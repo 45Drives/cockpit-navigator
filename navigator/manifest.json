@@ -1,1 +1,11 @@
+{
+    "version": 0,
 
+    "menu": {
+        "navigator": {
+            "label": "Navigator",
+            "path": "navigator.html",
+            "order": 114
+        }
+    }
+}
