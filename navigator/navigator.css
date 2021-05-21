@@ -53,7 +53,7 @@
 	overflow: auto;
 }
 
-.item {
+.nav-item {
 	margin: 0.5em;
 	flex: 0;
 	display: flex;
@@ -62,11 +62,35 @@
 	cursor: pointer;
 }
 
-.item .icon {
+.nav-item .nav-item-title {
+	text-align: center;
+	overflow-wrap: anywhere;
+}
+
+.nav-item .nav-dir-icon {
 	background-color: #212427;
 	border: 1px solid #3c3f42;
-	width: 3em;
+	width: 5em;
 	height: 4em;
+}
+
+.nav-item .nav-file-icon {
+	position: relative;
+	background-color: #212427;
+	width: 5em;
+	height: 4em;
+}
+
+.nav-item .nav-file-icon:before {
+	content: "";
+	position: absolute;
+	top: 0;
+	right: 0;
+	border-width: 0 16px 16px 0;
+	border-style: solid;
+	border-color: #3c3f42 #151515;
+	display: block;
+	width: 0;
 }
 
 .info-column {
