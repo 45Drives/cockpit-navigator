@@ -58,7 +58,7 @@ class NavDir extends NavEntry {
 	}
 	async get_children(nav_window_ref) {
 		var children = [];
-		var data = await cockpit.spawn(["/usr/share/cockpit/navigator/scripts/ls-no-fail.py", this.path_str()], {err:"ignore"});
+		var data = await cockpit.spawn(["/usr/share/cockpit/navigator/scripts/ls.py", this.path_str()], {err:"ignore"});
 		var entries = JSON.parse(data);
 		entries.forEach(entry => {
 			var filename = entry["filename"];
@@ -108,7 +108,6 @@ class NavWindow {
 		});
 	}
 	up() {
-		console.log("up");
 		if(this.path_stack.length > 1)
 			this.path_stack.pop();
 		this.refresh();
