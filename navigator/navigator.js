@@ -58,14 +58,12 @@ class NavDir extends NavEntry {
 	}
 	async get_children(nav_window_ref) {
 		var children = [];
-		var data = await cockpit.spawn(["/usr/share/cockpit/navigator/scripts/ls-no-fail.sh", this.path_str()], {err:"ignore"});
-		var entries = data.split("\n");
-		entries = entries.splice(1, entries.length - 2);
+		var data = await cockpit.spawn(["/usr/share/cockpit/navigator/scripts/ls-no-fail.py", this.path_str()], {err:"ignore"});
+		var entries = JSON.parse(data);
 		entries.forEach(entry => {
-			var entry_array = entry.split(/\s+/);
-			var filename = entry_array[entry_array.length - 1];
+			var filename = entry["filename"];
 			var path = (this.path.length >= 1 && this.path[0]) ? [... this.path, filename] : [filename];
-			if(entry[0] == 'd')
+			if(entry["isdir"])
 				children.push(new NavDir(path, nav_window_ref));
 			else
 				children.push(new NavFile(path));
@@ -109,19 +107,23 @@ class NavWindow {
 			window.alert(new_dir.path_str() + " is inaccessible.");
 		});
 	}
+	up() {
+		console.log("up");
+		if(this.path_stack.length > 1)
+			this.path_stack.pop();
+		this.refresh();
+	}
 }
 
 let nav_window = new NavWindow();
 
+function set_up_buttons() {
+	document.getElementById("nav-up-dir-btn").addEventListener("click", nav_window.up.bind(nav_window));
+}
+
 async function main() {
-	nav_window.refresh();
+	await nav_window.refresh();
+	set_up_buttons();
 }
 
 main();
-
-// setTimeout(function(){
-// 	while(files.length){
-// 		var file = files.pop();
-// 		file.destroy();
-// 	}
-// }, 5000);
