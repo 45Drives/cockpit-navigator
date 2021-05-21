@@ -68,17 +68,33 @@
 }
 
 .nav-item .nav-dir-icon {
+	position: relative;
 	background-color: #212427;
-	border: 1px solid #3c3f42;
-	width: 5em;
-	height: 4em;
+	width: 100px;
+	height: 80px;
+	border-radius: 0 5px 5px 5px;
+	margin-top: 12px;
+}
+
+.nav-item .nav-dir-icon:before {
+	content: "";
+	position: absolute;
+	top: -12px;
+	left: 0;
+	width: 50%;
+	height: 12px;
+	border-radius: 5px 5px 0 0;
+	background-color: #3c3f42;
+	display: block;
 }
 
 .nav-item .nav-file-icon {
 	position: relative;
 	background-color: #212427;
-	width: 5em;
-	height: 4em;
+	width: 70px;
+	height: 92px;
+	margin-left: 15px;
+	margin-right: 15px;
 }
 
 .nav-item .nav-file-icon:before {
