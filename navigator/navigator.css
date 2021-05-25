@@ -80,7 +80,12 @@
 	overflow-wrap: anywhere;
 }
 
-.nav-item .nav-dir-icon {
+.nav-item .nav-file-icon {
+	font-size: 100px;
+	color: #3c3f42;
+}
+
+/* .nav-item .nav-dir-icon {
 	position: relative;
 	background-color: #212427;
 	width: 100px;
@@ -120,7 +125,7 @@
 	border-color: #3c3f42 #151515;
 	display: block;
 	width: 0;
-}
+} */
 
 .nav-info-column {
 	background-color: #212427;

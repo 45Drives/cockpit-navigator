@@ -32,7 +32,8 @@ class NavEntry {
 			this.path = path;
 		this.dom_element = document.createElement("div");
 		this.dom_element.classList.add("nav-item");
-		let icon = this.dom_element.nav_item_icon = document.createElement("div");
+		let icon = this.dom_element.nav_item_icon = document.createElement("i");
+		icon.classList.add("nav-file-icon");
 		let title = this.dom_element.nav_item_title = document.createElement("div");
 		title.classList.add("nav-item-title");
 		title.innerText = this.filename();
@@ -90,7 +91,7 @@ class NavFile extends NavEntry {
 	constructor(/*string or array*/ path, /*dict*/ stat, nav_window_ref) {
 		super(path, stat, nav_window_ref);
 		this.nav_type = "file";
-		this.dom_element.nav_item_icon.classList.add("nav-file-icon");
+		this.dom_element.nav_item_icon.classList.add("fas", "fa-file");
 	}
 	handleEvent(e) {
 		super.handleEvent(e);
@@ -101,7 +102,7 @@ class NavDir extends NavEntry {
 	constructor(/*string or array*/ path, /*dict*/ stat, nav_window_ref) {
 		super(path, stat, nav_window_ref);
 		this.nav_type = "dir";
-		this.dom_element.nav_item_icon.classList.add("nav-dir-icon");
+		this.dom_element.nav_item_icon.classList.add("fas", "fa-folder");
 		this.double_click = false;
 	}
 	handleEvent(e) {
