@@ -23,6 +23,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 	<link href="../base1/cockpit.css" type="text/css" rel="stylesheet">
 	<link href="navigator.css" type="text/css" rel="stylesheet">
+	<link href="fontawesome/css/all.min.css" rel="stylesheet">
 	<script src="../base1/cockpit.js"></script>
 	<script src="../manifests.js"></script>
 	<script src="../*/po.js"></script>
@@ -31,19 +32,25 @@
 <body>
 	<div class="flex-col outer-container">
 		<div class="flex-row">
-			<button class="pf-c-button pf-m-secondary" id="nav-up-dir-btn">&#129121;</button>
+			<button class="pf-c-button pf-m-secondary" id="nav-up-dir-btn"><i class="fas fa-arrow-up"></i></button>
 			<div class="horizontal-spacer"></div>
 			<div class="navigation-bar" id="pwd">
 				/current/dir
 			</div>
 			<div class="horizontal-spacer"></div>
-			<button class="pf-c-button pf-m-primary">+</button>
+			<button class="pf-c-button pf-m-primary"><i class="fas fa-folder-plus"></i></button>
 		</div>
 		<div class="vertical-spacer"></div>
 		<div class="flex-row inner-container">
 			<div class="contents-view" id="nav-contents-view"></div>
 			<div class="horizontal-spacer"></div>
-			<div class="info-column" id="nav-info-column"></div>
+			<div class="nav-info-column" id="nav-info-column">
+				<div class="flex-row space-between">
+					<div class="nav-info-column-filename" id="nav-info-column-filename"></div>
+					<button class="pf-c-button pf-m-primary"><i class="fas fa-edit"></i></button>
+				</div>
+				<div class="nav-info-column-properties" id="nav-info-column-properties"></div>
+			</div>
 		</div>
 	</div>
 </body>

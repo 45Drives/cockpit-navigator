@@ -9,6 +9,8 @@ function property_entry_html(key, value) {
 }
 
 function format_bytes(bytes) {
+	if(bytes === 0)
+		return "0 B";
 	var units = [" B", " KiB", " MiB", " GiB", " TiB", " PiB"];
 	var index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
 	var pow = Math.pow(1024, index);
@@ -18,12 +20,12 @@ function format_bytes(bytes) {
 
 function format_time(timestamp) {
 	var date = new Date(timestamp * 1000);
-	console.log(date);
 	return date.toLocaleString();
 }
 
 class NavEntry {
-	constructor(/*string or array*/ path, /*dict*/ stat) {
+	constructor(/*string or array*/ path, /*dict*/ stat, /*NavWindow*/ nav_window_ref) {
+		this.nav_window_ref = nav_window_ref;
 		if(typeof path == 'string')
 			this.path = path.split('/').splice(1);
 		else
@@ -38,6 +40,15 @@ class NavEntry {
 		this.dom_element.appendChild(title);
 		this.stat = stat;
 		this.dom_element.addEventListener("click", this)
+	}
+	handleEvent(e) {
+		switch(e.type){
+			case "click":
+				this.show_properties();
+				this.nav_window_ref.set_selected(this);
+				e.stopPropagation();
+				break;
+		}
 	}
 	destroy() {
 		while(this.dom_element.firstChild){
@@ -62,7 +73,8 @@ class NavEntry {
 		return this.stat;
 	}
 	show_properties(){
-		var html =  '<div class="nav-info-column-filename">' + this.filename() + '</div>';
+		document.getElementById("nav-info-column-filename").innerText = this.filename();
+		var html = "";
 		html += property_entry_html("Mode", this.stat["mode-str"]);
 		html += property_entry_html("Owner", this.stat["owner"] + " (" + this.stat["uid"] + ")");
 		html += property_entry_html("Group", this.stat["group"] + " (" + this.stat["gid"] + ")");
@@ -70,32 +82,26 @@ class NavEntry {
 		html += property_entry_html("Accessed", format_time(this.stat["atime"]));
 		html += property_entry_html("Modified", format_time(this.stat["mtime"]));
 		html += property_entry_html("Created", format_time(this.stat["ctime"]));
-		document.getElementById("nav-info-column").innerHTML = html;
+		document.getElementById("nav-info-column-properties").innerHTML = html;
 	}
 }
 
 class NavFile extends NavEntry {
-	constructor(/*string or array*/ path, /*dict*/ stat) {
-		super(path, stat);
+	constructor(/*string or array*/ path, /*dict*/ stat, nav_window_ref) {
+		super(path, stat, nav_window_ref);
 		this.nav_type = "file";
 		this.dom_element.nav_item_icon.classList.add("nav-file-icon");
 	}
 	handleEvent(e) {
-		switch(e.type){
-			case "click":
-				this.show_properties();
-				e.stopPropagation();
-				break;
-		}
+		super.handleEvent(e);
 	}
 }
 
 class NavDir extends NavEntry {
 	constructor(/*string or array*/ path, /*dict*/ stat, nav_window_ref) {
-		super(path, stat);
+		super(path, stat, nav_window_ref);
 		this.nav_type = "dir";
 		this.dom_element.nav_item_icon.classList.add("nav-dir-icon");
-		this.nav_window_ref = nav_window_ref;
 		this.double_click = false;
 	}
 	handleEvent(e) {
@@ -104,7 +110,6 @@ class NavDir extends NavEntry {
 				if(this.double_click)
 					this.nav_window_ref.cd(this);
 				else{ // single click
-					this.show_properties();
 					this.double_click = true;
 					if(this.timeout)
 						clearTimeout(this.timeout)
@@ -112,9 +117,9 @@ class NavDir extends NavEntry {
 						this.double_click = false;
 					}, 500);
 				}
-				e.stopPropagation();
 				break;
 		}
+		super.handleEvent(e);
 	}
 	async get_children(nav_window_ref) {
 		var children = [];
@@ -129,7 +134,7 @@ class NavDir extends NavEntry {
 			if(entry["isdir"])
 				children.push(new NavDir(path, stat, nav_window_ref));
 			else
-				children.push(new NavFile(path, stat));
+				children.push(new NavFile(path, stat, nav_window_ref));
 		});
 		children.sort((first, second) => {
 			if(first.nav_type === second.nav_type){
@@ -146,6 +151,7 @@ class NavDir extends NavEntry {
 class NavWindow {
 	constructor() {
 		this.path_stack = [new NavDir("/", this)];
+		this.selected_entry = this.pwd();
 		this.entries = [];
 		this.window = document.getElementById("nav-contents-view");
 		this.window.addEventListener("click", this);
@@ -153,7 +159,8 @@ class NavWindow {
 	handleEvent(e) {
 		switch(e.type){
 			case "click":
-				this.show_pwd_properties();
+				this.set_selected(this.pwd());
+				this.show_selected_properties();
 				break;
 		}
 	}
@@ -168,6 +175,8 @@ class NavWindow {
 			this.entries.push(file);
 		});
 		document.getElementById("pwd").innerText = this.pwd().path_str();
+		this.set_selected(this.pwd());
+		this.show_selected_properties();
 	}
 	pwd() {
 		return this.path_stack[this.path_stack.length - 1];
@@ -185,8 +194,13 @@ class NavWindow {
 			this.path_stack.pop();
 		this.refresh();
 	}
-	show_pwd_properties() {
-		this.pwd().show_properties();
+	show_selected_properties() {
+		this.selected_entry.show_properties();
+	}
+	set_selected(/*NavEntry*/ entry) {
+		this.selected_entry.dom_element.classList.remove("nav-item-selected");
+		this.selected_entry = entry;
+		this.selected_entry.dom_element.classList.add("nav-item-selected");
 	}
 }
 
