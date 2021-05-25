@@ -40,7 +40,7 @@
 .contents-view {
 	height: 100%;
 	flex-basis: 0;
-	flex-grow: 4;
+	flex-grow: 8;
 	background-color: #151515;
 	border: 1px solid #3c3f42;
 	border-radius: 4px;
@@ -112,8 +112,35 @@
 .info-column {
 	background-color: #212427;
 	flex-basis: 0;
-	flex-grow: 1;
+	flex-grow: 3;
 	padding: 1em;
 	border: 1px solid #3c3f42;
 	border-radius: 4px;
+}
+
+.nav-info-column-filename {
+	margin: 0 12px 0 12px;
+	font-weight: bolder;
+	font-size: 150%;
+}
+
+.nav-property-pair {
+	margin: 0 12px 0 12px;
+	display: flex;
+	flex-flow: row nowrap;
+	align-items: baseline;
+}
+
+.nav-property-pair-key {
+	font-weight: bold;
+	flex-basis: 0;
+	flex: 2;
+	padding-right: 5px;
+}
+
+.nav-property-pair-value {
+	font-family:'Courier New', Courier, monospace;
+	font-size: 85%;
+	flex-basis: 0;
+	flex: 3;
 }

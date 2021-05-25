@@ -1,5 +1,27 @@
 
 
+function property_entry_html(key, value) {
+	var html = '<div class="nav-property-pair">';
+	html += '<span class="nav-property-pair-key">' + key + '</span>'
+	html += '<span class="nav-property-pair-value">' + value + '</span>'
+	html += '</div>'
+	return html;
+}
+
+function format_bytes(bytes) {
+	var units = [" B", " KiB", " MiB", " GiB", " TiB", " PiB"];
+	var index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
+	var pow = Math.pow(1024, index);
+	var formatted = bytes / pow;
+	return formatted.toFixed(2).toString() + units[index];
+}
+
+function format_time(timestamp) {
+	var date = new Date(timestamp * 1000);
+	console.log(date);
+	return date.toLocaleString();
+}
+
 class NavEntry {
 	constructor(/*string or array*/ path, /*dict*/ stat) {
 		if(typeof path == 'string')
@@ -15,7 +37,7 @@ class NavEntry {
 		this.dom_element.appendChild(icon);
 		this.dom_element.appendChild(title);
 		this.stat = stat;
-		this.dom_element.nav_item_icon.addEventListener("click", this)
+		this.dom_element.addEventListener("click", this)
 	}
 	destroy() {
 		while(this.dom_element.firstChild){
@@ -40,11 +62,14 @@ class NavEntry {
 		return this.stat;
 	}
 	show_properties(){
-		var html =  '<div class="nav-info-column-filename">' + this.filename() + '</div>\n';
-		html += '<div class="nav-property-pair">';
-		html += '<span class="nav-property-pair-key">Mode: </span>'
-		html += '<span class="nav-property-pair-value">' + this.stat["mode-str"] + '</span>'
-		html += '</div>'
+		var html =  '<div class="nav-info-column-filename">' + this.filename() + '</div>';
+		html += property_entry_html("Mode", this.stat["mode-str"]);
+		html += property_entry_html("Owner", this.stat["owner"] + " (" + this.stat["uid"] + ")");
+		html += property_entry_html("Group", this.stat["group"] + " (" + this.stat["gid"] + ")");
+		html += property_entry_html("Size", format_bytes(this.stat["size"]));
+		html += property_entry_html("Accessed", format_time(this.stat["atime"]));
+		html += property_entry_html("Modified", format_time(this.stat["mtime"]));
+		html += property_entry_html("Created", format_time(this.stat["ctime"]));
 		document.getElementById("nav-info-column").innerHTML = html;
 	}
 }
