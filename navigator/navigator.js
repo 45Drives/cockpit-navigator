@@ -1,7 +1,7 @@
 
 
 class NavEntry {
-	constructor(/*string or array*/ path) {
+	constructor(/*string or array*/ path, /*dict*/ stat) {
 		if(typeof path == 'string')
 			this.path = path.split('/').splice(1);
 		else
@@ -14,6 +14,8 @@ class NavEntry {
 		title.innerText = this.filename();
 		this.dom_element.appendChild(icon);
 		this.dom_element.appendChild(title);
+		this.stat = stat;
+		this.dom_element.nav_item_icon.addEventListener("click", this)
 	}
 	destroy() {
 		while(this.dom_element.firstChild){
@@ -23,7 +25,10 @@ class NavEntry {
 			this.dom_element.parentElement.removeChild(this.dom_element);
 	}
 	filename() {
-		return this.path[this.path.length -1];
+		var name = this.path[this.path.length -1];
+		if(name === "")
+			name = "/";
+		return name;
 	}
 	path_str() {
 		return "/" + this.path.join('/');
@@ -31,47 +36,81 @@ class NavEntry {
 	show() {
 		document.getElementById("nav-contents-view").appendChild(this.dom_element);
 	}
-}
-
-class NavFile extends NavEntry {
-	constructor(/*string or array*/ path) {
-		super(path);
-		this.nav_type = "file";
-		this.dom_element.nav_item_icon.classList.add("nav-file-icon");
+	get_properties() {
+		return this.stat;
+	}
+	show_properties(){
+		var html =  '<div class="nav-info-column-filename">' + this.filename() + '</div>\n';
+		html += '<div class="nav-property-pair">';
+		html += '<span class="nav-property-pair-key">Mode: </span>'
+		html += '<span class="nav-property-pair-value">' + this.stat["mode-str"] + '</span>'
+		html += '</div>'
+		document.getElementById("nav-info-column").innerHTML = html;
 	}
 }
 
-class NavDir extends NavEntry {
-	constructor(/*string or array*/ path, nav_window_ref) {
-		super(path);
-		this.nav_type = "dir";
-		this.dom_element.nav_item_icon.classList.add("nav-dir-icon");
-		this.nav_window_ref = nav_window_ref;
-		this.dom_element.nav_item_icon.addEventListener("click", this)
+class NavFile extends NavEntry {
+	constructor(/*string or array*/ path, /*dict*/ stat) {
+		super(path, stat);
+		this.nav_type = "file";
+		this.dom_element.nav_item_icon.classList.add("nav-file-icon");
 	}
 	handleEvent(e) {
 		switch(e.type){
 			case "click":
-				this.nav_window_ref.cd(this);
+				this.show_properties();
+				e.stopPropagation();
+				break;
+		}
+	}
+}
+
+class NavDir extends NavEntry {
+	constructor(/*string or array*/ path, /*dict*/ stat, nav_window_ref) {
+		super(path, stat);
+		this.nav_type = "dir";
+		this.dom_element.nav_item_icon.classList.add("nav-dir-icon");
+		this.nav_window_ref = nav_window_ref;
+		this.double_click = false;
+	}
+	handleEvent(e) {
+		switch(e.type){
+			case "click":
+				if(this.double_click)
+					this.nav_window_ref.cd(this);
+				else{ // single click
+					this.show_properties();
+					this.double_click = true;
+					if(this.timeout)
+						clearTimeout(this.timeout)
+					this.timeout = setTimeout(() => {
+						this.double_click = false;
+					}, 500);
+				}
+				e.stopPropagation();
 				break;
 		}
 	}
 	async get_children(nav_window_ref) {
 		var children = [];
 		var data = await cockpit.spawn(["/usr/share/cockpit/navigator/scripts/ls.py", this.path_str()], {err:"ignore"});
-		var entries = JSON.parse(data);
+		var response = JSON.parse(data);
+		this.stat = response["."]["stat"];
+		var entries = response["children"];
 		entries.forEach(entry => {
 			var filename = entry["filename"];
 			var path = (this.path.length >= 1 && this.path[0]) ? [... this.path, filename] : [filename];
+			var stat = entry["stat"];
 			if(entry["isdir"])
-				children.push(new NavDir(path, nav_window_ref));
+				children.push(new NavDir(path, stat, nav_window_ref));
 			else
-				children.push(new NavFile(path));
+				children.push(new NavFile(path, stat));
 		});
 		children.sort((first, second) => {
-			if(first.nav_type === second.nav_type)
-				return 0;
-			if(first.nav_type == "dir")
+			if(first.nav_type === second.nav_type){
+				return first.filename().localeCompare(second.filename());
+			}
+			if(first.nav_type === "dir")
 				return -1;
 			return 1;
 		})
@@ -83,6 +122,15 @@ class NavWindow {
 	constructor() {
 		this.path_stack = [new NavDir("/", this)];
 		this.entries = [];
+		this.window = document.getElementById("nav-contents-view");
+		this.window.addEventListener("click", this);
+	}
+	handleEvent(e) {
+		switch(e.type){
+			case "click":
+				this.show_pwd_properties();
+				break;
+		}
 	}
 	async refresh() {
 		var files = await this.pwd().get_children(this);
@@ -111,6 +159,9 @@ class NavWindow {
 		if(this.path_stack.length > 1)
 			this.path_stack.pop();
 		this.refresh();
+	}
+	show_pwd_properties() {
+		this.pwd().show_properties();
 	}
 }
 
