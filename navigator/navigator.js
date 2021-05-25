@@ -200,8 +200,16 @@ class NavWindow {
 	}
 	set_selected(/*NavEntry*/ entry) {
 		this.selected_entry.dom_element.classList.remove("nav-item-selected");
+		if(this.selected_entry.nav_type === "dir"){
+			this.selected_entry.dom_element.nav_item_icon.classList.remove("fa-folder-open");
+			this.selected_entry.dom_element.nav_item_icon.classList.add("fa-folder");
+		}
 		this.selected_entry = entry;
 		this.selected_entry.dom_element.classList.add("nav-item-selected");
+		if(this.selected_entry.nav_type === "dir"){
+			this.selected_entry.dom_element.nav_item_icon.classList.remove("fa-folder");
+			this.selected_entry.dom_element.nav_item_icon.classList.add("fa-folder-open");
+		}
 	}
 }
 
