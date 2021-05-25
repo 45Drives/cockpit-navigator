@@ -73,8 +73,11 @@ class NavEntry {
 	get_properties() {
 		return this.stat;
 	}
-	show_properties(){
-		document.getElementById("nav-info-column-filename").innerText = this.filename();
+	show_properties() {
+		var selected_name_fields = document.getElementsByClassName("nav-info-column-filename");
+		for(let elem of selected_name_fields){
+			elem.innerText = this.filename();
+		}
 		var html = "";
 		html += property_entry_html("Mode", this.stat["mode-str"]);
 		html += property_entry_html("Owner", this.stat["owner"] + " (" + this.stat["uid"] + ")");
@@ -84,6 +87,19 @@ class NavEntry {
 		html += property_entry_html("Modified", format_time(this.stat["mtime"]));
 		html += property_entry_html("Created", format_time(this.stat["ctime"]));
 		document.getElementById("nav-info-column-properties").innerHTML = html;
+	}
+	populate_edit_fields() {
+		document.getElementById("nav-edit-filename").value = this.filename();
+		var mode_bits = ["other-exec", "other-write", "other-read",
+						 "group-exec", "group-write", "group-read",
+						 "owner-exec", "owner-write", "owner-read"];
+		for(let i = 0; i < mode_bits.length; i++){
+			var bit_check = (1 << i);
+			var result = this.stat["mode"] & bit_check;
+			document.getElementById(mode_bits[i]).checked = (result != 0);
+		}
+		document.getElementById("nav-edit-owner").value = this.stat["owner"];
+		document.getElementById("nav-edit-group").value = this.stat["group"];
 	}
 }
 
@@ -199,6 +215,7 @@ class NavWindow {
 		this.selected_entry.show_properties();
 	}
 	set_selected(/*NavEntry*/ entry) {
+		this.hide_edit_selected();
 		this.selected_entry.dom_element.classList.remove("nav-item-selected");
 		if(this.selected_entry.nav_type === "dir"){
 			this.selected_entry.dom_element.nav_item_icon.classList.remove("fa-folder-open");
@@ -211,12 +228,22 @@ class NavWindow {
 			this.selected_entry.dom_element.nav_item_icon.classList.add("fa-folder-open");
 		}
 	}
+	show_edit_selected() {
+		this.selected_entry.populate_edit_fields();
+		document.getElementById("nav-edit-properties").style.display = "block";
+		document.getElementById("nav-show-properties").style.display = "none";
+	}
+	hide_edit_selected() {
+		document.getElementById("nav-show-properties").style.display = "block";
+		document.getElementById("nav-edit-properties").style.display = "none";
+	}
 }
 
 let nav_window = new NavWindow();
 
 function set_up_buttons() {
 	document.getElementById("nav-up-dir-btn").addEventListener("click", nav_window.up.bind(nav_window));
+	document.getElementById("nav-edit-properties-btn").addEventListener("click", nav_window.show_edit_selected.bind(nav_window));
 }
 
 async function main() {

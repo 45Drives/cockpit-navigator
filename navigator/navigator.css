@@ -20,6 +20,10 @@
 	margin-bottom: 1em;
 }
 
+.nav-hidden {
+	display: none;
+}
+
 .outer-container {
 	height: 100%;
 	background-color: #212427;
@@ -104,7 +108,7 @@
 }
 
 .nav-property-pair {
-	margin: 0 12px 0 12px;
+	margin: 2px 12px 2px 12px;
 	display: flex;
 	flex-flow: row nowrap;
 	align-items: baseline;
@@ -122,4 +126,15 @@
 	font-size: 85%;
 	flex-basis: 0;
 	flex: 3;
+}
+
+.grid-container {
+	margin: 0 0 2px 42px;
+	display: grid;
+	grid-template-columns: auto auto auto auto;
+	justify-content: space-evenly;
+}
+
+.grid-label {
+	font-weight: bold;
 }
