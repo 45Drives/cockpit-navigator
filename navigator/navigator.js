@@ -113,7 +113,7 @@ class NavEntry {
 	}
 	async mv(/*string*/ new_path) {
 		var proc = cockpit.spawn(
-			["mv", this.path_str(), [this.nav_window_ref.pwd().path_str(), new_path].join('/')],
+			["mv", "-n", this.path_str(), [this.nav_window_ref.pwd().path_str(), new_path].join('/')],
 			{superuser: "try", err:"out"}
 		);
 		proc.fail((e, data) => {
@@ -159,6 +159,16 @@ class NavFile extends NavEntry {
 	}
 	handleEvent(e) {
 		super.handleEvent(e);
+	}
+	async rm() {
+		var proc = cockpit.spawn(
+			["rm", "-f", this.path_str(), [this.nav_window_ref.pwd().path_str(), new_path].join('/')],
+			{superuser: "try", err:"out"}
+		);
+		proc.fail((e, data) => {
+			window.alert(data);
+		});
+		await proc;
 	}
 }
 
@@ -210,6 +220,16 @@ class NavDir extends NavEntry {
 			return 1;
 		})
 		return children;
+	}
+	async rm() {
+		var proc = cockpit.spawn(
+			["rmdir", this.path_str(), [this.nav_window_ref.pwd().path_str(), new_path].join('/')],
+			{superuser: "try", err:"out"}
+		);
+		proc.fail((e, data) => {
+			window.alert(data);
+		});
+		await proc;
 	}
 }
 
@@ -277,6 +297,15 @@ class NavWindow {
 		}
 	}
 	show_edit_selected() {
+		var dangerous_dirs = [
+			"/", "/usr", "/bin", "/sbin", "/lib", "/lib32", "/lib64", "/usr/bin",
+			"/usr/include", "/usr/lib", "/usr/lib32", "/usr/lib64", "/usr/sbin"
+		];
+		if(dangerous_dirs.includes(this.selected_entry.path_str())){
+			if(!window.confirm("Warning: editing `" + this.selected_entry.path_str() + "` can be dangerous. Are you sure?")){
+				return;
+			}
+		}
 		this.selected_entry.populate_edit_fields();
 		this.update_permissions_preview();
 		document.getElementById("nav-edit-properties").style.display = "block";
@@ -307,7 +336,7 @@ class NavWindow {
 		document.getElementById("nav-mode-preview").innerText = text;
 	}
 	async apply_edit_selected() {
-		// do mv last so the rest don't fail from not finding it
+		// do mv last so the rest don't fail from not finding path
 		var new_owner = document.getElementById("nav-edit-owner").value;
 		var new_group = document.getElementById("nav-edit-group").value;
 		if(new_owner !== this.selected_entry.stat["owner"] || new_group !== this.selected_entry.stat["group"]){
