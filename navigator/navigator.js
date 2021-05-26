@@ -160,8 +160,23 @@ class NavFile extends NavEntry {
 		super(path, stat, nav_window_ref);
 		this.nav_type = "file";
 		this.dom_element.nav_item_icon.classList.add("fas", "fa-file");
+		this.double_click = false;
 	}
 	handleEvent(e) {
+		switch(e.type){
+			case "click":
+				if(this.double_click)
+					this.show_edit_file_contents();
+				else{ // single click
+					this.double_click = true;
+					if(this.timeout)
+						clearTimeout(this.timeout)
+					this.timeout = setTimeout(() => {
+						this.double_click = false;
+					}, 500);
+				}
+				break;
+		}
 		super.handleEvent(e);
 	}
 	async rm() {
@@ -173,6 +188,32 @@ class NavFile extends NavEntry {
 			window.alert(data);
 		});
 		await proc;
+	}
+	async show_edit_file_contents() {
+		var proc_output = await cockpit.spawn(["file", "--mime-type", this.path_str()], {superuser: "try"});
+		var fields = proc_output.split(':');
+		var type = fields[1].trim();
+		if(!(type.match(/^text/) || type.match(/^inode\/x-empty$/) || this.stat["size"] === 0)){
+			if(!window.confirm("File is of type `" + type + "`. Are you sure you want to edit it?"))
+				return;
+		}
+		var contents = await cockpit.spawn(["cat", this.path_str()], {superuser: "try"});
+		document.getElementById("nav-edit-contents-textarea").value = contents;
+		document.getElementById("nav-cancel-edit-contents-btn").onclick = this.hide_edit_file_contents.bind(this);
+		document.getElementById("nav-continue-edit-contents-btn").onclick = this.write_to_file.bind(this);
+		document.getElementById("nav-edit-contents-header").innerText = "Editing " + this.path_str();
+		document.getElementById("nav-contents-view").style.display = "none";
+		document.getElementById("nav-edit-contents-view").style.display = "flex";
+	}
+	async write_to_file() {
+		var new_contents = document.getElementById("nav-edit-contents-textarea").value;
+		await cockpit.script("echo -n \"$1\" > $2", [new_contents, this.path_str()], {superuser: "try"});
+		this.nav_window_ref.refresh();
+		this.hide_edit_file_contents();
+	}
+	hide_edit_file_contents() {
+		document.getElementById("nav-edit-contents-view").style.display = "none";
+		document.getElementById("nav-contents-view").style.display = "flex";
 	}
 }
 
@@ -309,7 +350,8 @@ class NavWindow {
 		this.refresh();
 	}
 	up() {
-		this.cd(new NavDir(this.pwd().parent_dir()));
+		if(this.pwd().path_str() !== '/')
+			this.cd(new NavDir(this.pwd().parent_dir()));
 	}
 	show_selected_properties() {
 		this.selected_entry.show_properties();

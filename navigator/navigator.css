@@ -146,3 +146,22 @@
 	justify-content: flex-end;
 	align-items: flex-start;
 }
+
+.editor-header {
+	font-weight: bold;
+}
+
+.edit-file-contents {
+	height: 100%;
+	flex-basis: 0;
+	flex-grow: 8;
+	flex-flow: column nowrap;
+	align-items: stretch;
+}
+
+.edit-file-contents > textarea {
+	flex-grow: 1;
+	white-space: pre;
+	overflow: auto;
+	resize: none;
+}
