@@ -121,7 +121,7 @@ class NavEntry {
 		});
 		await proc;
 	}
-	show_properties() {
+	show_properties(/*string*/ extra_properties = "") {
 		var selected_name_fields = document.getElementsByClassName("nav-info-column-filename");
 		for(let elem of selected_name_fields){
 			elem.innerText = this.filename();
@@ -134,6 +134,7 @@ class NavEntry {
 		html += property_entry_html("Accessed", format_time(this.stat["atime"]));
 		html += property_entry_html("Modified", format_time(this.stat["mtime"]));
 		html += property_entry_html("Created", format_time(this.stat["ctime"]));
+		html += extra_properties;
 		document.getElementById("nav-info-column-properties").innerHTML = html;
 	}
 	populate_edit_fields() {
@@ -178,6 +179,12 @@ class NavDir extends NavEntry {
 		this.nav_type = "dir";
 		this.dom_element.nav_item_icon.classList.add("fas", "fa-folder");
 		this.double_click = false;
+		/*
+		Sam:
+		add a method to NavDir that calls cephfs-dir-stats and call it here.
+		The function should save the results as a dictionary like the following:
+		this.cephfs_dir_stats = {key : "value", etc};
+		*/
 	}
 	handleEvent(e) {
 		switch(e.type){
@@ -230,6 +237,16 @@ class NavDir extends NavEntry {
 			window.alert(data);
 		});
 		await proc;
+	}
+	show_properties() {
+		var extra_properties = "";
+		/*
+		Sam:
+		Follow NavEntry.show_properties() as an example to put the cephfs-dir-stats results
+		into extra_properties as html elements. If cephfs-dir-stats failed, i.e. it's not in a
+		ceph filesystem, make sure extra_properties is an empty string.
+		*/
+		super.show_properties(extra_properties);
 	}
 }
 
