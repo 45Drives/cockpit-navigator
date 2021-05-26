@@ -14,6 +14,16 @@ def get_stat(full_path, filename = '/'):
         isdir = S_ISDIR(os.stat(full_path).st_mode)
     except OSError:
         pass
+    owner = '?'
+    try:
+        owner = getpwuid(stats.st_uid).pw_name
+    except:
+        pass
+    group = '?'
+    try:
+        group = getgrgid(stats.st_gid).gr_name
+    except:
+        pass
     response = {
         "filename": filename,
         "isdir": isdir,
@@ -21,9 +31,9 @@ def get_stat(full_path, filename = '/'):
             "mode": stats.st_mode,
             "mode-str": filemode(stats.st_mode),
             "uid": stats.st_uid,
-            "owner": getpwuid(stats.st_uid).pw_name,
+            "owner": owner,
             "gid": stats.st_gid,
-            "group": getgrgid(stats.st_gid).gr_name,
+            "group": group,
             "size": stats.st_size,
             "atime": stats.st_atime,
             "mtime": stats.st_mtime,
