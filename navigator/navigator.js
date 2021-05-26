@@ -23,6 +23,21 @@ function format_time(timestamp) {
 	return date.toLocaleString();
 }
 
+function format_permissions(/*int*/ mode) {
+	var bit_list = ["x", "w", "r"];
+	var result = "";
+	for(let bit = 8; bit >= 0; bit--){
+		var test_bit = 1 << bit;
+		var test_result = mode & test_bit;
+		if(test_result != 0){
+			result += bit_list[bit % bit_list.length];
+		}else{
+			result += "-";
+		}
+	}
+	return result;
+}
+
 class NavEntry {
 	constructor(/*string or array*/ path, /*dict*/ stat, /*NavWindow*/ nav_window_ref) {
 		this.nav_window_ref = nav_window_ref;
@@ -251,6 +266,7 @@ class NavWindow {
 	}
 	show_edit_selected() {
 		this.selected_entry.populate_edit_fields();
+		this.update_permissions_preview();
 		document.getElementById("nav-edit-properties").style.display = "block";
 		document.getElementById("nav-show-properties").style.display = "none";
 	}
@@ -258,14 +274,48 @@ class NavWindow {
 		document.getElementById("nav-show-properties").style.display = "block";
 		document.getElementById("nav-edit-properties").style.display = "none";
 	}
+	get_new_permissions() {
+		var category_list = ["other", "group", "owner"];
+		var action_list = ["exec", "write", "read"];
+		var result = 0;
+		var bit = 0;
+		for(let category of category_list){
+			for(let action of action_list){
+				if(document.getElementById(category + "-" + action).checked)
+					result |= 1 << bit;
+				bit++;
+			}
+		}
+		return result;
+	}
+	update_permissions_preview() {
+		var new_perms = this.get_new_permissions();
+		var text = format_permissions(new_perms);
+		text += " (" + (new_perms & 0o777).toString(8) + ")";
+		document.getElementById("nav-mode-preview").innerText = text;
+	}
 	async apply_edit_selected() {
 		var new_name = document.getElementById("nav-edit-filename").value;
+		if(new_name !== this.selected_entry.filename())
 		await this.selected_entry.mv(new_name).catch(
 			(e) => {
 				console.log(e);
 				window.alert(e);
 			}
-		)
+		);
+		var new_owner = document.getElementById("nav-edit-owner").value;
+		var new_group = document.getElementById("nav-edit-group").value;
+		if(new_owner !== this.selected_entry.stat["owner"] || new_group !== this.selected_entry.stat["group"]){
+			await this.selected_entry.chown(new_owner, new_group).catch(
+				(e) => {
+					console.log(e);
+					window.alert(e);
+				}
+			);
+		}
+		window.alert(this.get_new_permissions().toString(8));
+		this.refresh();
+		this.hide_edit_selected();
 	}
 }
 
@@ -276,6 +326,11 @@ function set_up_buttons() {
 	document.getElementById("nav-refresh-btn").addEventListener("click", nav_window.refresh.bind(nav_window));
 	document.getElementById("nav-edit-properties-btn").addEventListener("click", nav_window.show_edit_selected.bind(nav_window));
 	document.getElementById("nav-cancel-edit-btn").addEventListener("click", nav_window.hide_edit_selected.bind(nav_window));
+	document.getElementById("nav-apply-edit-btn").addEventListener("click", nav_window.apply_edit_selected.bind(nav_window));
+	var mode_checkboxes = document.getElementsByClassName("mode-checkbox");
+	for(let checkbox of mode_checkboxes){
+		checkbox.addEventListener("change", nav_window.update_permissions_preview.bind(nav_window));
+	}
 }
 
 async function main() {
