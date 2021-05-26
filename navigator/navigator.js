@@ -35,6 +35,22 @@ function format_permissions(/*int*/ mode) {
 	return result;
 }
 
+/*
+ *	Code to change theme
+ */
+
+const toggleSwitch = document.getElementById("toggle-theme");
+
+function switchTheme(e) {
+	if (e.target.checked) {
+		document.documentElement.setAttribute("data-theme", "dark");
+	} else {
+		document.documentElement.setAttribute("data-theme", "light");
+	}
+}
+
+toggleSwitch.addEventListener("change", switchTheme, false);
+
 /* cephfs_dir_stats
  * Receives: path to folder
  * Does: Tries command with --json flag at path to folder. If
