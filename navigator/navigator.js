@@ -162,7 +162,7 @@ class NavFile extends NavEntry {
 	}
 	async rm() {
 		var proc = cockpit.spawn(
-			["rm", "-f", this.path_str(), [this.nav_window_ref.pwd().path_str(), new_path].join('/')],
+			["rm", "-f", this.path_str()],
 			{superuser: "try", err:"out"}
 		);
 		proc.fail((e, data) => {
@@ -223,7 +223,7 @@ class NavDir extends NavEntry {
 	}
 	async rm() {
 		var proc = cockpit.spawn(
-			["rmdir", this.path_str(), [this.nav_window_ref.pwd().path_str(), new_path].join('/')],
+			["rmdir", this.path_str()],
 			{superuser: "try", err:"out"}
 		);
 		proc.fail((e, data) => {
@@ -353,6 +353,13 @@ class NavWindow {
 		this.refresh();
 		this.hide_edit_selected();
 	}
+	async delete_selected() {
+		if(!window.confirm("Deleting `" + this.selected_entry.path_str() + "` cannot be undone. Are you sure?")){
+			return;
+		}
+		await this.selected_entry.rm().catch(/*ignore, caught in rm*/);
+		this.refresh();
+	}
 }
 
 let nav_window = new NavWindow();
@@ -360,6 +367,7 @@ let nav_window = new NavWindow();
 function set_up_buttons() {
 	document.getElementById("nav-up-dir-btn").addEventListener("click", nav_window.up.bind(nav_window));
 	document.getElementById("nav-refresh-btn").addEventListener("click", nav_window.refresh.bind(nav_window));
+	document.getElementById("nav-delete-btn").addEventListener("click", nav_window.delete_selected.bind(nav_window));
 	document.getElementById("nav-edit-properties-btn").addEventListener("click", nav_window.show_edit_selected.bind(nav_window));
 	document.getElementById("nav-cancel-edit-btn").addEventListener("click", nav_window.hide_edit_selected.bind(nav_window));
 	document.getElementById("nav-apply-edit-btn").addEventListener("click", nav_window.apply_edit_selected.bind(nav_window));
