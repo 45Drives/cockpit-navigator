@@ -73,6 +73,27 @@ class NavEntry {
 	get_properties() {
 		return this.stat;
 	}
+	get_permissions() {
+		return this.stat["mode"] & 0o777;
+	}
+	async chmod(/*int*/ new_perms) {
+		await cockpit.spawn(
+			["chmod", (new_perms & 0o777).toString(8), this.path_str()],
+			{superuser: "try"}
+		);
+	}
+	async chown(/*string*/ new_owner, /*string*/ new_group) {
+		await cockpit.spawn(
+			["chown", [new_owner, new_group].join(":"), this.path_str()],
+			{superuser: "try"}
+		);
+	}
+	async mv(/*string*/ new_path) {
+		await cockpit.spawn(
+			["mv", this.path_str(), [this.nav_window_ref.pwd().path_str(), new_path].join('/')],
+			{superuser: "try"}
+		);
+	}
 	show_properties() {
 		var selected_name_fields = document.getElementsByClassName("nav-info-column-filename");
 		for(let elem of selected_name_fields){
@@ -237,13 +258,24 @@ class NavWindow {
 		document.getElementById("nav-show-properties").style.display = "block";
 		document.getElementById("nav-edit-properties").style.display = "none";
 	}
+	async apply_edit_selected() {
+		var new_name = document.getElementById("nav-edit-filename").value;
+		await this.selected_entry.mv(new_name).catch(
+			(e) => {
+				console.log(e);
+				window.alert(e);
+			}
+		)
+	}
 }
 
 let nav_window = new NavWindow();
 
 function set_up_buttons() {
 	document.getElementById("nav-up-dir-btn").addEventListener("click", nav_window.up.bind(nav_window));
+	document.getElementById("nav-refresh-btn").addEventListener("click", nav_window.refresh.bind(nav_window));
 	document.getElementById("nav-edit-properties-btn").addEventListener("click", nav_window.show_edit_selected.bind(nav_window));
+	document.getElementById("nav-cancel-edit-btn").addEventListener("click", nav_window.hide_edit_selected.bind(nav_window));
 }
 
 async function main() {

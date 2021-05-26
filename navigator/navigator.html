@@ -32,7 +32,11 @@
 <body>
 	<div class="flex-col outer-container">
 		<div class="flex-row">
-			<button class="pf-c-button pf-m-secondary" id="nav-up-dir-btn"><i class="fas fa-arrow-up"></i></button>
+			<div class="nav-btn-group">
+				<button class="pf-c-button pf-m-secondary" id="nav-up-dir-btn"><i class="fas fa-arrow-up"></i></button>
+				<div class="horizontal-spacer"></div>
+				<button class="pf-c-button pf-m-secondary" id="nav-refresh-btn"><i class="fas fa-sync"></i></button>
+			</div>
 			<div class="horizontal-spacer"></div>
 			<div class="navigation-bar" id="pwd">
 				/current/dir
@@ -59,6 +63,14 @@
 						<input type="text" class="nav-property-pair-value" id="nav-edit-filename"></input>
 					</div>
 					<div class="nav-property-pair">
+						<span class="nav-property-pair-key">Owner</span>
+						<input type="text" class="nav-property-pair-value" id="nav-edit-owner"></input>
+					</div>
+					<div class="nav-property-pair">
+						<span class="nav-property-pair-key">Group</span>
+						<input type="text" class="nav-property-pair-value" id="nav-edit-group"></input>
+					</div>
+					<div class="nav-property-pair">
 						<div class="nav-property-pair-key">Mode</div>
 					</div>
 					<div class="grid-container">
@@ -79,13 +91,11 @@
 						<input type="checkbox" id="other-write"></input>
 						<input type="checkbox" id="other-exec"></input>
 					</div>
-					<div class="nav-property-pair">
-						<span class="nav-property-pair-key">Owner</span>
-						<input type="text" class="nav-property-pair-value" id="nav-edit-owner"></input>
-					</div>
-					<div class="nav-property-pair">
-						<span class="nav-property-pair-key">Group</span>
-						<input type="text" class="nav-property-pair-value" id="nav-edit-group"></input>
+					<div class="vertical-spacer"></div>
+					<div class="nav-btn-group">
+						<button class="pf-c-button pf-m-danger" id="nav-cancel-edit-btn">Cancel</button>
+						<div class="horizontal-spacer"></div>
+						<button class="pf-c-button pf-m-primary" id="nav-apply-edit-btn">Apply</button>
 					</div>
 				</div>
 			</div>

@@ -138,3 +138,9 @@
 .grid-label {
 	font-weight: bold;
 }
+
+.nav-btn-group {
+	display: flex;
+	flex-flow: row nowrap;
+	justify-content: flex-end;
+}
