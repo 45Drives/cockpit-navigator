@@ -206,11 +206,12 @@ class NavDir extends NavEntry {
 		}
 		super.handleEvent(e);
 	}
-	async get_children(nav_window_ref) {
+	async get_children(nav_window_ref, no_alert = false) {
 		var children = [];
 		var proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/ls.py", this.path_str()], {err:"out", superuser: "try"});
 		proc.fail((e, data) => {
-			window.alert(data);
+			if(!no_alert)
+				window.alert(data);
 		})
 		var data = await proc;
 		var response = JSON.parse(data);
@@ -284,7 +285,7 @@ class NavWindow {
 			file.show();
 			this.entries.push(file);
 		});
-		document.getElementById("pwd").innerText = this.pwd().path_str();
+		document.getElementById("pwd").value = this.pwd().path_str();
 		this.set_selected(this.pwd());
 		this.show_selected_properties();
 	}
@@ -427,6 +428,44 @@ class NavWindow {
 		await proc;
 		this.refresh();
 	}
+	nav_bar_event_handler(e) {
+		switch(e.key){
+			case 'Enter':
+				this.nav_bar_cd();
+				break;
+			default:
+				break;
+		}
+	}
+	nav_bar_cd() {
+		var new_path = document.getElementById("pwd").value;
+		this.cd(new NavDir(new_path));
+	}
+	async nav_bar_update_choices() {
+		var list = document.getElementById("possible-paths");
+		var partial_path_str = document.getElementById("pwd").value;
+		var last_delim = partial_path_str.lastIndexOf('/');
+		if(last_delim === -1)
+			return;
+		var parent_path_str = partial_path_str.slice(0, last_delim);
+		if(this.nav_bar_last_parent_path_str === parent_path_str)
+			return;
+		this.nav_bar_last_parent_path_str = parent_path_str;
+		var parent_dir = new NavDir(parent_path_str);
+		console.log(parent_dir.path_str());
+		var error = false;
+		var objs = await parent_dir.get_children(this, true).catch(() => {error = true});
+		if(error)
+			return;
+		objs = objs.filter((child) => {return child.nav_type === "dir"});
+		while(list.firstChild)
+			list.removeChild(list.firstChild);
+		objs.forEach((obj) => {
+			var option = document.createElement("option");
+			option.value = obj.path_str();
+			list.appendChild(option);
+		});
+	}
 }
 
 let nav_window = new NavWindow();
@@ -446,6 +485,9 @@ function set_up_buttons() {
 	for(let checkbox of mode_checkboxes){
 		checkbox.addEventListener("change", nav_window.update_permissions_preview.bind(nav_window));
 	}
+	document.getElementById("pwd").addEventListener("input", nav_window.nav_bar_update_choices.bind(nav_window), false);
+	document.getElementById("pwd").addEventListener("focus", nav_window.nav_bar_update_choices.bind(nav_window), false);
+	document.getElementById("pwd").addEventListener("keydown", nav_window.nav_bar_event_handler.bind(nav_window));
 }
 
 async function main() {

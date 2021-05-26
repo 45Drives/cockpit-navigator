@@ -42,9 +42,11 @@
 				<button class="pf-c-button pf-m-secondary" id="nav-refresh-btn"><i class="fas fa-sync"></i></button>
 			</div>
 			<div class="horizontal-spacer"></div>
-			<div class="navigation-bar" id="pwd">
-				/current/dir
-			</div>
+			<input type="text" list="possible-paths-list" autocomplete="off" class="navigation-bar" id="pwd"></input>
+			<datalist id="possible-paths-list">
+				<select id="possible-paths">
+				</select>
+			</datalist>
 			<div class="horizontal-spacer"></div>
 			<button class="pf-c-button pf-m-primary" id="nav-mkdir-btn"><i class="fas fa-folder-plus"></i></button>
 			<div class="horizontal-spacer"></div>

@@ -33,6 +33,7 @@
 
 .navigation-bar {
 	background-color: #212427;
+	color: inherit;
 	flex-grow: 1;
 	padding: 0.25em 1em 0.25em 1em;
 	border: 1px solid #3c3f42;
