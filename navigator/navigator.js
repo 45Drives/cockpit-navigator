@@ -82,6 +82,9 @@ class NavEntry {
 	path_str() {
 		return "/" + this.path.join('/');
 	}
+	parent_dir() {
+		return this.path.slice(0, this.path.length - 1);
+	}
 	show() {
 		document.getElementById("nav-contents-view").appendChild(this.dom_element);
 	}
@@ -253,6 +256,7 @@ class NavDir extends NavEntry {
 class NavWindow {
 	constructor() {
 		this.path_stack = [new NavDir("/", this)];
+		this.path_stack_index = this.path_stack.length - 1;
 		this.selected_entry = this.pwd();
 		this.entries = [];
 		this.window = document.getElementById("nav-contents-view");
@@ -281,20 +285,28 @@ class NavWindow {
 		this.show_selected_properties();
 	}
 	pwd() {
-		return this.path_stack[this.path_stack.length - 1];
+		return this.path_stack[this.path_stack_index];
 	}
 	cd(new_dir) {
+		this.path_stack.length = this.path_stack_index + 1;
 		this.path_stack.push(new_dir);
+		this.path_stack_index = this.path_stack.length - 1;
 		this.refresh().catch(() => {
 			this.path_stack.pop();
 			this.refresh();
 			window.alert(new_dir.path_str() + " is inaccessible.");
 		});
 	}
-	up() {
-		if(this.path_stack.length > 1)
-			this.path_stack.pop();
+	back() {
+		this.path_stack_index = Math.max(this.path_stack_index - 1, 0);
 		this.refresh();
+	}
+	forward() {
+		this.path_stack_index = Math.min(this.path_stack_index + 1, this.path_stack.length - 1);
+		this.refresh();
+	}
+	up() {
+		this.cd(new NavDir(this.pwd().parent_dir()));
 	}
 	show_selected_properties() {
 		this.selected_entry.show_properties();
@@ -418,6 +430,8 @@ class NavWindow {
 let nav_window = new NavWindow();
 
 function set_up_buttons() {
+	document.getElementById("nav-back-btn").addEventListener("click", nav_window.back.bind(nav_window));
+	document.getElementById("nav-forward-btn").addEventListener("click", nav_window.forward.bind(nav_window));
 	document.getElementById("nav-up-dir-btn").addEventListener("click", nav_window.up.bind(nav_window));
 	document.getElementById("nav-refresh-btn").addEventListener("click", nav_window.refresh.bind(nav_window));
 	document.getElementById("nav-mkdir-btn").addEventListener("click", nav_window.mkdir.bind(nav_window));
