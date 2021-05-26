@@ -377,6 +377,42 @@ class NavWindow {
 		await this.selected_entry.rm().catch(/*ignore, caught in rm*/);
 		this.refresh();
 	}
+	async mkdir() {
+		var new_dir_name = window.prompt("Directory Name: ");
+		if(new_dir_name === null)
+			return;
+		if(new_dir_name.includes("/")){
+			window.alert("Directory name can't contain `/`.");
+			return;
+		}
+		var proc = cockpit.spawn(
+			["mkdir", this.pwd().path_str() + "/" + new_dir_name],
+			{superuser: "try", err:"out"}
+		);
+		proc.fail((e, data) => {
+			window.alert(data);
+		});
+		await proc;
+		this.refresh();
+	}
+	async touch() {
+		var new_file_name = window.prompt("File Name: ");
+		if(new_file_name === null)
+			return;
+		if(new_file_name.includes("/")){
+			window.alert("File name can't contain `/`.");
+			return;
+		}
+		var proc = cockpit.spawn(
+			["touch", this.pwd().path_str() + "/" + new_file_name],
+			{superuser: "try", err:"out"}
+		);
+		proc.fail((e, data) => {
+			window.alert(data);
+		});
+		await proc;
+		this.refresh();
+	}
 }
 
 let nav_window = new NavWindow();
@@ -384,6 +420,8 @@ let nav_window = new NavWindow();
 function set_up_buttons() {
 	document.getElementById("nav-up-dir-btn").addEventListener("click", nav_window.up.bind(nav_window));
 	document.getElementById("nav-refresh-btn").addEventListener("click", nav_window.refresh.bind(nav_window));
+	document.getElementById("nav-mkdir-btn").addEventListener("click", nav_window.mkdir.bind(nav_window));
+	document.getElementById("nav-touch-btn").addEventListener("click", nav_window.touch.bind(nav_window));
 	document.getElementById("nav-delete-btn").addEventListener("click", nav_window.delete_selected.bind(nav_window));
 	document.getElementById("nav-edit-properties-btn").addEventListener("click", nav_window.show_edit_selected.bind(nav_window));
 	document.getElementById("nav-cancel-edit-btn").addEventListener("click", nav_window.hide_edit_selected.bind(nav_window));
