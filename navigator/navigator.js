@@ -208,7 +208,11 @@ class NavDir extends NavEntry {
 	}
 	async get_children(nav_window_ref) {
 		var children = [];
-		var data = await cockpit.spawn(["/usr/share/cockpit/navigator/scripts/ls.py", this.path_str()], {err:"ignore"});
+		var proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/ls.py", this.path_str()], {err:"out", superuser: "try"});
+		proc.fail((e, data) => {
+			window.alert(data);
+		})
+		var data = await proc;
 		var response = JSON.parse(data);
 		this.stat = response["."]["stat"];
 		var entries = response["children"];
@@ -292,9 +296,7 @@ class NavWindow {
 		this.path_stack.push(new_dir);
 		this.path_stack_index = this.path_stack.length - 1;
 		this.refresh().catch(() => {
-			this.path_stack.pop();
-			this.refresh();
-			window.alert(new_dir.path_str() + " is inaccessible.");
+			this.back();
 		});
 	}
 	back() {
