@@ -92,22 +92,34 @@ class NavEntry {
 		return this.stat["mode"] & 0o777;
 	}
 	async chmod(/*int*/ new_perms) {
-		await cockpit.spawn(
+		var proc = cockpit.spawn(
 			["chmod", (new_perms & 0o777).toString(8), this.path_str()],
-			{superuser: "try"}
+			{superuser: "try", err:"out"}
 		);
+		proc.fail((e, data) => {
+			window.alert(data);
+		});
+		await proc;
 	}
 	async chown(/*string*/ new_owner, /*string*/ new_group) {
-		await cockpit.spawn(
+		var proc = cockpit.spawn(
 			["chown", [new_owner, new_group].join(":"), this.path_str()],
-			{superuser: "try"}
+			{superuser: "try", err:"out"}
 		);
+		proc.fail((e, data) => {
+			window.alert(data);
+		});
+		await proc;
 	}
 	async mv(/*string*/ new_path) {
-		await cockpit.spawn(
+		var proc = cockpit.spawn(
 			["mv", this.path_str(), [this.nav_window_ref.pwd().path_str(), new_path].join('/')],
-			{superuser: "try"}
+			{superuser: "try", err:"out"}
 		);
+		proc.fail((e, data) => {
+			window.alert(data);
+		});
+		await proc;
 	}
 	show_properties() {
 		var selected_name_fields = document.getElementsByClassName("nav-info-column-filename");
@@ -295,25 +307,20 @@ class NavWindow {
 		document.getElementById("nav-mode-preview").innerText = text;
 	}
 	async apply_edit_selected() {
-		var new_name = document.getElementById("nav-edit-filename").value;
-		if(new_name !== this.selected_entry.filename())
-		await this.selected_entry.mv(new_name).catch(
-			(e) => {
-				console.log(e);
-				window.alert(e);
-			}
-		);
+		// do mv last so the rest don't fail from not finding it
 		var new_owner = document.getElementById("nav-edit-owner").value;
 		var new_group = document.getElementById("nav-edit-group").value;
 		if(new_owner !== this.selected_entry.stat["owner"] || new_group !== this.selected_entry.stat["group"]){
-			await this.selected_entry.chown(new_owner, new_group).catch(
-				(e) => {
-					console.log(e);
-					window.alert(e);
-				}
-			);
+			await this.selected_entry.chown(new_owner, new_group).catch(/*ignore, caught in chown*/);
 		}
-		window.alert(this.get_new_permissions().toString(8));
+		var new_perms = this.get_new_permissions();
+		if((new_perms & 0o777) !== (this.selected_entry.stat["mode"] & 0o777)){
+			await this.selected_entry.chmod(new_perms).catch(/*ignore, caught in chmod*/);
+		}
+		var new_name = document.getElementById("nav-edit-filename").value;
+		if(new_name !== this.selected_entry.filename()){
+			await this.selected_entry.mv(new_name).catch(/*ignore, caught in mv*/);
+		}
 		this.refresh();
 		this.hide_edit_selected();
 	}
