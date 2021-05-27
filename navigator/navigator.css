@@ -11,11 +11,11 @@
 
 [data-theme="dark"] {
 	/* Dark style */
-	--container: #212427;
+	--container: #212121;
 	--border: #3c3f42;
-	--navigation: #151515;
 	--font: #fff;
 	--selected: #191a1b;
+	--navigation: #121212;
 }
 
 .flex-row {
@@ -176,8 +176,8 @@
 .switch {
 	position: relative;
 	display: inline-block;
-	width: 60px;
-	height: 34px;
+	width: 38px;
+	height: 20px;
 }
 
 .switch input {
@@ -201,10 +201,10 @@
 .slider:before {
 	position: absolute;
 	content: "";
-	height: 26px;
-	width: 26px;
-	left: 4px;
-	bottom: 4px;
+	height: 16px;
+	width: 16px;
+	left: 2px;
+	bottom: 2px;
 	background-color: white;
 	-webkit-transition: 0.4s;
 	transition: 0.4s;
@@ -219,9 +219,9 @@ input:focus + .slider {
 }
 
 input:checked + .slider:before {
-	-webkit-transform: translateX(26px);
-	-ms-transform: translateX(26px);
-	transform: translateX(26px);
+	-webkit-transform: translateX(18px);
+	-ms-transform: translateX(18px);
+	transform: translateX(18px);
 }
 
 .slider.round {
