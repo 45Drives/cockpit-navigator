@@ -249,6 +249,7 @@ class NavFile extends NavEntry {
 			if (!button.classList.contains("editor-btn"))
 				button.disabled = true;
 		}
+		document.getElementById("pwd").disabled = true;
 		var proc_output = await cockpit.spawn(["file", "--mime-type", this.path_str()], {superuser: "try"});
 		var fields = proc_output.split(':');
 		var type = fields[1].trim();
@@ -276,6 +277,7 @@ class NavFile extends NavEntry {
 		for (let button of document.getElementsByTagName("button")) {
 			button.disabled = false;
 		}
+		document.getElementById("pwd").disabled = false;
 	}
 }
 
