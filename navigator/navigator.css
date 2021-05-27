@@ -30,6 +30,7 @@
 	--scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
 	--loading-bg-color: rgba(255, 255, 255, 0.5);
 	--textarea-bg: var(--navigation);
+	--logo-45: #333;
 }
 
 [data-theme="dark"] {
@@ -44,6 +45,7 @@
 	--scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
 	--loading-bg-color: rgba(33, 36, 39, 0.5);
 	--textarea-bg: var(--navigation);
+	--logo-45: #fff;
 }
 
 .pf-c-button:disabled[data-theme="dark"] {
@@ -303,11 +305,21 @@ body::-webkit-scrollbar-thumb {
 	padding: 5px;
 }
 
-/* .nav-footer > div > input[type="checkbox"] {
-	margin: 0;
-	position: relative;
-	bottom: -2px;
-} */
+.nav-footer > a > img {
+	height: 1.25em;
+	width: auto;
+	margin-bottom: 4px;
+}
+
+.nav-footer > a > .logo-45 {
+	font-weight: 900;
+	color: var(--logo-45);
+}
+
+.nav-footer > a > .logo-drives {
+	font-weight: 600;
+	color: #981c20;
+}
 
 .nav-toggle {
 	justify-self: flex-end;
