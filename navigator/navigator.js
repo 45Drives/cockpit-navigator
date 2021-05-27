@@ -1,5 +1,5 @@
 /* 
-	Cockpit Navigator - A filesystem browser for Cockpit.
+	Cockpit Navigator - A File System Browser for Cockpit.
 	Copyright (C) 2021 Josh Boudreau <jboudreau@45drives.com>
 	Copyright (C) 2021 Sam Silver    <ssilver@45drives.com>
 

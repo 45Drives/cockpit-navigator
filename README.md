@@ -1,2 +1,2 @@
-# cockpit-navigator
-File Browser for Cockpit
+# Cockpit Navigator
+A File System Browser for Cockpit.
