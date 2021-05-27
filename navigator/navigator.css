@@ -29,6 +29,7 @@
 	--scrollbar-bg: var(--navigation);
 	--scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
 	--loading-bg-color: rgba(255, 255, 255, 0.5);
+	--textarea-bg: var(--navigation);
 }
 
 [data-theme="dark"] {
@@ -42,6 +43,7 @@
 	--scrollbar-bg: var(--navigation);
 	--scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
 	--loading-bg-color: rgba(33, 36, 39, 0.5);
+	--textarea-bg: var(--navigation);
 }
 
 .pf-c-button:disabled[data-theme="dark"] {
@@ -285,6 +287,8 @@ body::-webkit-scrollbar-thumb {
 	border-radius: 4px;
 	outline: none;
 	padding: 5px;
+	color: var(--font);
+	background-color: var(--textarea-bg);
 }
 
 .nav-toggle {
