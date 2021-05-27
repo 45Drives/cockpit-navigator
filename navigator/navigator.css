@@ -281,6 +281,10 @@ body::-webkit-scrollbar-thumb {
 	white-space: pre;
 	overflow: auto;
 	resize: none;
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	outline: none;
+	padding: 5px;
 }
 
 .nav-toggle {
