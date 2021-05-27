@@ -69,7 +69,7 @@ class NavEntry {
 		if (typeof path == "string")
 			this.path = path.split("/").splice(1);
 		else
-			this.path = path;
+			this.path = (path.length) ? path : [""];
 		this.dom_element = document.createElement("div");
 		this.dom_element.classList.add("nav-item");
 		let icon = this.dom_element.nav_item_icon = document.createElement("i");
