@@ -7,6 +7,10 @@
 	--selected: #fff;
 	--toggle-light: #151515;
 	--toggle-dark: #ccc;
+	--scrollbar-thumb: var(--border);
+	--scrollbar-bg: var(--navigation);
+	--scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
+	--loading-bg-color: rgba(255, 255, 255, 0.5);
 }
 
 [data-theme="dark"] {
@@ -16,7 +20,78 @@
 	--navigation: #151515;
 	--font: #fff;
 	--selected: #191a1b;
+	--scrollbar-thumb: var(--container);
+	--scrollbar-bg: var(--navigation);
+	--scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
+	--loading-bg-color: rgba(33, 36, 39, 0.5);
 }
+
+.pf-c-button:disabled[data-theme="dark"] {
+	background-color: var(--border);
+}
+
+.nav-loader-container {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background-color: var(--loading-bg-color);
+	z-index: 10;
+}
+
+.nav-loader-centerer {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 27%;
+	display: flex;
+	align-items: center;
+	align-content: center;
+}
+
+.nav-loader {
+	margin: auto;
+	border: 6px solid rgba(0,0,0,0);
+	border-radius: 50%;
+	border-top: 6px solid var(--border);
+	width: 100px;
+	height: 100px;
+	-webkit-animation: spin 2s linear infinite; /* Safari */
+	animation: spin 2s linear infinite;
+}
+
+/* Safari */
+@-webkit-keyframes spin {
+    0% { -webkit-transform: rotate(0deg); }
+    100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+body::-webkit-scrollbar {
+	width: 11px;
+}
+
+body {
+	scrollbar-width: thin;
+	scrollbar-color: var(--scrollbar-color);
+}
+
+body::-webkit-scrollbar-track {
+	background: var(--scrollbar-bg);
+}
+
+body::-webkit-scrollbar-thumb {
+	background-color: var(--scrollbar-thumb) ;
+	border-radius: 6px;
+	border: 3px solid var(--scrollbar-bg);
+}
+
 
 .flex-row {
 	display: flex;

@@ -30,6 +30,11 @@
 	<script defer src="navigator.js"></script>
 </head>
 <body>
+	<div class="nav-loader-container" id="nav-loader-container">
+		<div class="nav-loader-centerer">
+			<div class="nav-loader"></div>
+		</div>
+	</div>
 	<div class="flex-col outer-container">
 		<div class="flex-row">
 			<div class="nav-btn-group">
@@ -61,9 +66,9 @@
 				<textarea id="nav-edit-contents-textarea"></textarea>
 				<div class="vertical-spacer"></div>
 				<div class="nav-btn-group">
-					<button class="pf-c-button pf-m-danger" id="nav-cancel-edit-contents-btn"><i class="fas fa-times"></i></button>
+					<button class="pf-c-button pf-m-danger editor-btn" id="nav-cancel-edit-contents-btn"><i class="fas fa-times"></i></button>
 					<div class="horizontal-spacer"></div>
-					<button class="pf-c-button pf-m-primary" id="nav-continue-edit-contents-btn"><i class="fas fa-save"></i></button>
+					<button class="pf-c-button pf-m-primary editor-btn" id="nav-continue-edit-contents-btn"><i class="fas fa-save"></i></button>
 				</div>
 			</div>
 			<div class="horizontal-spacer"></div>

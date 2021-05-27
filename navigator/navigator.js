@@ -227,6 +227,10 @@ class NavFile extends NavEntry {
 		await proc;
 	}
 	async show_edit_file_contents() {
+		for (let button of document.getElementsByTagName("button")) {
+			if (!button.classList.contains("editor-btn"))
+				button.disabled = true;
+		}
 		var proc_output = await cockpit.spawn(["file", "--mime-type", this.path_str()], {superuser: "try"});
 		var fields = proc_output.split(':');
 		var type = fields[1].trim();
@@ -251,6 +255,9 @@ class NavFile extends NavEntry {
 	hide_edit_file_contents() {
 		document.getElementById("nav-edit-contents-view").style.display = "none";
 		document.getElementById("nav-contents-view").style.display = "flex";
+		for (let button of document.getElementsByTagName("button")) {
+			button.disabled = false;
+		}
 	}
 }
 
@@ -396,6 +403,7 @@ class NavWindow {
 		}
 	}
 	async refresh() {
+		this.start_load();
 		var files = await this.pwd().get_children(this);
 		while (this.entries.length) {
 			var entry = this.entries.pop();
@@ -408,6 +416,7 @@ class NavWindow {
 		document.getElementById("pwd").value = this.pwd().path_str();
 		this.set_selected(this.pwd());
 		this.show_selected_properties();
+		this.stop_load();
 	}
 	pwd() {
 		return this.path_stack[this.path_stack_index];
@@ -610,6 +619,20 @@ class NavWindow {
 			option.value = obj.path_str();
 			list.appendChild(option);
 		});
+	}
+	start_load() {
+		document.getElementById("nav-loader-container").hidden = false;
+		var buttons = document.getElementsByTagName("button");
+		for (let button of buttons) {
+			button.disabled = true;
+		}
+	}
+	stop_load() {
+		document.getElementById("nav-loader-container").hidden = true;
+		var buttons = document.getElementsByTagName("button");
+		for (let button of buttons) {
+			button.disabled = false;
+		}
 	}
 }
 
