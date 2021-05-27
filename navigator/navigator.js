@@ -39,12 +39,17 @@ function format_permissions(/*int*/ mode) {
 function set_last_theme_state() {
 	var toggle_switch = document.getElementById("toggle-theme");
 	var state = localStorage.getItem("houston-theme-state");
+	var icon = document.getElementById("houston-theme-icon");
 	if (state === "light") {
 		toggle_switch.checked = false;
 		document.documentElement.setAttribute("data-theme", "light");
+		icon.classList.remove("fa-moon");
+		icon.classList.add("fa-sun");
 	} else if (state === "dark") {
 		toggle_switch.checked = true;
 		document.documentElement.setAttribute("data-theme", "dark");
+		icon.classList.remove("fa-sun");
+		icon.classList.add("fa-moon");
 	} else {
 		toggle_switch.checked = false;
 		state = "light";
@@ -53,11 +58,16 @@ function set_last_theme_state() {
 }
 
 function switch_theme(/*event*/ e) {
+	var icon = document.getElementById("houston-theme-icon");
 	var state = "";
 	if (e.target.checked) {
 		state = "dark";
+		icon.classList.remove("fa-sun");
+		icon.classList.add("fa-moon");
 	} else {
 		state = "light";
+		icon.classList.remove("fa-moon");
+		icon.classList.add("fa-sun");
 	}
 	document.documentElement.setAttribute("data-theme", state);
 	localStorage.setItem("houston-theme-state", state);
