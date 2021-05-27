@@ -423,6 +423,8 @@ class NavWindow {
 		}
 	}
 	async refresh() {
+		var num_dirs = 0;
+		var num_files = 0;
 		this.start_load();
 		var files = await this.pwd().get_children(this);
 		while (this.entries.length) {
@@ -430,12 +432,18 @@ class NavWindow {
 			entry.destroy();
 		}
 		files.forEach((file) => {
+			if (file.nav_type === "dir")
+				num_dirs++;
+			else
+				num_files++;
 			file.show();
 			this.entries.push(file);
 		});
 		document.getElementById("pwd").value = this.pwd().path_str();
 		this.set_selected(this.pwd());
 		this.show_selected_properties();
+		document.getElementById("nav-num-dirs").innerText = num_dirs.toString();
+		document.getElementById("nav-num-files").innerText = num_files.toString();
 		this.stop_load();
 	}
 	pwd() {

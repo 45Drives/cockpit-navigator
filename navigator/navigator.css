@@ -139,6 +139,10 @@ body::-webkit-scrollbar-thumb {
 	margin-bottom: 1em;
 }
 
+.spacer-stretchy {
+	flex-grow: 1;
+}
+
 .nav-hidden {
 	display: none;
 }
@@ -148,6 +152,7 @@ body::-webkit-scrollbar-thumb {
 	background-color: var(--container);
 	color: var(--font);
 	padding: 1em;
+	padding-bottom: 0;
 }
 
 .navigation-bar {
@@ -291,11 +296,15 @@ body::-webkit-scrollbar-thumb {
 	background-color: var(--textarea-bg);
 }
 
+.nav-footer {
+	flex: 1;
+	align-items: baseline;
+	justify-content: flex-start;
+	padding: 5px;
+}
+
 .nav-toggle {
-	position: absolute;
-	right: 0;
-	bottom: 1.5em;
-	margin-right: 1.9em;
+	justify-self: flex-end;
 }
 
 .switch {
