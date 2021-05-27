@@ -1,4 +1,4 @@
-function property_entry_html(key, value) {
+function property_entry_html(/*string*/ key, /*string*/ value) {
 	var html = '<div class="nav-property-pair">';
 	html += '<span class="nav-property-pair-key">' + key + '</span>';
 	html += '<span class="nav-property-pair-value">' + value + '</span>';
@@ -6,7 +6,7 @@ function property_entry_html(key, value) {
 	return html;
 }
 
-function format_bytes(bytes) {
+function format_bytes(/*int*/ bytes) {
 	if (bytes === 0)
 		return "0 B";
 	var units = [" B", " KiB", " MiB", " GiB", " TiB", " PiB"];
@@ -16,7 +16,7 @@ function format_bytes(bytes) {
 	return formatted.toFixed(2).toString() + units[index];
 }
 
-function format_time(timestamp) {
+function format_time(/*int*/ timestamp) {
 	var date = new Date(timestamp * 1000);
 	return date.toLocaleString();
 }
@@ -36,53 +36,31 @@ function format_permissions(/*int*/ mode) {
 	return result;
 }
 
-/*
- *	Code to change theme
- */
-
-const toggleSwitch = document.getElementById("toggle-theme");
-
-function switchTheme(e) {
-	if (e.target.checked) {
+function set_last_theme_state() {
+	var toggle_switch = document.getElementById("toggle-theme");
+	var state = localStorage.getItem("houston-theme-state");
+	if (state === "light") {
+		toggle_switch.checked = false;
+		document.documentElement.setAttribute("data-theme", "light");
+	} else if (state === "dark") {
+		toggle_switch.checked = true;
 		document.documentElement.setAttribute("data-theme", "dark");
 	} else {
-		document.documentElement.setAttribute("data-theme", "light");
+		toggle_switch.checked = false;
+		state = "light";
+		localStorage.setItem("houston-theme-state", state);
 	}
 }
 
-toggleSwitch.addEventListener("change", switchTheme, false);
-
-/* cephfs_dir_stats
- * Receives: path to folder
- * Does: Tries command with --json flag at path to folder. If
- * command fails and gives an error then catch that error
- * Returns: JSON object or nothing
- */
-async function cephfs_dir_stats(path) {
-	try {
-		var proc = await cockpit.spawn(
-			["cephfs-dir-stats", "-j", path],
-			{err: "ignore",}
-		);
-		return JSON.parse(proc.replace(/\[|\]/g, ""));
-	} catch {
-		return [];
-	}
-}
-
-/* in_json
- * Receives: A boolean to see if key is in JSON object
- * and the JSON objects value if it exists
- * Does: Checks if JSON key exists; if so, return the
- * value of the key, if not, return the string "N/A"
- * Returns: The value of key or "N/A"
- */
-function in_json(is_key, value) {
-	if (is_key) {
-		return value;
+function switch_theme(/*event*/ e) {
+	var state = "";
+	if (e.target.checked) {
+		state = "dark";
 	} else {
-		return "N/A";
+		state = "light";
 	}
+	document.documentElement.setAttribute("data-theme", state);
+	localStorage.setItem("houston-theme-state", state);
 }
 
 class NavEntry {
@@ -104,7 +82,7 @@ class NavEntry {
 		this.stat = stat;
 		this.dom_element.addEventListener("click", this);
 	}
-	handleEvent(e) {
+	handleEvent(/*event*/ e) {
 		switch (e.type) {
 			case "click":
 				this.show_properties();
@@ -211,7 +189,7 @@ class NavFile extends NavEntry {
 		this.dom_element.nav_item_icon.classList.add("fas", "fa-file");
 		this.double_click = false;
 	}
-	handleEvent(e) {
+	handleEvent(/*event*/ e) {
 		switch(e.type){
 			case "click":
 				if(this.double_click)
@@ -272,10 +250,8 @@ class NavDir extends NavEntry {
 		this.nav_type = "dir";
 		this.dom_element.nav_item_icon.classList.add("fas", "fa-folder");
 		this.double_click = false;
-		this.ceph_stats = [];
-		cephfs_dir_stats(this.path_str()).then((data) => (this.ceph_stats = data));
 	}
-	handleEvent(e) {
+	handleEvent(/*event*/ e) {
 		switch (e.type) {
 			case "click":
 				if (this.double_click)
@@ -293,7 +269,7 @@ class NavDir extends NavEntry {
 		}
 		super.handleEvent(e);
 	}
-	async get_children(nav_window_ref, no_alert = false) {
+	async get_children(/*NavWindow*/ nav_window_ref, /*boolean*/ no_alert = false) {
 		var children = [];
 		var proc = cockpit.spawn(
 			["/usr/share/cockpit/navigator/scripts/ls.py", this.path_str()],
@@ -336,43 +312,56 @@ class NavDir extends NavEntry {
 		});
 		await proc;
 	}
-	show_properties() {
+	async cephfs_dir_stats() {
+		try {
+			var proc = await cockpit.spawn(
+				["cephfs-dir-stats", "-j", this.path_str()],
+				{err: "ignore"}
+			);
+			return JSON.parse(proc)[0];
+		} catch {
+			return null;
+		}
+	}
+	async show_properties() {
 		var extra_properties = "";
+		if(!this.hasOwnProperty("ceph_stats"))
+			this.ceph_stats = await this.cephfs_dir_stats();
 		// See if a JSON object exists for folder we are currently looking at
-		if (this.ceph_stats.length !== 0) {
+		if (this.ceph_stats !== null) {
 			extra_properties +=
 				'<div class="vertical-spacer"></div><h2 class="nav-info-column-filename">Ceph Status</h2>';
 			extra_properties += property_entry_html(
 				"Files",
-				in_json(this.ceph_stats.hasOwnProperty("files"), this.ceph_stats.files)
+				this.ceph_stats.hasOwnProperty("files") ? this.ceph_stats.files : "N/A"
 			);
 			extra_properties += property_entry_html(
 				"Directories",
-				in_json(this.ceph_stats.hasOwnProperty("subdirs"), this.ceph_stats.subdirs)
+				this.ceph_stats.hasOwnProperty("subdirs") ? this.ceph_stats.subdirs : "N/A"
 			);
 			extra_properties += property_entry_html(
 				"Recursive files",
-				in_json(this.ceph_stats.hasOwnProperty("rfiles"), this.ceph_stats.rfiles)
+				this.ceph_stats.hasOwnProperty("rfiles") ? this.ceph_stats.rfiles : "N/A"
 			);
 			extra_properties += property_entry_html(
 				"Recursive directories",
-				in_json(this.ceph_stats.hasOwnProperty("rsubdirs"), this.ceph_stats.rsubdirs)
+				this.ceph_stats.hasOwnProperty("rsubdirs") ? this.ceph_stats.rsubdirs : "N/A"
 			);
 			extra_properties += property_entry_html(
 				"Total size",
-				in_json(this.ceph_stats.hasOwnProperty("rbytes"), this.ceph_stats.rbytes)
+				this.ceph_stats.hasOwnProperty("rbytes") ? this.ceph_stats.rbytes : "N/A"
 			);
 			extra_properties += property_entry_html(
 				"Layout pool",
-				in_json(this.ceph_stats.hasOwnProperty("layout.pool"), this.ceph_stats["layout.pool"])
+				this.ceph_stats.hasOwnProperty("layout.pool") ? this.ceph_stats["layout.pool"] : "N/A"
 			);
 			extra_properties += property_entry_html(
 				"Max files",
-				in_json(this.ceph_stats.hasOwnProperty("max_files"), this.ceph_stats.max_files)
+				this.ceph_stats.hasOwnProperty("max_files") ? this.ceph_stats.max_files : "N/A"
 			);
 			extra_properties += property_entry_html(
 				"Max bytes",
-				in_json(this.ceph_stats.hasOwnProperty("max_bytes"), this.ceph_stats.max_bytes)
+				this.ceph_stats.hasOwnProperty("max_bytes") ? this.ceph_stats.max_bytes : "N/A"
 			);
 		}
 		super.show_properties(extra_properties);
@@ -413,7 +402,7 @@ class NavWindow {
 	pwd() {
 		return this.path_stack[this.path_stack_index];
 	}
-	cd(new_dir) {
+	cd(/*NavDir*/ new_dir) {
 		this.path_stack.length = this.path_stack_index + 1;
 		this.path_stack.push(new_dir);
 		this.path_stack_index = this.path_stack.length - 1;
@@ -574,7 +563,7 @@ class NavWindow {
 		await proc;
 		this.refresh();
 	}
-	nav_bar_event_handler(e) {
+	nav_bar_event_handler(/*event*/ e) {
 		switch(e.key){
 			case 'Enter':
 				this.nav_bar_cd();
@@ -634,9 +623,11 @@ function set_up_buttons() {
 	document.getElementById("pwd").addEventListener("input", nav_window.nav_bar_update_choices.bind(nav_window), false);
 	document.getElementById("pwd").addEventListener("focus", nav_window.nav_bar_update_choices.bind(nav_window), false);
 	document.getElementById("pwd").addEventListener("keydown", nav_window.nav_bar_event_handler.bind(nav_window));
+	document.getElementById("toggle-theme").addEventListener("change", switch_theme, false);
 }
 
 async function main() {
+	set_last_theme_state();
 	await nav_window.refresh();
 	set_up_buttons();
 }
