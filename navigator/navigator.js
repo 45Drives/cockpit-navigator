@@ -109,6 +109,7 @@ class NavEntry {
 		this.dom_element.appendChild(title);
 		this.stat = stat;
 		this.dom_element.addEventListener("click", this);
+		this.is_hidden_file = this.filename().startsWith('.');
 	}
 	handleEvent(/*event*/ e) {
 		switch (e.type) {
@@ -425,6 +426,7 @@ class NavWindow {
 	async refresh() {
 		var num_dirs = 0;
 		var num_files = 0;
+		var show_hidden = document.getElementById("nav-show-hidden").checked;
 		this.start_load();
 		var files = await this.pwd().get_children(this);
 		while (this.entries.length) {
@@ -436,7 +438,8 @@ class NavWindow {
 				num_dirs++;
 			else
 				num_files++;
-			file.show();
+			if(!file.is_hidden_file || show_hidden)
+				file.show();
 			this.entries.push(file);
 		});
 		document.getElementById("pwd").value = this.pwd().path_str();
@@ -662,6 +665,17 @@ class NavWindow {
 			button.disabled = false;
 		}
 	}
+	toggle_show_hidden(e) {
+		var icon = document.getElementById("nav-show-hidden-icon");
+		if (e.target.checked) {
+			icon.classList.remove("fa-low-vision");
+			icon.classList.add("fa-eye");
+		} else {
+			icon.classList.remove("fa-eye");
+			icon.classList.add("fa-low-vision");
+		}
+		this.refresh();
+	}
 }
 
 let nav_window = new NavWindow();
@@ -685,6 +699,7 @@ function set_up_buttons() {
 	document.getElementById("pwd").addEventListener("focus", nav_window.nav_bar_update_choices.bind(nav_window), false);
 	document.getElementById("pwd").addEventListener("keydown", nav_window.nav_bar_event_handler.bind(nav_window));
 	document.getElementById("toggle-theme").addEventListener("change", switch_theme, false);
+	document.getElementById("nav-show-hidden").addEventListener("change", nav_window.toggle_show_hidden.bind(nav_window));
 }
 
 async function main() {

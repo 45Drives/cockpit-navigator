@@ -299,9 +299,15 @@ body::-webkit-scrollbar-thumb {
 .nav-footer {
 	flex: 1;
 	align-items: baseline;
-	justify-content: flex-start;
+	justify-content: space-between;
 	padding: 5px;
 }
+
+/* .nav-footer > div > input[type="checkbox"] {
+	margin: 0;
+	position: relative;
+	bottom: -2px;
+} */
 
 .nav-toggle {
 	justify-self: flex-end;
