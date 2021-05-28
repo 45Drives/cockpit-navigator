@@ -108,7 +108,7 @@ class NavEntry {
 		this.dom_element = document.createElement("div");
 		this.dom_element.classList.add("nav-item");
 		let icon = this.dom_element.nav_item_icon = document.createElement("i");
-		icon.classList.add("nav-file-icon");
+		icon.classList.add("nav-item-icon");
 		let title = this.dom_element.nav_item_title = document.createElement("div");
 		title.classList.add("nav-item-title");
 		title.innerText = this.filename();
@@ -136,7 +136,7 @@ class NavEntry {
 	}
 	filename() {
 		var name = this.path[this.path.length - 1];
-		if (name === "")
+		if (!name)
 			name = "/";
 		return name;
 	}
