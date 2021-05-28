@@ -18,7 +18,7 @@
 """
 
 import os
-from stat import S_ISDIR, filemode
+from stat import S_ISDIR, S_ISLNK, filemode
 import json
 import sys
 from pwd import getpwuid
@@ -31,6 +31,9 @@ def get_stat(full_path, filename = '/'):
         isdir = S_ISDIR(os.stat(full_path).st_mode)
     except OSError:
         pass
+    link_target = '?'
+    if S_ISLNK(stats.st_mode):
+        link_target = os.readlink(full_path)
     owner = '?'
     try:
         owner = getpwuid(stats.st_uid).pw_name
@@ -44,6 +47,7 @@ def get_stat(full_path, filename = '/'):
     response = {
         "filename": filename,
         "isdir": isdir,
+        "link-target": link_target,
         "stat": {
             "mode": stats.st_mode,
             "mode-str": filemode(stats.st_mode),

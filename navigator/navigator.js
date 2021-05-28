@@ -404,6 +404,73 @@ class NavFile extends NavEntry {
 	}
 }
 
+class NavFileLink extends NavFile{
+	/**
+	 * 
+	 * @param {string} path 
+	 * @param {object} stat 
+	 * @param {NavWindow} nav_window_ref 
+	 * @param {string} link_target 
+	 */
+	constructor(path, stat, nav_window_ref, link_target) {
+		super(path, stat, nav_window_ref);
+		var link_icon = this.dom_element.nav_item_icon.link_icon = document.createElement("i");
+		link_icon.classList.add("fas", "fa-link", "nav-item-symlink-symbol-file");
+		this.dom_element.nav_item_icon.appendChild(link_icon);
+		this.double_click = false;
+		this.link_target = link_target;
+	}
+
+	show_properties() {
+		var extra_properties = property_entry_html("Link Target", this.link_target);
+		super.show_properties(extra_properties);
+	}
+
+	/**
+	 * 
+	 * @returns {string}
+	 */
+	get_link_target_path() {
+		var target = "";
+		if(this.link_target.charAt(0) === '/')
+			target = this.link_target;
+		else
+			target = "/" + this.parent_dir().join("/") + "/" + this.link_target;
+		return target;
+	}
+
+	async show_edit_file_contents() {
+		for (let button of document.getElementsByTagName("button")) {
+			if (!button.classList.contains("editor-btn"))
+				button.disabled = true;
+		}
+		document.getElementById("pwd").disabled = true;
+		var target_path = this.get_link_target_path();
+		var proc_output = await cockpit.spawn(["file", "--mime-type", target_path], {superuser: "try"});
+		var fields = proc_output.split(':');
+		var type = fields[1].trim();
+		if(!(type.match(/^text/) || type.match(/^inode\/x-empty$/) || this.stat["size"] === 0)){
+			if(!window.confirm("File is of type `" + type + "`. Are you sure you want to edit it?"))
+				return;
+		}
+		var contents = await cockpit.spawn(["cat", target_path], {superuser: "try"});
+		document.getElementById("nav-edit-contents-textarea").value = contents;
+		document.getElementById("nav-cancel-edit-contents-btn").onclick = this.hide_edit_file_contents.bind(this);
+		document.getElementById("nav-continue-edit-contents-btn").onclick = this.write_to_file.bind(this);
+		document.getElementById("nav-edit-contents-header").innerText = "Editing " + this.path_str();
+		document.getElementById("nav-contents-view").style.display = "none";
+		document.getElementById("nav-edit-contents-view").style.display = "flex";
+	}
+
+	async write_to_file() {
+		var target_path = this.get_link_target_path();
+		var new_contents = document.getElementById("nav-edit-contents-textarea").value;
+		await cockpit.script("echo -n \"$1\" > $2", [new_contents, target_path], {superuser: "try"});
+		this.nav_window_ref.refresh();
+		this.hide_edit_file_contents();
+	}
+}
+
 class NavDir extends NavEntry {
 	/**
 	 * 
@@ -465,10 +532,20 @@ class NavDir extends NavEntry {
 			var filename = entry["filename"];
 			var path = (this.path.length >= 1 && this.path[0]) ? [...this.path, filename] : [filename];
 			var stat = entry["stat"];
-			if (entry["isdir"])
-				children.push(new NavDir(path, stat, nav_window_ref));
-			else
-				children.push(new NavFile(path, stat, nav_window_ref));
+			switch(stat["mode-str"].charAt(0)) {
+				case 'd':
+					children.push(new NavDir(path, stat, nav_window_ref));
+					break;
+				case 'l':
+					if(entry["isdir"])
+						children.push(new NavDirLink(path, stat, nav_window_ref, entry["link-target"]));
+					else
+						children.push(new NavFileLink(path, stat, nav_window_ref, entry["link-target"]));
+					break;
+				default:
+					children.push(new NavFile(path, stat, nav_window_ref));
+					break;
+			}
 		});
 		children.sort((first, second) => {
 			if (first.nav_type === second.nav_type) {
@@ -494,7 +571,7 @@ class NavDir extends NavEntry {
 	
 	/**
 	 * 
-	 * @returns {any}
+	 * @returns {Object}
 	 */
 	async cephfs_dir_stats() {
 		try {
@@ -508,8 +585,11 @@ class NavDir extends NavEntry {
 		}
 	}
 
-	async show_properties() {
-		var extra_properties = "";
+	/**
+	 * 
+	 * @param {string} extra_properties 
+	 */
+	async show_properties(extra_properties = "") {
 		if(!this.hasOwnProperty("ceph_stats"))
 			this.ceph_stats = await this.cephfs_dir_stats();
 		// See if a JSON object exists for folder we are currently looking at
@@ -549,6 +629,40 @@ class NavDir extends NavEntry {
 				this.ceph_stats.hasOwnProperty("max_bytes") ? this.ceph_stats.max_bytes : "N/A"
 			);
 		}
+		super.show_properties(extra_properties);
+	}
+}
+
+class NavDirLink extends NavDir{
+	/**
+	 * 
+	 * @param {string|string[]} path 
+	 * @param {object} stat 
+	 * @param {NavWindow} nav_window_ref 
+	 * @param {string} link_target 
+	 */
+	constructor(path, stat, nav_window_ref, link_target) {
+		super(path, stat, nav_window_ref);
+		var link_icon = this.dom_element.nav_item_icon.link_icon = document.createElement("i");
+		link_icon.classList.add("fas", "fa-link", "nav-item-symlink-symbol-dir");
+		this.dom_element.nav_item_icon.appendChild(link_icon);
+		this.double_click = false;
+		this.link_target = link_target;
+	}
+
+	async rm() {
+		var proc = cockpit.spawn(
+			["rm", "-f", this.path_str()],
+			{superuser: "try", err: "out"}
+		);
+		proc.fail((e, data) => {
+			window.alert(data);
+		});
+		await proc;
+	}
+
+	show_properties() {
+		var extra_properties = property_entry_html("Link Target", this.link_target);
 		super.show_properties(extra_properties);
 	}
 }
@@ -645,7 +759,7 @@ class NavWindow {
 	
 	/**
 	 * 
-	 * @param {any} entry 
+	 * @param {NavEntry} entry 
 	 */
 	set_selected(entry) {
 		this.hide_edit_selected();
@@ -828,7 +942,6 @@ class NavWindow {
 			return;
 		this.nav_bar_last_parent_path_str = parent_path_str;
 		var parent_dir = new NavDir(parent_path_str);
-		console.log(parent_dir.path_str());
 		var error = false;
 		var objs = await parent_dir.get_children(this, true).catch(() => {error = true});
 		if(error)
@@ -876,6 +989,38 @@ class NavWindow {
 		}
 		this.refresh();
 	}
+	async get_system_users() {
+		var proc = cockpit.spawn(["getent", "passwd"], {err: "ignore", superuser: "try"});
+		var list = document.getElementById("possible-owners");
+		while(list.firstChild) {
+			list.removeChild(list.firstChild);
+		}
+		var passwd = await proc;
+		var passwd_entries = passwd.split("\n");
+		for (let entry of passwd_entries) {
+			var cols = entry.split(":");
+			var username = cols[0];
+			var option = document.createElement("option");
+			option.value = username;
+			list.appendChild(option);
+		}
+	}
+	async get_system_groups() {
+		var proc = cockpit.spawn(["getent", "group"], {err: "ignore", superuser: "try"});
+		var list = document.getElementById("possible-groups");
+		while(list.firstChild) {
+			list.removeChild(list.firstChild);
+		}
+		var group = await proc;
+		var group_entries = group.split("\n");
+		for (let entry of group_entries) {
+			var cols = entry.split(":");
+			var groupname = cols[0];
+			var option = document.createElement("option");
+			option.value = groupname;
+			list.appendChild(option);
+		}
+	}
 }
 
 let nav_window = new NavWindow();
@@ -905,7 +1050,12 @@ function set_up_buttons() {
 async function main() {
 	set_last_theme_state();
 	load_hidden_file_state(nav_window);
-	await nav_window.refresh();
+	var get_users = nav_window.get_system_users();
+	var get_groups = nav_window.get_system_groups();
+	var refresh = nav_window.refresh();
+	await get_users;
+	await get_groups;
+	await refresh;
 	set_up_buttons();
 }
 
