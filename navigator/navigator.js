@@ -17,7 +17,13 @@
 	along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-function property_entry_html(/*string*/ key, /*string*/ value) {
+/**
+ * 
+ * @param {string} key 
+ * @param {string} value 
+ * @returns {string}
+ */
+function property_entry_html(key, value) {
 	var html = '<div class="nav-property-pair">';
 	html += '<span class="nav-property-pair-key">' + key + '</span>';
 	html += '<span class="nav-property-pair-value">' + value + '</span>';
@@ -25,7 +31,12 @@ function property_entry_html(/*string*/ key, /*string*/ value) {
 	return html;
 }
 
-function format_bytes(/*int*/ bytes) {
+/**
+ * 
+ * @param {number} bytes 
+ * @returns {string}
+ */
+function format_bytes(bytes) {
 	if (bytes === 0)
 		return "0 B";
 	var units = [" B", " KiB", " MiB", " GiB", " TiB", " PiB"];
@@ -35,12 +46,22 @@ function format_bytes(/*int*/ bytes) {
 	return formatted.toFixed(2).toString() + units[index];
 }
 
-function format_time(/*int*/ timestamp) {
+/**
+ * 
+ * @param {number} timestamp 
+ * @returns {string}
+ */
+function format_time(timestamp) {
 	var date = new Date(timestamp * 1000);
 	return date.toLocaleString();
 }
 
-function format_permissions(/*int*/ mode) {
+/**
+ * 
+ * @param {number} mode 
+ * @returns {string}
+ */
+function format_permissions(mode) {
 	var bit_list = ["x", "w", "r"];
 	var result = "";
 	for (let bit = 8; bit >= 0; bit--) {
@@ -55,6 +76,10 @@ function format_permissions(/*int*/ mode) {
 	return result;
 }
 
+/**
+ * 
+ * @param {NavWindow} nav_window 
+ */
 function load_hidden_file_state(nav_window) {
 	const state = localStorage.getItem('show-hidden-files') === 'true';
 	const element = document.querySelector('#nav-show-hidden');
@@ -90,7 +115,11 @@ function set_last_theme_state() {
 	}
 }
 
-function switch_theme(/*event*/ e) {
+/**
+ * 
+ * @param {Event} e 
+ */
+function switch_theme(e) {
 	var icon = document.getElementById("houston-theme-icon");
 	var logo = document.getElementById("logo-45d");
 	var state = "";
@@ -110,7 +139,13 @@ function switch_theme(/*event*/ e) {
 }
 
 class NavEntry {
-	constructor(/*string or array*/ path, /*dict*/ stat, /*NavWindow*/ nav_window_ref) {
+	/**
+	 * 
+	 * @param {string} path 
+	 * @param {object} stat 
+	 * @param {NavWindow} nav_window_ref 
+	 */
+	constructor(path, stat, nav_window_ref) {
 		this.nav_window_ref = nav_window_ref;
 		if (typeof path == "string")
 			this.path = path.split("/").splice(1);
@@ -129,7 +164,12 @@ class NavEntry {
 		this.dom_element.addEventListener("click", this);
 		this.is_hidden_file = this.filename().startsWith('.');
 	}
-	handleEvent(/*event*/ e) {
+
+	/**
+	 * 
+	 * @param {Event} e 
+	 */
+	handleEvent(e) {
 		switch (e.type) {
 			case "click":
 				this.show_properties();
@@ -138,6 +178,7 @@ class NavEntry {
 				break;
 		}
 	}
+
 	destroy() {
 		while (this.dom_element.firstChild) {
 			this.dom_element.removeChild(this.dom_element.firstChild);
@@ -145,28 +186,59 @@ class NavEntry {
 		if (this.dom_element.parentElement)
 			this.dom_element.parentElement.removeChild(this.dom_element);
 	}
+
+	/**
+	 * 
+	 * @returns {string}
+	 */
 	filename() {
 		var name = this.path[this.path.length - 1];
 		if (!name)
 			name = "/";
 		return name;
 	}
+
+	/**
+	 * 
+	 * @returns {string}
+	 */
 	path_str() {
 		return "/" + this.path.join("/");
 	}
+
+	/**
+	 * 
+	 * @returns {string}
+	 */
 	parent_dir() {
 		return this.path.slice(0, this.path.length - 1);
 	}
+
 	show() {
 		document.getElementById("nav-contents-view").appendChild(this.dom_element);
 	}
+
+	/**
+	 * 
+	 * @returns {object}
+	 */
 	get_properties() {
 		return this.stat;
 	}
+
+	/**
+	 * 
+	 * @returns {number}
+	 */
 	get_permissions() {
 		return this.stat["mode"] & 0o777;
 	}
-	async chmod(/*int*/ new_perms) {
+
+	/**
+	 * 
+	 * @param {number} new_perms 
+	 */
+	async chmod(new_perms) {
 		var proc = cockpit.spawn(
 			["chmod", (new_perms & 0o777).toString(8), this.path_str()],
 			{superuser: "try", err: "out"}
@@ -176,7 +248,13 @@ class NavEntry {
 		});
 		await proc;
 	}
-	async chown(/*string*/ new_owner, /*string*/ new_group) {
+
+	/**
+	 * 
+	 * @param {string} new_owner 
+	 * @param {string} new_group 
+	 */
+	async chown(new_owner, new_group) {
 		var proc = cockpit.spawn(
 			["chown", [new_owner, new_group].join(":"), this.path_str()],
 			{superuser: "try", err: "out"}
@@ -186,7 +264,12 @@ class NavEntry {
 		});
 		await proc;
 	}
-	async mv(/*string*/ new_path) {
+
+	/**
+	 * 
+	 * @param {string} new_path 
+	 */
+	async mv(new_path) {
 		var proc = cockpit.spawn(
 			["mv", "-n", this.path_str(), [this.nav_window_ref.pwd().path_str(), new_path].join("/")],
 			{superuser: "try", err: "out"}
@@ -196,7 +279,12 @@ class NavEntry {
 		});
 		await proc;
 	}
-	show_properties(/*string*/ extra_properties = "") {
+
+	/**
+	 * 
+	 * @param {string} extra_properties 
+	 */
+	show_properties(extra_properties = "") {
 		var selected_name_fields = document.getElementsByClassName("nav-info-column-filename");
 		for (let elem of selected_name_fields) {
 			elem.innerText = this.filename();
@@ -212,6 +300,7 @@ class NavEntry {
 		html += extra_properties;
 		document.getElementById("nav-info-column-properties").innerHTML = html;
 	}
+	
 	populate_edit_fields() {
 		document.getElementById("nav-edit-filename").value = this.filename();
 		var mode_bits = [
@@ -230,13 +319,24 @@ class NavEntry {
 }
 
 class NavFile extends NavEntry {
-	constructor(/*string or array*/ path, /*dict*/ stat, nav_window_ref) {
+	/**
+	 * 
+	 * @param {string|string[]} path 
+	 * @param {object} stat 
+	 * @param {NavWindow} nav_window_ref 
+	 */
+	constructor(path, stat, nav_window_ref) {
 		super(path, stat, nav_window_ref);
 		this.nav_type = "file";
 		this.dom_element.nav_item_icon.classList.add("fas", "fa-file");
 		this.double_click = false;
 	}
-	handleEvent(/*event*/ e) {
+
+	/**
+	 * 
+	 * @param {Event} e 
+	 */
+	handleEvent(e) {
 		switch(e.type){
 			case "click":
 				if(this.double_click)
@@ -253,6 +353,7 @@ class NavFile extends NavEntry {
 		}
 		super.handleEvent(e);
 	}
+
 	async rm() {
 		var proc = cockpit.spawn(
 			["rm", "-f", this.path_str()],
@@ -263,6 +364,7 @@ class NavFile extends NavEntry {
 		});
 		await proc;
 	}
+	
 	async show_edit_file_contents() {
 		for (let button of document.getElementsByTagName("button")) {
 			if (!button.classList.contains("editor-btn"))
@@ -284,12 +386,14 @@ class NavFile extends NavEntry {
 		document.getElementById("nav-contents-view").style.display = "none";
 		document.getElementById("nav-edit-contents-view").style.display = "flex";
 	}
+	
 	async write_to_file() {
 		var new_contents = document.getElementById("nav-edit-contents-textarea").value;
 		await cockpit.script("echo -n \"$1\" > $2", [new_contents, this.path_str()], {superuser: "try"});
 		this.nav_window_ref.refresh();
 		this.hide_edit_file_contents();
 	}
+	
 	hide_edit_file_contents() {
 		document.getElementById("nav-edit-contents-view").style.display = "none";
 		document.getElementById("nav-contents-view").style.display = "flex";
@@ -301,13 +405,24 @@ class NavFile extends NavEntry {
 }
 
 class NavDir extends NavEntry {
-	constructor(/*string or array*/ path, /*dict*/ stat, nav_window_ref) {
+	/**
+	 * 
+	 * @param {string|string[]} path 
+	 * @param {object} stat 
+	 * @param {NavWindow} nav_window_ref 
+	 */
+	constructor(path, stat, nav_window_ref) {
 		super(path, stat, nav_window_ref);
 		this.nav_type = "dir";
 		this.dom_element.nav_item_icon.classList.add("fas", "fa-folder");
 		this.double_click = false;
 	}
-	handleEvent(/*event*/ e) {
+
+	/**
+	 * 
+	 * @param {Event} e 
+	 */
+	handleEvent(e) {
 		switch (e.type) {
 			case "click":
 				if (this.double_click)
@@ -325,7 +440,14 @@ class NavDir extends NavEntry {
 		}
 		super.handleEvent(e);
 	}
-	async get_children(/*NavWindow*/ nav_window_ref, /*boolean*/ no_alert = false) {
+
+	/**
+	 * 
+	 * @param {NavWindow} nav_window_ref 
+	 * @param {boolean} no_alert 
+	 * @returns {object[]}
+	 */
+	async get_children(nav_window_ref, no_alert = false) {
 		var children = [];
 		var proc = cockpit.spawn(
 			["/usr/share/cockpit/navigator/scripts/ls.py", this.path_str()],
@@ -358,6 +480,7 @@ class NavDir extends NavEntry {
 		});
 		return children;
 	}
+
 	async rm() {
 		var proc = cockpit.spawn(
 			["rmdir", this.path_str()],
@@ -368,6 +491,11 @@ class NavDir extends NavEntry {
 		});
 		await proc;
 	}
+	
+	/**
+	 * 
+	 * @returns {any}
+	 */
 	async cephfs_dir_stats() {
 		try {
 			var proc = await cockpit.spawn(
@@ -379,6 +507,7 @@ class NavDir extends NavEntry {
 			return null;
 		}
 	}
+
 	async show_properties() {
 		var extra_properties = "";
 		if(!this.hasOwnProperty("ceph_stats"))
@@ -435,6 +564,7 @@ class NavWindow {
 		this.window = document.getElementById("nav-contents-view");
 		this.window.addEventListener("click", this);
 	}
+
 	handleEvent(e) {
 		switch (e.type) {
 			case "click":
@@ -443,6 +573,7 @@ class NavWindow {
 				break;
 		}
 	}
+
 	async refresh() {
 		localStorage.setItem('navigator-path', `/${this.path_stack[this.path_stack_index].path.join('/')}`);
 
@@ -471,10 +602,20 @@ class NavWindow {
 		document.getElementById("nav-num-files").innerText = num_files.toString();
 		this.stop_load();
 	}
+
+	/**
+	 * 
+	 * @returns {NavDir}
+	 */
 	pwd() {
 		return this.path_stack[this.path_stack_index];
 	}
-	cd(/*NavDir*/ new_dir) {
+
+	/**
+	 * 
+	 * @param {NavDir} new_dir 
+	 */
+	cd(new_dir) {
 		this.path_stack.length = this.path_stack_index + 1;
 		this.path_stack.push(new_dir);
 		this.path_stack_index = this.path_stack.length - 1;
@@ -482,22 +623,31 @@ class NavWindow {
 			this.back();
 		});
 	}
+
 	back() {
 		this.path_stack_index = Math.max(this.path_stack_index - 1, 0);
 		this.refresh();
 	}
+	
 	forward() {
 		this.path_stack_index = Math.min(this.path_stack_index + 1, this.path_stack.length - 1);
 		this.refresh();
 	}
+	
 	up() {
 		if(this.pwd().path_str() !== '/')
 			this.cd(new NavDir(this.pwd().parent_dir()));
 	}
+	
 	show_selected_properties() {
 		this.selected_entry.show_properties();
 	}
-	set_selected(/*NavEntry*/ entry) {
+	
+	/**
+	 * 
+	 * @param {any} entry 
+	 */
+	set_selected(entry) {
 		this.hide_edit_selected();
 		this.selected_entry.dom_element.classList.remove("nav-item-selected");
 		if (this.selected_entry.nav_type === "dir") {
@@ -511,6 +661,7 @@ class NavWindow {
 			this.selected_entry.dom_element.nav_item_icon.classList.add("fa-folder-open");
 		}
 	}
+	
 	show_edit_selected() {
 		var dangerous_dirs = [
 			"/",
@@ -543,10 +694,16 @@ class NavWindow {
 		document.getElementById("nav-edit-properties").style.display = "block";
 		document.getElementById("nav-show-properties").style.display = "none";
 	}
+	
 	hide_edit_selected() {
 		document.getElementById("nav-show-properties").style.display = "block";
 		document.getElementById("nav-edit-properties").style.display = "none";
 	}
+	
+	/**
+	 * 
+	 * @returns {number}
+	 */
 	get_new_permissions() {
 		var category_list = ["other", "group", "owner"];
 		var action_list = ["exec", "write", "read"];
@@ -561,12 +718,14 @@ class NavWindow {
 		}
 		return result;
 	}
+	
 	update_permissions_preview() {
 		var new_perms = this.get_new_permissions();
 		var text = format_permissions(new_perms);
 		text += " (" + (new_perms & 0o777).toString(8) + ")";
 		document.getElementById("nav-mode-preview").innerText = text;
 	}
+
 	async apply_edit_selected() {
 		// do mv last so the rest don't fail from not finding path
 		var new_owner = document.getElementById("nav-edit-owner").value;
@@ -588,6 +747,7 @@ class NavWindow {
 		this.refresh();
 		this.hide_edit_selected();
 	}
+
 	async delete_selected() {
 		if (
 			!window.confirm(
@@ -599,6 +759,7 @@ class NavWindow {
 		await this.selected_entry.rm().catch(/*ignore, caught in rm*/);
 		this.refresh();
 	}
+
 	async mkdir() {
 		var new_dir_name = window.prompt("Directory Name: ");
 		if (new_dir_name === null)
@@ -617,6 +778,7 @@ class NavWindow {
 		await proc;
 		this.refresh();
 	}
+
 	async touch() {
 		var new_file_name = window.prompt("File Name: ");
 		if (new_file_name === null)
@@ -635,7 +797,12 @@ class NavWindow {
 		await proc;
 		this.refresh();
 	}
-	nav_bar_event_handler(/*event*/ e) {
+
+	/**
+	 * 
+	 * @param {Event} e 
+	 */
+	nav_bar_event_handler(e) {
 		switch(e.key){
 			case 'Enter':
 				this.nav_bar_cd();
@@ -644,10 +811,12 @@ class NavWindow {
 				break;
 		}
 	}
+
 	nav_bar_cd() {
 		var new_path = document.getElementById("pwd").value;
 		this.cd(new NavDir(new_path));
 	}
+
 	async nav_bar_update_choices() {
 		var list = document.getElementById("possible-paths");
 		var partial_path_str = document.getElementById("pwd").value;
@@ -673,6 +842,7 @@ class NavWindow {
 			list.appendChild(option);
 		});
 	}
+
 	start_load() {
 		document.getElementById("nav-loader-container").hidden = false;
 		var buttons = document.getElementsByTagName("button");
@@ -680,6 +850,7 @@ class NavWindow {
 			button.disabled = true;
 		}
 	}
+
 	stop_load() {
 		document.getElementById("nav-loader-container").hidden = true;
 		var buttons = document.getElementsByTagName("button");
@@ -687,6 +858,11 @@ class NavWindow {
 			button.disabled = false;
 		}
 	}
+
+	/**
+	 * 
+	 * @param {Event} e 
+	 */
 	toggle_show_hidden(e) {
 		localStorage.setItem('show-hidden-files', e.target.checked);
 
