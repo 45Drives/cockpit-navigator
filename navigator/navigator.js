@@ -1,7 +1,8 @@
 /* 
 	Cockpit Navigator - A File System Browser for Cockpit.
-	Copyright (C) 2021 Josh Boudreau <jboudreau@45drives.com>
-	Copyright (C) 2021 Sam Silver    <ssilver@45drives.com>
+	Copyright (C) 2021 Josh Boudreau      <jboudreau@45drives.com>
+	Copyright (C) 2021 Sam Silver         <ssilver@45drives.com>
+	Copyright (C) 2021 Dawson Della Valle <ddellavalle@45drives.com>
 
 	This file is part of Cockpit Navigator.
 	Cockpit Navigator is free software: you can redistribute it and/or modify
@@ -52,6 +53,16 @@ function format_permissions(/*int*/ mode) {
 		}
 	}
 	return result;
+}
+
+function load_hidden_file_state(nav_window) {
+	const state = localStorage.getItem('show-hidden-files') === 'true';
+	const element = document.querySelector('#nav-show-hidden');
+
+	if (state) {
+		element.checked = true;
+		nav_window.toggle_show_hidden({ target: element });
+	}
 }
 
 function set_last_theme_state() {
@@ -415,7 +426,9 @@ class NavDir extends NavEntry {
 
 class NavWindow {
 	constructor() {
-		this.path_stack = [new NavDir("/", this)];
+		this.path_stack = (localStorage.getItem('navigator-path') ?? '/').split('/');
+		this.path_stack = this.path_stack.map((_, index) => new NavDir([...this.path_stack.slice(0, index + 1)].filter(part => part != ''), this));
+
 		this.path_stack_index = this.path_stack.length - 1;
 		this.selected_entry = this.pwd();
 		this.entries = [];
@@ -431,6 +444,8 @@ class NavWindow {
 		}
 	}
 	async refresh() {
+		localStorage.setItem('navigator-path', `/${this.path_stack[this.path_stack_index].path.join('/')}`);
+
 		var num_dirs = 0;
 		var num_files = 0;
 		var show_hidden = document.getElementById("nav-show-hidden").checked;
@@ -673,6 +688,8 @@ class NavWindow {
 		}
 	}
 	toggle_show_hidden(e) {
+		localStorage.setItem('show-hidden-files', e.target.checked);
+
 		var icon = document.getElementById("nav-show-hidden-icon");
 		if (e.target.checked) {
 			icon.classList.remove("fa-low-vision");
@@ -719,6 +736,7 @@ function set_up_buttons() {
 
 async function main() {
 	set_last_theme_state();
+	load_hidden_file_state(nav_window);
 	await nav_window.refresh();
 	set_up_buttons();
 }
