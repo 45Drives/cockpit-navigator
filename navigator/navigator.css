@@ -35,8 +35,9 @@
 
 [data-theme="dark"] {
 	/* Dark style */
-	--container: #212121;
+	--container: #212427;
 	--border: #3c3f42;
+	--navigation: #151515;
 	--font: #fff;
 	--selected: #191a1b;
 	--scrollbar-thumb: var(--container);
