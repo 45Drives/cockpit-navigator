@@ -419,6 +419,7 @@ class NavFileLink extends NavFile{
 		this.dom_element.nav_item_icon.appendChild(link_icon);
 		this.double_click = false;
 		this.link_target = link_target;
+		this.dom_element.nav_item_title.style.fontStyle = "italic";
 	}
 
 	show_properties() {
@@ -650,6 +651,7 @@ class NavDirLink extends NavDir{
 		this.dom_element.nav_item_icon.appendChild(link_icon);
 		this.double_click = false;
 		this.link_target = link_target;
+		this.dom_element.nav_item_title.style.fontStyle = "italic";
 	}
 
 	async rm() {
