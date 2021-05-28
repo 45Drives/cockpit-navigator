@@ -405,7 +405,14 @@ class NavFile extends NavEntry {
 }
 
 class NavFileLink extends NavFile{
-	constructor(/*string or array*/ path, /*dict*/ stat, nav_window_ref, link_target) {
+	/**
+	 * 
+	 * @param {string} path 
+	 * @param {object} stat 
+	 * @param {NavWindow} nav_window_ref 
+	 * @param {string} link_target 
+	 */
+	constructor(path, stat, nav_window_ref, link_target) {
 		super(path, stat, nav_window_ref);
 		var link_icon = this.dom_element.nav_item_icon.link_icon = document.createElement("i");
 		link_icon.classList.add("fas", "fa-link", "nav-item-symlink-symbol-file");
@@ -413,10 +420,16 @@ class NavFileLink extends NavFile{
 		this.double_click = false;
 		this.link_target = link_target;
 	}
+
 	show_properties() {
 		var extra_properties = property_entry_html("Link Target", this.link_target);
 		super.show_properties(extra_properties);
 	}
+
+	/**
+	 * 
+	 * @returns {string}
+	 */
 	get_link_target_path() {
 		var target = "";
 		if(this.link_target.charAt(0) === '/')
@@ -425,6 +438,7 @@ class NavFileLink extends NavFile{
 			target = "/" + this.parent_dir().join("/") + "/" + this.link_target;
 		return target;
 	}
+
 	async show_edit_file_contents() {
 		for (let button of document.getElementsByTagName("button")) {
 			if (!button.classList.contains("editor-btn"))
@@ -447,6 +461,7 @@ class NavFileLink extends NavFile{
 		document.getElementById("nav-contents-view").style.display = "none";
 		document.getElementById("nav-edit-contents-view").style.display = "flex";
 	}
+
 	async write_to_file() {
 		var target_path = this.get_link_target_path();
 		var new_contents = document.getElementById("nav-edit-contents-textarea").value;
@@ -556,7 +571,7 @@ class NavDir extends NavEntry {
 	
 	/**
 	 * 
-	 * @returns {any}
+	 * @returns {Object}
 	 */
 	async cephfs_dir_stats() {
 		try {
@@ -569,7 +584,12 @@ class NavDir extends NavEntry {
 			return null;
 		}
 	}
-	async show_properties(/*string*/ extra_properties = "") {
+
+	/**
+	 * 
+	 * @param {string} extra_properties 
+	 */
+	async show_properties(extra_properties = "") {
 		if(!this.hasOwnProperty("ceph_stats"))
 			this.ceph_stats = await this.cephfs_dir_stats();
 		// See if a JSON object exists for folder we are currently looking at
@@ -614,7 +634,14 @@ class NavDir extends NavEntry {
 }
 
 class NavDirLink extends NavDir{
-	constructor(/*string or array*/ path, /*dict*/ stat, nav_window_ref, /*string*/ link_target) {
+	/**
+	 * 
+	 * @param {string|string[]} path 
+	 * @param {object} stat 
+	 * @param {NavWindow} nav_window_ref 
+	 * @param {string} link_target 
+	 */
+	constructor(path, stat, nav_window_ref, link_target) {
 		super(path, stat, nav_window_ref);
 		var link_icon = this.dom_element.nav_item_icon.link_icon = document.createElement("i");
 		link_icon.classList.add("fas", "fa-link", "nav-item-symlink-symbol-dir");
@@ -622,6 +649,7 @@ class NavDirLink extends NavDir{
 		this.double_click = false;
 		this.link_target = link_target;
 	}
+
 	async rm() {
 		var proc = cockpit.spawn(
 			["rm", "-f", this.path_str()],
@@ -632,6 +660,7 @@ class NavDirLink extends NavDir{
 		});
 		await proc;
 	}
+
 	show_properties() {
 		var extra_properties = property_entry_html("Link Target", this.link_target);
 		super.show_properties(extra_properties);
@@ -730,7 +759,7 @@ class NavWindow {
 	
 	/**
 	 * 
-	 * @param {any} entry 
+	 * @param {NavEntry} entry 
 	 */
 	set_selected(entry) {
 		this.hide_edit_selected();
