@@ -29,7 +29,7 @@ cp -a * %{buildroot}
 rm -rf %{buildroot}
 
 %files
-/usr/share/cockpit/samba-navigator/*
+/usr/share/cockpit/navigator/*
 
 %changelog
 * Fri May 28 2021 Josh Boudreau <jboudreau@45drives.com> 0.1.0-1
