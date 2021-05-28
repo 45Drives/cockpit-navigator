@@ -157,7 +157,7 @@ body::-webkit-scrollbar-thumb {
 	padding-bottom: 0;
 }
 
-.navigation-bar {
+input[type="text"] {
 	background-color: var(--container);
 	color: inherit;
 	flex-grow: 1;
