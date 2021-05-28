@@ -432,10 +432,12 @@ class NavFileLink extends NavFile{
 	 */
 	get_link_target_path() {
 		var target = "";
-		if(this.link_target.charAt(0) === '/')
+		if (this.link_target.charAt(0) === '/')
 			target = this.link_target;
 		else
-			target = "/" + this.parent_dir().join("/") + "/" + this.link_target;
+			target = this.parent_dir().join("/") + "/" + this.link_target;
+		if (target.charAt(0) !== '/')
+			target = '/' + target;
 		return target;
 	}
 
@@ -457,7 +459,7 @@ class NavFileLink extends NavFile{
 		document.getElementById("nav-edit-contents-textarea").value = contents;
 		document.getElementById("nav-cancel-edit-contents-btn").onclick = this.hide_edit_file_contents.bind(this);
 		document.getElementById("nav-continue-edit-contents-btn").onclick = this.write_to_file.bind(this);
-		document.getElementById("nav-edit-contents-header").innerText = "Editing " + this.path_str();
+		document.getElementById("nav-edit-contents-header").innerHTML = "Editing " + this.path_str() + ' <i class="fas fa-long-arrow-alt-right"></i> ' + this.get_link_target_path();
 		document.getElementById("nav-contents-view").style.display = "none";
 		document.getElementById("nav-edit-contents-view").style.display = "flex";
 	}
