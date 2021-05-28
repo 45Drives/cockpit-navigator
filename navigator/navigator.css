@@ -257,15 +257,30 @@ input[type="text"] {
 	flex: 3;
 }
 
+.nav-property-pair > input[type="text"] {
+	flex-grow: 3;
+	flex-basis: 0;
+	padding: 0px 12px 0px 12px;
+}
+
 .grid-container {
-	margin: 0 0 2px 42px;
+	margin: 0 24px 2px 24px;
 	display: grid;
-	grid-template-columns: auto auto auto auto;
-	justify-content: space-evenly;
+	grid-template-columns: 2fr 1fr 1fr 1fr;
+	justify-items: center;
+	row-gap: 4px;
 }
 
 .grid-label {
 	font-weight: bold;
+	flex-basis: 0;
+	font-size: 90%;
+}
+
+.grid-row-label {
+	justify-self: start;
+	padding-right: 5px;
+	padding-left: 50%;
 }
 
 .nav-btn-group {
