@@ -683,6 +683,14 @@ class NavWindow {
 		}
 		this.refresh();
 	}
+	async get_system_users() {
+		var passwd = await cockpit.spawn(["getent", "passwd"], {err: "ignore", superuser: "try"});
+
+	}
+	async get_system_groups() {
+		var groups = await cockpit.spawn(["getent", "groups"], {err: "ignore", superuser: "try"});
+
+	}
 }
 
 let nav_window = new NavWindow();
