@@ -92,11 +92,19 @@
 					</div>
 					<div class="nav-property-pair">
 						<span class="nav-property-pair-key">Owner</span>
-						<input type="text" class="nav-property-pair-value" id="nav-edit-owner"></input>
+						<input type="text" list="possible-owners-list" autocomplete="off" class="nav-property-pair-value" id="nav-edit-owner"></input>
+						<datalist id="possible-owners-list">
+							<select id="possible-owners">
+							</select>
+						</datalist>
 					</div>
 					<div class="nav-property-pair">
 						<span class="nav-property-pair-key">Group</span>
-						<input type="text" class="nav-property-pair-value" id="nav-edit-group"></input>
+						<input type="text" list="possible-groups-list" autocomplete="off" class="nav-property-pair-value" id="nav-edit-group"></input>
+						<datalist id="possible-groups-list">
+							<select id="possible-groups">
+							</select>
+						</datalist>
 					</div>
 					<div class="nav-property-pair">
 						<span class="nav-property-pair-key">Mode</span>

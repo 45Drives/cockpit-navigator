@@ -659,7 +659,6 @@ class NavWindow {
 			return;
 		this.nav_bar_last_parent_path_str = parent_path_str;
 		var parent_dir = new NavDir(parent_path_str);
-		console.log(parent_dir.path_str());
 		var error = false;
 		var objs = await parent_dir.get_children(this, true).catch(() => {error = true});
 		if(error)
@@ -701,12 +700,36 @@ class NavWindow {
 		this.refresh();
 	}
 	async get_system_users() {
-		var passwd = await cockpit.spawn(["getent", "passwd"], {err: "ignore", superuser: "try"});
-
+		var proc = cockpit.spawn(["getent", "passwd"], {err: "ignore", superuser: "try"});
+		var list = document.getElementById("possible-owners");
+		while(list.firstChild) {
+			list.removeChild(list.firstChild);
+		}
+		var passwd = await proc;
+		var passwd_entries = passwd.split("\n");
+		for (let entry of passwd_entries) {
+			var cols = entry.split(":");
+			var username = cols[0];
+			var option = document.createElement("option");
+			option.value = username;
+			list.appendChild(option);
+		}
 	}
 	async get_system_groups() {
-		var groups = await cockpit.spawn(["getent", "groups"], {err: "ignore", superuser: "try"});
-
+		var proc = cockpit.spawn(["getent", "group"], {err: "ignore", superuser: "try"});
+		var list = document.getElementById("possible-groups");
+		while(list.firstChild) {
+			list.removeChild(list.firstChild);
+		}
+		var group = await proc;
+		var group_entries = group.split("\n");
+		for (let entry of group_entries) {
+			var cols = entry.split(":");
+			var groupname = cols[0];
+			var option = document.createElement("option");
+			option.value = groupname;
+			list.appendChild(option);
+		}
 	}
 }
 
@@ -737,7 +760,12 @@ function set_up_buttons() {
 async function main() {
 	set_last_theme_state();
 	load_hidden_file_state(nav_window);
-	await nav_window.refresh();
+	var get_users = nav_window.get_system_users();
+	var get_groups = nav_window.get_system_groups();
+	var refresh = nav_window.refresh();
+	await get_users;
+	await get_groups;
+	await refresh;
 	set_up_buttons();
 }
 
