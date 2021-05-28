@@ -23,7 +23,7 @@ install:
 	cp -rpf navigator $(DESTDIR)/usr/share/cockpit
 
 uninstall:
-	rm -rf $(DESTDIR)/usr/share/cockpit/samba-manager
+	rm -rf $(DESTDIR)/usr/share/cockpit/navigator
 
 install-local:
 	mkdir -p $(HOME)/.local/share/cockpit
