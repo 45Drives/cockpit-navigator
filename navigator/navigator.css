@@ -53,6 +53,14 @@
 	--symlink-symbol-color: var(--navigation);
 }
 
+html {
+	height: 100%;
+}
+
+body {
+	height: 100%;
+}
+
 .pf-c-button:disabled[data-theme="dark"] {
 	background-color: var(--border);
 }
