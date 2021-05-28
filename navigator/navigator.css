@@ -1,3 +1,21 @@
+/* 
+	Cockpit Navigator - A File System Browser for Cockpit.
+	Copyright (C) 2021 Josh Boudreau <jboudreau@45drives.com>
+	Copyright (C) 2021 Sam Silver    <ssilver@45drives.com>
+
+	This file is part of Cockpit Navigator.
+	Cockpit Navigator is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	Cockpit Navigator is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+	You should have received a copy of the GNU General Public License
+	along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 :root {
 	/* white style */
 	--container: #fff;
@@ -7,6 +25,12 @@
 	--selected: #fff;
 	--toggle-light: #151515;
 	--toggle-dark: #ccc;
+	--scrollbar-thumb: var(--border);
+	--scrollbar-bg: var(--navigation);
+	--scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
+	--loading-bg-color: rgba(255, 255, 255, 0.5);
+	--textarea-bg: var(--navigation);
+	--logo-45: #333;
 }
 
 [data-theme="dark"] {
@@ -15,8 +39,80 @@
 	--border: #3c3f42;
 	--font: #fff;
 	--selected: #191a1b;
-	--navigation: #121212;
+	--scrollbar-thumb: var(--container);
+	--scrollbar-bg: var(--navigation);
+	--scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
+	--loading-bg-color: rgba(33, 36, 39, 0.5);
+	--textarea-bg: var(--navigation);
+	--logo-45: #fff;
 }
+
+.pf-c-button:disabled[data-theme="dark"] {
+	background-color: var(--border);
+}
+
+.nav-loader-container {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background-color: var(--loading-bg-color);
+	z-index: 10;
+}
+
+.nav-loader-centerer {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 27%;
+	display: flex;
+	align-items: center;
+	align-content: center;
+}
+
+.nav-loader {
+	margin: auto;
+	border: 6px solid rgba(0,0,0,0);
+	border-radius: 50%;
+	border-top: 6px solid var(--border);
+	width: 100px;
+	height: 100px;
+	-webkit-animation: spin 2s linear infinite; /* Safari */
+	animation: spin 2s linear infinite;
+}
+
+/* Safari */
+@-webkit-keyframes spin {
+    0% { -webkit-transform: rotate(0deg); }
+    100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+body::-webkit-scrollbar {
+	width: 11px;
+}
+
+body {
+	scrollbar-width: thin;
+	scrollbar-color: var(--scrollbar-color);
+}
+
+body::-webkit-scrollbar-track {
+	background: var(--scrollbar-bg);
+}
+
+body::-webkit-scrollbar-thumb {
+	background-color: var(--scrollbar-thumb) ;
+	border-radius: 6px;
+	border: 3px solid var(--scrollbar-bg);
+}
+
 
 .flex-row {
 	display: flex;
@@ -36,8 +132,16 @@
 	margin-right: 1em;
 }
 
+.horizontal-spacer-sm {
+	margin-right: 0.25em;
+}
+
 .vertical-spacer {
 	margin-bottom: 1em;
+}
+
+.spacer-stretchy {
+	flex-grow: 1;
 }
 
 .nav-hidden {
@@ -49,10 +153,12 @@
 	background-color: var(--container);
 	color: var(--font);
 	padding: 1em;
+	padding-bottom: 0;
 }
 
 .navigation-bar {
 	background-color: var(--container);
+	color: inherit;
 	flex-grow: 1;
 	padding: 0.25em 1em 0.25em 1em;
 	border: 1px solid var(--border);
@@ -166,18 +272,63 @@
 	align-items: flex-start;
 }
 
+.editor-header {
+	font-weight: bold;
+}
+
+.edit-file-contents {
+	height: 100%;
+	flex-basis: 0;
+	flex-grow: 8;
+	flex-flow: column nowrap;
+	align-items: stretch;
+}
+
+.edit-file-contents > textarea {
+	flex-grow: 1;
+	white-space: pre;
+	overflow: auto;
+	resize: none;
+	border: 1px solid var(--border);
+	border-radius: 4px;
+	outline: none;
+	padding: 5px;
+	color: var(--font);
+	background-color: var(--textarea-bg);
+}
+
+.nav-footer {
+	flex: 1;
+	align-items: baseline;
+	justify-content: space-between;
+	padding: 5px;
+}
+
+.nav-footer > a > img {
+	height: 1.25em;
+	width: auto;
+	margin-bottom: 4px;
+}
+
+.nav-footer > a > .logo-45 {
+	font-weight: 900;
+	color: var(--logo-45);
+}
+
+.nav-footer > a > .logo-drives {
+	font-weight: 600;
+	color: #981c20;
+}
+
 .nav-toggle {
-	position: absolute;
-	right: 0;
-	bottom: 0.5em;
-	margin-right: 1.9em;
+	justify-self: flex-end;
 }
 
 .switch {
 	position: relative;
 	display: inline-block;
-	width: 38px;
-	height: 20px;
+	width: 30px;
+	height: 17px;
 }
 
 .switch input {
@@ -201,8 +352,8 @@
 .slider:before {
 	position: absolute;
 	content: "";
-	height: 16px;
-	width: 16px;
+	height: 13px;
+	width: 13px;
 	left: 2px;
 	bottom: 2px;
 	background-color: white;
@@ -219,13 +370,13 @@ input:focus + .slider {
 }
 
 input:checked + .slider:before {
-	-webkit-transform: translateX(18px);
-	-ms-transform: translateX(18px);
-	transform: translateX(18px);
+	-webkit-transform: translateX(13px);
+	-ms-transform: translateX(13px);
+	transform: translateX(13px);
 }
 
 .slider.round {
-	border-radius: 34px;
+	border-radius: 17px;
 }
 
 .slider.round:before {

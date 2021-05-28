@@ -1,20 +1,20 @@
 <!doctype html>
-<html>
 <!--
-    Cockpit Samba Manager - Cockpit plugin for managing Samba.
-    Copyright (C) 2021 Josh Boudreau <jboudreau@45drives.com>
-    
-    This file is part of Cockpit Samba Manager.
-    Cockpit Samba Manager is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    Cockpit Samba Manager is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    You should have received a copy of the GNU General Public License
-    along with Cockpit Samba Manager.  If not, see <https://www.gnu.org/licenses/>.
+	Cockpit Navigator - A File System Browser for Cockpit.
+	Copyright (C) 2021 Josh Boudreau <jboudreau@45drives.com>
+	Copyright (C) 2021 Sam Silver    <ssilver@45drives.com>
+
+	This file is part of Cockpit Navigator.
+	Cockpit Navigator is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	Cockpit Navigator is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+	You should have received a copy of the GNU General Public License
+	along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
 -->
 <html lang="en">
 <head>
@@ -30,17 +30,28 @@
 	<script defer src="navigator.js"></script>
 </head>
 <body>
+	<div class="nav-loader-container" id="nav-loader-container">
+		<div class="nav-loader-centerer">
+			<div class="nav-loader"></div>
+		</div>
+	</div>
 	<div class="flex-col outer-container">
 		<div class="flex-row">
 			<div class="nav-btn-group">
+				<button class="pf-c-button pf-m-secondary" id="nav-back-btn"><i class="fas fa-arrow-left"></i></button>
+				<div class="horizontal-spacer"></div>
+				<button class="pf-c-button pf-m-secondary" id="nav-forward-btn"><i class="fas fa-arrow-right"></i></button>
+				<div class="horizontal-spacer"></div>
 				<button class="pf-c-button pf-m-secondary" id="nav-up-dir-btn"><i class="fas fa-arrow-up"></i></button>
 				<div class="horizontal-spacer"></div>
 				<button class="pf-c-button pf-m-secondary" id="nav-refresh-btn"><i class="fas fa-sync"></i></button>
 			</div>
 			<div class="horizontal-spacer"></div>
-			<div class="navigation-bar" id="pwd">
-				/current/dir
-			</div>
+			<input type="text" list="possible-paths-list" autocomplete="off" class="navigation-bar" id="pwd"></input>
+			<datalist id="possible-paths-list">
+				<select id="possible-paths">
+				</select>
+			</datalist>
 			<div class="horizontal-spacer"></div>
 			<button class="pf-c-button pf-m-primary" id="nav-mkdir-btn"><i class="fas fa-folder-plus"></i></button>
 			<div class="horizontal-spacer"></div>
@@ -49,6 +60,17 @@
 		<div class="vertical-spacer"></div>
 		<div class="flex-row inner-container">
 			<div class="contents-view" id="nav-contents-view"></div>
+			<div class="edit-file-contents nav-hidden" id="nav-edit-contents-view">
+				<div class="editor-header" id="nav-edit-contents-header"></div>
+				<div class="vertical-spacer"></div>
+				<textarea id="nav-edit-contents-textarea"></textarea>
+				<div class="vertical-spacer"></div>
+				<div class="nav-btn-group">
+					<button class="pf-c-button pf-m-danger editor-btn" id="nav-cancel-edit-contents-btn"><i class="fas fa-times"></i></button>
+					<div class="horizontal-spacer"></div>
+					<button class="pf-c-button pf-m-primary editor-btn" id="nav-continue-edit-contents-btn"><i class="fas fa-save"></i></button>
+				</div>
+			</div>
 			<div class="horizontal-spacer"></div>
 			<div class="nav-info-column" id="nav-info-column">
 				<div id="nav-show-properties">
@@ -57,17 +79,10 @@
 						<div class="nav-btn-group">
 							<button class="pf-c-button pf-m-danger" id="nav-delete-btn"><i class="fas fa-trash-alt"></i></button>
 							<div class="horizontal-spacer"></div>
-							<button class="pf-c-button pf-m-primary" id="nav-edit-properties-btn"><i class="fas fa-edit"></i></button>
+							<button class="pf-c-button pf-m-primary" id="nav-edit-properties-btn"><i class="fas fa-sliders-h"></i></button>
 						</div>
 					</div>
 					<div class="nav-info-column-properties" id="nav-info-column-properties"></div>
-					<div class="nav-toggle">
-						<label class="switch">
-							<input type="checkbox" id="toggle-theme">
-							<span class="slider round"></span>
-						</label>
-						<div class="vertical-spacer"></div>
-					</div>
 				</div>
 				<div class="nav-hidden" id="nav-edit-properties">
 					<div class="nav-info-column-filename"></div>
@@ -107,10 +122,41 @@
 					</div>
 					<div class="vertical-spacer"></div>
 					<div class="nav-btn-group">
-						<button class="pf-c-button pf-m-danger" id="nav-cancel-edit-btn">Cancel</button>
+						<button class="pf-c-button pf-m-danger" id="nav-cancel-edit-btn"><i class="fas fa-times"></i></button>
 						<div class="horizontal-spacer"></div>
-						<button class="pf-c-button pf-m-primary" id="nav-apply-edit-btn">Apply</button>
+						<button class="pf-c-button pf-m-primary" id="nav-apply-edit-btn"><i class="fas fa-save"></i></button>
 					</div>
+				</div>
+			</div>
+		</div>
+		<div class="flex-row nav-footer">
+			<div>
+				<span id="nav-num-dirs">-</span> Directories, <span id="nav-num-files">-</span> Files
+			</div>
+			<div class="spacer-stretchy"></div>
+			<a href="https://45drives.com" target="_blank">
+				<img src="branding/logo-light.svg" id="logo-45d"><span class="logo-45">45</span><span class="logo-drives">Drives</span>
+			</a>
+			<div class="spacer-stretchy"></div>
+			<div class="nav-toggle">
+				<div class="nav-btn-group">
+					<i class="fas fa-low-vision" id="nav-show-hidden-icon"></i>
+					<div class="horizontal-spacer-sm"></div>
+					<label class="switch">
+						<input type="checkbox" id="nav-show-hidden">
+						<span class="slider round"></span>
+					</label>
+				</div>
+			</div>
+			<div class="horizontal-spacer"></div>
+			<div class="nav-toggle">
+				<div class="nav-btn-group">
+					<i class="fas fa-sun" id="houston-theme-icon"></i>
+					<div class="horizontal-spacer-sm"></div>
+					<label class="switch">
+						<input type="checkbox" id="toggle-theme">
+						<span class="slider round"></span>
+					</label>
 				</div>
 			</div>
 		</div>

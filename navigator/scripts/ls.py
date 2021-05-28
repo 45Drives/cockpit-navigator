@@ -1,5 +1,22 @@
 #!/usr/bin/env python3
 
+"""
+    Cockpit Navigator - A File System Browser for Cockpit.
+    Copyright (C) 2021 Josh Boudreau <jboudreau@45drives.com>
+
+    This file is part of Cockpit Navigator.
+    Cockpit Navigator is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    Cockpit Navigator is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License
+    along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
+"""
+
 import os
 from stat import S_ISDIR, filemode
 import json
@@ -14,6 +31,16 @@ def get_stat(full_path, filename = '/'):
         isdir = S_ISDIR(os.stat(full_path).st_mode)
     except OSError:
         pass
+    owner = '?'
+    try:
+        owner = getpwuid(stats.st_uid).pw_name
+    except:
+        pass
+    group = '?'
+    try:
+        group = getgrgid(stats.st_gid).gr_name
+    except:
+        pass
     response = {
         "filename": filename,
         "isdir": isdir,
@@ -21,9 +48,9 @@ def get_stat(full_path, filename = '/'):
             "mode": stats.st_mode,
             "mode-str": filemode(stats.st_mode),
             "uid": stats.st_uid,
-            "owner": getpwuid(stats.st_uid).pw_name,
+            "owner": owner,
             "gid": stats.st_gid,
-            "group": getgrgid(stats.st_gid).gr_name,
+            "group": group,
             "size": stats.st_size,
             "atime": stats.st_atime,
             "mtime": stats.st_mtime,
