@@ -1,4 +1,4 @@
-cockpit-navigator (0.0.1-1focal) focal; urgency=medium
+cockpit-navigator (0.1.0-1focal) focal; urgency=medium
 
   * Initial packaging of cockpit-navigator for Ubuntu Focal.
 
