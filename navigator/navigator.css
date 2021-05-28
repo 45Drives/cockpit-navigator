@@ -332,6 +332,7 @@ input[type="text"] {
 	padding: 5px;
 	color: var(--font);
 	background-color: var(--textarea-bg);
+	font-family: 'Courier New', Courier, monospace;
 }
 
 .nav-footer {
