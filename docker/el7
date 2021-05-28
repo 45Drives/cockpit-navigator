@@ -1,0 +1,17 @@
+FROM centos:7
+
+LABEL description="Container in which to build el7 applications"
+
+ENV TZ=America/Glace_Bay
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN yum install -y gcc rpm-build rpm-devel rpmlint make python python3 bash coreutils diffutils patch rpmdevtools
+
+RUN mkdir -p /home/rpm/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS,tmp}
+
+RUN echo %_topdir /home/rpm/rpmbuild > /etc/rpm/macros
+RUN echo %_tmppath %{_topdir}/tmp >> /etc/rpm/macros
+
+RUN chmod -R 777 /home/rpm
+
+RUN ln -fs /usr/bin/python3 /usr/bin/python
