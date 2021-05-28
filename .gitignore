@@ -2,9 +2,9 @@
 .vscode
 
 # deb packaging
-debian/cockpit-samba-manager
-debian/cockpit-samba-manager.substvars
-debian/cockpit-samba-manager.postrm.debhelper
+debian/cockpit-navigator
+debian/cockpit-navigator.substvars
+debian/cockpit-navigator.postrm.debhelper
 debian/debhelper-build-stamp
 debian/files
 debian/.debhelper
