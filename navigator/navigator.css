@@ -22,7 +22,7 @@
 	--border: #bebebe;
 	--navigation: #fff;
 	--font: #1c1c1c;
-	--selected: #fff;
+	--selected: #f8f8f8;
 	--toggle-light: #151515;
 	--toggle-dark: #ccc;
 	--scrollbar-thumb: var(--border);
@@ -33,6 +33,7 @@
 	--logo-45: #333;
 	--nav-entry-color: #555F6E;
 	--nav-border-radius: 4px;
+	--symlink-symbol-color: var(--navigation);
 }
 
 [data-theme="dark"] {
@@ -49,6 +50,7 @@
 	--textarea-bg: var(--navigation);
 	--logo-45: #fff;
 	--nav-entry-color: #555F6E;
+	--symlink-symbol-color: var(--navigation);
 }
 
 .pf-c-button:disabled[data-theme="dark"] {
@@ -215,10 +217,27 @@ input[type="text"] {
 }
 
 .nav-item .nav-item-icon {
+	position: relative;
 	text-align: center;
 	width: 100px;
 	font-size: 80px;
 	color: var(--nav-entry-color);
+}
+
+.nav-item-symlink-symbol-dir {
+	position: absolute;
+	color: var(--symlink-symbol-color);
+	font-size: 12pt;
+	bottom: 18%;
+	right: 15%;
+}
+
+.nav-item-symlink-symbol-file {
+	position: absolute;
+	color: var(--symlink-symbol-color);
+	font-size: 12pt;
+	bottom: 8%;
+	right: 25%;
 }
 
 .nav-info-column {

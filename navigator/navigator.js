@@ -300,6 +300,58 @@ class NavFile extends NavEntry {
 	}
 }
 
+class NavFileLink extends NavFile{
+	constructor(/*string or array*/ path, /*dict*/ stat, nav_window_ref, link_target) {
+		super(path, stat, nav_window_ref);
+		var link_icon = this.dom_element.nav_item_icon.link_icon = document.createElement("i");
+		link_icon.classList.add("fas", "fa-link", "nav-item-symlink-symbol-file");
+		this.dom_element.nav_item_icon.appendChild(link_icon);
+		this.double_click = false;
+		this.link_target = link_target;
+	}
+	show_properties() {
+		var extra_properties = property_entry_html("Link Target", this.link_target);
+		super.show_properties(extra_properties);
+	}
+	get_link_target_path() {
+		var target = "";
+		if(this.link_target.charAt(0) === '/')
+			target = this.link_target;
+		else
+			target = "/" + this.parent_dir().join("/") + "/" + this.link_target;
+		return target;
+	}
+	async show_edit_file_contents() {
+		for (let button of document.getElementsByTagName("button")) {
+			if (!button.classList.contains("editor-btn"))
+				button.disabled = true;
+		}
+		document.getElementById("pwd").disabled = true;
+		var target_path = this.get_link_target_path();
+		var proc_output = await cockpit.spawn(["file", "--mime-type", target_path], {superuser: "try"});
+		var fields = proc_output.split(':');
+		var type = fields[1].trim();
+		if(!(type.match(/^text/) || type.match(/^inode\/x-empty$/) || this.stat["size"] === 0)){
+			if(!window.confirm("File is of type `" + type + "`. Are you sure you want to edit it?"))
+				return;
+		}
+		var contents = await cockpit.spawn(["cat", target_path], {superuser: "try"});
+		document.getElementById("nav-edit-contents-textarea").value = contents;
+		document.getElementById("nav-cancel-edit-contents-btn").onclick = this.hide_edit_file_contents.bind(this);
+		document.getElementById("nav-continue-edit-contents-btn").onclick = this.write_to_file.bind(this);
+		document.getElementById("nav-edit-contents-header").innerText = "Editing " + this.path_str();
+		document.getElementById("nav-contents-view").style.display = "none";
+		document.getElementById("nav-edit-contents-view").style.display = "flex";
+	}
+	async write_to_file() {
+		var target_path = this.get_link_target_path();
+		var new_contents = document.getElementById("nav-edit-contents-textarea").value;
+		await cockpit.script("echo -n \"$1\" > $2", [new_contents, target_path], {superuser: "try"});
+		this.nav_window_ref.refresh();
+		this.hide_edit_file_contents();
+	}
+}
+
 class NavDir extends NavEntry {
 	constructor(/*string or array*/ path, /*dict*/ stat, nav_window_ref) {
 		super(path, stat, nav_window_ref);
@@ -343,10 +395,20 @@ class NavDir extends NavEntry {
 			var filename = entry["filename"];
 			var path = (this.path.length >= 1 && this.path[0]) ? [...this.path, filename] : [filename];
 			var stat = entry["stat"];
-			if (entry["isdir"])
-				children.push(new NavDir(path, stat, nav_window_ref));
-			else
-				children.push(new NavFile(path, stat, nav_window_ref));
+			switch(stat["mode-str"].charAt(0)) {
+				case 'd':
+					children.push(new NavDir(path, stat, nav_window_ref));
+					break;
+				case 'l':
+					if(entry["isdir"])
+						children.push(new NavDirLink(path, stat, nav_window_ref, entry["link-target"]));
+					else
+						children.push(new NavFileLink(path, stat, nav_window_ref, entry["link-target"]));
+					break;
+				default:
+					children.push(new NavFile(path, stat, nav_window_ref));
+					break;
+			}
 		});
 		children.sort((first, second) => {
 			if (first.nav_type === second.nav_type) {
@@ -379,8 +441,7 @@ class NavDir extends NavEntry {
 			return null;
 		}
 	}
-	async show_properties() {
-		var extra_properties = "";
+	async show_properties(/*string*/ extra_properties = "") {
 		if(!this.hasOwnProperty("ceph_stats"))
 			this.ceph_stats = await this.cephfs_dir_stats();
 		// See if a JSON object exists for folder we are currently looking at
@@ -420,6 +481,31 @@ class NavDir extends NavEntry {
 				this.ceph_stats.hasOwnProperty("max_bytes") ? this.ceph_stats.max_bytes : "N/A"
 			);
 		}
+		super.show_properties(extra_properties);
+	}
+}
+
+class NavDirLink extends NavDir{
+	constructor(/*string or array*/ path, /*dict*/ stat, nav_window_ref, /*string*/ link_target) {
+		super(path, stat, nav_window_ref);
+		var link_icon = this.dom_element.nav_item_icon.link_icon = document.createElement("i");
+		link_icon.classList.add("fas", "fa-link", "nav-item-symlink-symbol-dir");
+		this.dom_element.nav_item_icon.appendChild(link_icon);
+		this.double_click = false;
+		this.link_target = link_target;
+	}
+	async rm() {
+		var proc = cockpit.spawn(
+			["rm", "-f", this.path_str()],
+			{superuser: "try", err: "out"}
+		);
+		proc.fail((e, data) => {
+			window.alert(data);
+		});
+		await proc;
+	}
+	show_properties() {
+		var extra_properties = property_entry_html("Link Target", this.link_target);
 		super.show_properties(extra_properties);
 	}
 }
