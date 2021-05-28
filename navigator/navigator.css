@@ -228,7 +228,7 @@ input[type="text"] {
 	position: absolute;
 	color: var(--symlink-symbol-color);
 	font-size: 12pt;
-	bottom: 18%;
+	bottom: 19%;
 	right: 15%;
 }
 
@@ -236,7 +236,7 @@ input[type="text"] {
 	position: absolute;
 	color: var(--symlink-symbol-color);
 	font-size: 12pt;
-	bottom: 8%;
+	bottom: 6%;
 	right: 25%;
 }
 
