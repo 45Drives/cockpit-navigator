@@ -360,7 +360,7 @@ class NavDir extends NavEntry {
 	async cephfs_dir_stats() {
 		try {
 			var proc = await cockpit.spawn(
-				["cephfs-dir-stats", "-j", this.path_str()],
+				["/usr/share/cockpit/navigator/scripts/cephfs-dir-stats.py", "-j", this.path_str()],
 				{err: "ignore"}
 			);
 			return JSON.parse(proc)[0];
