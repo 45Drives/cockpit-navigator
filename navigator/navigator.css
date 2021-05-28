@@ -31,7 +31,7 @@
 	--loading-bg-color: rgba(255, 255, 255, 0.5);
 	--textarea-bg: var(--navigation);
 	--logo-45: #333;
-	--nav-entry-color: #4f99e4;
+	--nav-entry-color: #555F6E;
 	--nav-border-radius: 4px;
 }
 
@@ -48,7 +48,7 @@
 	--loading-bg-color: rgba(33, 36, 39, 0.5);
 	--textarea-bg: var(--navigation);
 	--logo-45: #fff;
-	--nav-entry-color: var(--border);
+	--nav-entry-color: #555F6E;
 }
 
 .pf-c-button:disabled[data-theme="dark"] {
