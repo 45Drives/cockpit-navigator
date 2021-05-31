@@ -973,6 +973,8 @@ class NavWindow {
 
 	nav_bar_cd() {
 		var new_path = document.getElementById("pwd").value;
+		while (new_path.charAt(new_path.length - 1) === '/' && new_path.length > 1)
+			new_path = new_path.substr(0, new_path.length - 1);
 		this.cd(new NavDir(new_path));
 	}
 
