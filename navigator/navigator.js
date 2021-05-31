@@ -934,6 +934,29 @@ class NavWindow {
 		this.refresh();
 	}
 
+	async ln() {
+		var link_target = window.prompt("Link Target: ");
+		if (link_target === null)
+			return;
+		var link_name = window.prompt("Link Name: ");
+		if (link_name === null)
+			return;
+		if (link_name.includes("/")) {
+			window.alert("Link name can't contain `/`.");
+			return;
+		}
+		var link_path = this.pwd().path_str() + "/" + link_name;
+		var proc = cockpit.spawn(
+			["ln", "-sn", link_target, link_path],
+			{superuser: "try", err: "out"}
+		);
+		proc.fail((e, data) => {
+			window.alert(data);
+		});
+		await proc;
+		this.refresh();
+	}
+
 	/**
 	 * 
 	 * @param {Event} e 
@@ -1071,6 +1094,7 @@ function set_up_buttons() {
 	document.getElementById("nav-refresh-btn").addEventListener("click", nav_window.refresh.bind(nav_window));
 	document.getElementById("nav-mkdir-btn").addEventListener("click", nav_window.mkdir.bind(nav_window));
 	document.getElementById("nav-touch-btn").addEventListener("click", nav_window.touch.bind(nav_window));
+	document.getElementById("nav-ln-btn").addEventListener("click", nav_window.ln.bind(nav_window));
 	document.getElementById("nav-delete-btn").addEventListener("click", nav_window.delete_selected.bind(nav_window));
 	document.getElementById("nav-edit-properties-btn").addEventListener("click", nav_window.show_edit_selected.bind(nav_window));
 	document.getElementById("nav-cancel-edit-btn").addEventListener("click", nav_window.hide_edit_selected.bind(nav_window));
