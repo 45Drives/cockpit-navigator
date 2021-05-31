@@ -9,6 +9,9 @@ With no command line use needed, you can:
 * Edit file ownership and permissions,
 * Create symbolic links to files and directories.
 
+### Browsing Filesystem
 ![User Interface](doc/ui_root.png)
+### Editing Properties
 ![Edit Preferences](doc/ui_prefs.png)
+### Editing Content
 ![Edit Contents](doc/ui_editor.png)
