@@ -380,15 +380,10 @@ class NavFile extends NavEntry {
 		}
 		var contents = "";
 		try {
-			contents = await cockpit.spawn(["cat", this.path_str()], {superuser: "try"});
+			contents = await cockpit.file(this.path_str(), {superuser: "try"}).read();
 		} catch (e) {
 			this.nav_window_ref.enable_buttons();
-			var message = "";
-			if (e.message === "protocol-error")
-				message = "Error reading file.";
-			else
-				message = e.message;
-			window.alert(message);
+			window.alert(e.message);
 			return;
 		}
 		document.getElementById("nav-edit-contents-textarea").value = contents;
@@ -401,7 +396,11 @@ class NavFile extends NavEntry {
 	
 	async write_to_file() {
 		var new_contents = document.getElementById("nav-edit-contents-textarea").value;
-		await cockpit.script("echo -n \"$1\" > $2", [new_contents, this.path_str()], {superuser: "try"});
+		try {
+			await cockpit.file(this.path_str(), {superuser: "try"}).replace(new_contents); // cockpit.script("echo -n \"$1\" > $2", [new_contents, this.path_str()], {superuser: "try"});
+		} catch (e) {
+			window.alert(e.message);
+		}
 		this.nav_window_ref.refresh();
 		this.hide_edit_file_contents();
 	}
@@ -466,15 +465,10 @@ class NavFileLink extends NavFile{
 		}
 		var contents = "";
 		try {
-			contents = await cockpit.spawn(["cat", target_path], {superuser: "try"});
+			contents = await cockpit.file(this.path_str(), {superuser: "try"}).read();
 		} catch(e) {
 			this.nav_window_ref.enable_buttons();
-			var message = "";
-			if (e.message === "protocol-error")
-				message = "Error reading file.";
-			else
-				message = e.message;
-			window.alert(message);
+			window.alert(e.message);
 			return;
 		}
 		document.getElementById("nav-edit-contents-textarea").value = contents;
@@ -488,7 +482,11 @@ class NavFileLink extends NavFile{
 	async write_to_file() {
 		var target_path = this.get_link_target_path();
 		var new_contents = document.getElementById("nav-edit-contents-textarea").value;
-		await cockpit.script("echo -n \"$1\" > $2", [new_contents, target_path], {superuser: "try"});
+		try {
+			await cockpit.file(target_path, {superuser: "try"}).replace(new_contents);
+		} catch (e) {
+			window.alert(e.message);
+		}
 		this.nav_window_ref.refresh();
 		this.hide_edit_file_contents();
 	}
