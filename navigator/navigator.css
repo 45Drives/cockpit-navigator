@@ -257,10 +257,18 @@ input[type="text"] {
 	border-radius: var(--nav-border-radius);
 }
 
+.min-width-0 {
+	min-width: 0;
+}
+
 .nav-info-column-filename {
+	flex: 1;
 	margin: 0 12px 0 12px;
 	font-weight: bolder;
 	font-size: 150%;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .nav-property-pair {

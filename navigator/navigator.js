@@ -163,6 +163,7 @@ class NavEntry {
 		this.stat = stat;
 		this.dom_element.addEventListener("click", this);
 		this.is_hidden_file = this.filename().startsWith('.');
+		this.dom_element.title = this.filename();
 	}
 
 	/**
@@ -287,7 +288,8 @@ class NavEntry {
 	show_properties(extra_properties = "") {
 		var selected_name_fields = document.getElementsByClassName("nav-info-column-filename");
 		for (let elem of selected_name_fields) {
-			elem.innerText = this.filename();
+			elem.innerHTML = this.filename();
+			elem.title = this.filename();
 		}
 		var html = "";
 		html += property_entry_html("Mode", this.stat["mode-str"]);
