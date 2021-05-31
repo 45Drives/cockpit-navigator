@@ -366,19 +366,29 @@ class NavFile extends NavEntry {
 	}
 	
 	async show_edit_file_contents() {
-		for (let button of document.getElementsByTagName("button")) {
-			if (!button.classList.contains("editor-btn"))
-				button.disabled = true;
-		}
-		document.getElementById("pwd").disabled = true;
+		this.nav_window_ref.disable_buttons_for_editing();
 		var proc_output = await cockpit.spawn(["file", "--mime-type", this.path_str()], {superuser: "try"});
 		var fields = proc_output.split(':');
 		var type = fields[1].trim();
-		if(!(type.match(/^text/) || type.match(/^inode\/x-empty$/) || this.stat["size"] === 0)){
-			if(!window.confirm("File is of type `" + type + "`. Are you sure you want to edit it?"))
+		if (!(type.match(/^text/) || type.match(/^inode\/x-empty$/) || this.stat["size"] === 0)) {
+			if (!window.confirm("File is of type `" + type + "`. Are you sure you want to edit it?")) {
+				this.nav_window_ref.enable_buttons();
 				return;
+			}
 		}
-		var contents = await cockpit.spawn(["cat", this.path_str()], {superuser: "try"});
+		var contents = "";
+		try {
+			contents = await cockpit.spawn(["cat", this.path_str()], {superuser: "try"});
+		} catch (e) {
+			this.nav_window_ref.enable_buttons();
+			var message = "";
+			if (e.message === "protocol-error")
+				message = "Error reading file.";
+			else
+				message = e.message;
+			window.alert(message);
+			return;
+		}
 		document.getElementById("nav-edit-contents-textarea").value = contents;
 		document.getElementById("nav-cancel-edit-contents-btn").onclick = this.hide_edit_file_contents.bind(this);
 		document.getElementById("nav-continue-edit-contents-btn").onclick = this.write_to_file.bind(this);
@@ -397,10 +407,7 @@ class NavFile extends NavEntry {
 	hide_edit_file_contents() {
 		document.getElementById("nav-edit-contents-view").style.display = "none";
 		document.getElementById("nav-contents-view").style.display = "flex";
-		for (let button of document.getElementsByTagName("button")) {
-			button.disabled = false;
-		}
-		document.getElementById("pwd").disabled = false;
+		this.nav_window_ref.enable_buttons();
 	}
 }
 
@@ -443,20 +450,31 @@ class NavFileLink extends NavFile{
 	}
 
 	async show_edit_file_contents() {
-		for (let button of document.getElementsByTagName("button")) {
-			if (!button.classList.contains("editor-btn"))
-				button.disabled = true;
-		}
+		this.nav_window_ref.disable_buttons_for_editing();
 		document.getElementById("pwd").disabled = true;
 		var target_path = this.get_link_target_path();
 		var proc_output = await cockpit.spawn(["file", "--mime-type", target_path], {superuser: "try"});
 		var fields = proc_output.split(':');
 		var type = fields[1].trim();
-		if(!(type.match(/^text/) || type.match(/^inode\/x-empty$/) || this.stat["size"] === 0)){
-			if(!window.confirm("File is of type `" + type + "`. Are you sure you want to edit it?"))
+		if (!(type.match(/^text/) || type.match(/^inode\/x-empty$/) || this.stat["size"] === 0)) {
+			if (!window.confirm("File is of type `" + type + "`. Are you sure you want to edit it?")) {
+				this.nav_window_ref.enable_buttons();
 				return;
+			}
 		}
-		var contents = await cockpit.spawn(["cat", target_path], {superuser: "try"});
+		var contents = "";
+		try {
+			contents = await cockpit.spawn(["cat", target_path], {superuser: "try"});
+		} catch(e) {
+			this.nav_window_ref.enable_buttons();
+			var message = "";
+			if (e.message === "protocol-error")
+				message = "Error reading file.";
+			else
+				message = e.message;
+			window.alert(message);
+			return;
+		}
 		document.getElementById("nav-edit-contents-textarea").value = contents;
 		document.getElementById("nav-cancel-edit-contents-btn").onclick = this.hide_edit_file_contents.bind(this);
 		document.getElementById("nav-continue-edit-contents-btn").onclick = this.write_to_file.bind(this);
@@ -993,6 +1011,7 @@ class NavWindow {
 		}
 		this.refresh();
 	}
+
 	async get_system_users() {
 		var proc = cockpit.spawn(["getent", "passwd"], {err: "ignore", superuser: "try"});
 		var list = document.getElementById("possible-owners");
@@ -1009,6 +1028,7 @@ class NavWindow {
 			list.appendChild(option);
 		}
 	}
+
 	async get_system_groups() {
 		var proc = cockpit.spawn(["getent", "group"], {err: "ignore", superuser: "try"});
 		var list = document.getElementById("possible-groups");
@@ -1024,6 +1044,21 @@ class NavWindow {
 			option.value = groupname;
 			list.appendChild(option);
 		}
+	}
+
+	disable_buttons_for_editing() {
+		for (let button of document.getElementsByTagName("button")) {
+			if (!button.classList.contains("editor-btn"))
+				button.disabled = true;
+		}
+		document.getElementById("pwd").disabled = true;
+	}
+
+	enable_buttons() {
+		for (let button of document.getElementsByTagName("button")) {
+			button.disabled = false;
+		}
+		document.getElementById("pwd").disabled = false;
 	}
 }
 
