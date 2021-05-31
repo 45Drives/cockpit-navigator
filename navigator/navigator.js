@@ -568,14 +568,6 @@ class NavDir extends NavEntry {
 					break;
 			}
 		});
-		children.sort((first, second) => {
-			if (first.nav_type === second.nav_type) {
-				return first.filename().localeCompare(second.filename());
-			}
-			if (first.nav_type === "dir")
-				return -1;
-			return 1;
-		});
 		return children;
 	}
 
@@ -723,6 +715,14 @@ class NavWindow {
 			var entry = this.entries.pop();
 			entry.destroy();
 		}
+		files.sort((first, second) => {
+			if (first.nav_type === second.nav_type) {
+				return first.filename().localeCompare(second.filename());
+			}
+			if (first.nav_type === "dir")
+				return -1;
+			return 1;
+		});
 		files.forEach((file) => {
 			if (file.nav_type === "dir")
 				num_dirs++;
