@@ -174,7 +174,7 @@ class NavEntry {
 		switch (e.type) {
 			case "click":
 				this.show_properties();
-				this.nav_window_ref.set_selected(this);
+				this.nav_window_ref.set_selected(this, e.shiftKey, e.ctrlKey);
 				e.stopPropagation();
 				break;
 		}
@@ -695,16 +695,17 @@ class NavWindow {
 		this.path_stack = this.path_stack.map((_, index) => new NavDir([...this.path_stack.slice(0, index + 1)].filter(part => part != ''), this));
 
 		this.path_stack_index = this.path_stack.length - 1;
-		this.selected_entry = this.pwd();
+		this.selected_entries = new Set([this.pwd()]);
 		this.entries = [];
 		this.window = document.getElementById("nav-contents-view");
 		this.window.addEventListener("click", this);
+		this.last_selected_index = -1;
 	}
 
 	handleEvent(e) {
 		switch (e.type) {
 			case "click":
-				this.set_selected(this.pwd());
+				this.clear_selected();
 				this.show_selected_properties();
 				break;
 		}
@@ -732,7 +733,7 @@ class NavWindow {
 			this.entries.push(file);
 		});
 		document.getElementById("pwd").value = this.pwd().path_str();
-		this.set_selected(this.pwd());
+		this.set_selected(this.pwd(), false, false);
 		this.show_selected_properties();
 		document.getElementById("nav-num-dirs").innerText = num_dirs.toString();
 		document.getElementById("nav-num-files").innerText = num_files.toString();
@@ -775,29 +776,62 @@ class NavWindow {
 			this.cd(new NavDir(this.pwd().parent_dir()));
 	}
 	
-	show_selected_properties() {
-		this.selected_entry.show_properties();
-	}
-	
 	/**
 	 * 
 	 * @param {NavEntry} entry 
+	 * @param {Boolean} select_range 
+	 * @param {Boolean} append 
 	 */
-	set_selected(entry) {
+	set_selected(entry, select_range, append) {
 		this.hide_edit_selected();
-		this.selected_entry.dom_element.classList.remove("nav-item-selected");
-		if (this.selected_entry.nav_type === "dir") {
-			this.selected_entry.dom_element.nav_item_icon.classList.remove("fa-folder-open");
-			this.selected_entry.dom_element.nav_item_icon.classList.add("fa-folder");
+		for (let i of this.selected_entries) {
+			i.dom_element.classList.remove("nav-item-selected");
+			if (i.nav_type === "dir") {
+				i.dom_element.nav_item_icon.classList.remove("fa-folder-open");
+				i.dom_element.nav_item_icon.classList.add("fa-folder");
+			}
 		}
-		this.selected_entry = entry;
-		this.selected_entry.dom_element.classList.add("nav-item-selected");
-		if (this.selected_entry.nav_type === "dir") {
-			this.selected_entry.dom_element.nav_item_icon.classList.remove("fa-folder");
-			this.selected_entry.dom_element.nav_item_icon.classList.add("fa-folder-open");
+		var to_be_selected = [];
+		if (append && this.selected_entries.has(entry)) {
+			this.selected_entries.delete(entry);
+		} else if (select_range && this.last_selected_index !== -1) {
+			var start = this.last_selected_index;
+			var end = this.entries.indexOf(entry);
+			if (end < start)
+				[start, end] = [end, start];
+			if (end === -1)
+				return;
+			to_be_selected = this.entries.slice(start, end + 1);
+		} else {
+			if (!append)
+				this.selected_entries.clear();
+			to_be_selected = [entry];
 		}
+		for (let i of to_be_selected) {
+			this.selected_entries.add(i);
+		}
+		for (let i of this.selected_entries) {
+			i.dom_element.classList.add("nav-item-selected");
+			if (i.nav_type === "dir") {
+				i.dom_element.nav_item_icon.classList.remove("fa-folder");
+				i.dom_element.nav_item_icon.classList.add("fa-folder-open");
+			}
+		}
+		this.last_selected_index = this.entries.indexOf(entry);
 	}
 	
+	clear_selected() {
+		this.set_selected(this.pwd(), false, false);
+	}
+
+	selected_entry() {
+		return [...this.selected_entries][this.selected_entries.size - 1];
+	}
+	
+	show_selected_properties() {
+		this.selected_entry().show_properties();
+	}
+
 	show_edit_selected() {
 		var dangerous_dirs = [
 			"/",
@@ -814,18 +848,18 @@ class NavWindow {
 			"/usr/lib64",
 			"/usr/sbin",
 		];
-		if (dangerous_dirs.includes(this.selected_entry.path_str())) {
+		if (dangerous_dirs.includes(this.selected_entry().path_str())) {
 			if (
 				!window.confirm(
 					"Warning: editing `" +
-					this.selected_entry.path_str() +
+					this.selected_entry().path_str() +
 					"` can be dangerous. Are you sure?"
 				)
 			) {
 				return;
 			}
 		}
-		this.selected_entry.populate_edit_fields();
+		this.selected_entry().populate_edit_fields();
 		this.update_permissions_preview();
 		document.getElementById("nav-edit-properties").style.display = "block";
 		document.getElementById("nav-show-properties").style.display = "none";
@@ -870,15 +904,15 @@ class NavWindow {
 			new_owner !== this.selected_entry.stat["owner"] ||
 			new_group !== this.selected_entry.stat["group"]
 		) {
-			await this.selected_entry.chown(new_owner, new_group).catch(/*ignore, caught in chown*/);
+			await this.selected_entry().chown(new_owner, new_group).catch(/*ignore, caught in chown*/);
 		}
 		var new_perms = this.get_new_permissions();
 		if ((new_perms & 0o777) !== (this.selected_entry.stat["mode"] & 0o777)) {
-			await this.selected_entry.chmod(new_perms).catch(/*ignore, caught in chmod*/);
+			await this.selected_entry().chmod(new_perms).catch(/*ignore, caught in chmod*/);
 		}
 		var new_name = document.getElementById("nav-edit-filename").value;
 		if (new_name !== this.selected_entry.filename()) {
-			await this.selected_entry.mv(new_name).catch(/*ignore, caught in mv*/);
+			await this.selected_entry().mv(new_name).catch(/*ignore, caught in mv*/);
 		}
 		this.refresh();
 		this.hide_edit_selected();
@@ -892,7 +926,7 @@ class NavWindow {
 		) {
 			return;
 		}
-		await this.selected_entry.rm().catch(/*ignore, caught in rm*/);
+		await this.selected_entry().rm().catch(/*ignore, caught in rm*/);
 		this.refresh();
 	}
 
