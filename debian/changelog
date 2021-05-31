@@ -1,0 +1,5 @@
+cockpit-navigator (0.1.0-1focal) focal; urgency=medium
+
+  * Initial packaging of cockpit-navigator for Ubuntu Focal.
+
+ -- Josh Boudreau <jboudreau@45drives.com>  Fri, 28 May 2021 3:58:00 -0300

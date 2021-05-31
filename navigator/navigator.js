@@ -163,6 +163,7 @@ class NavEntry {
 		this.stat = stat;
 		this.dom_element.addEventListener("click", this);
 		this.is_hidden_file = this.filename().startsWith('.');
+		this.dom_element.title = this.filename();
 	}
 
 	/**
@@ -287,7 +288,8 @@ class NavEntry {
 	show_properties(extra_properties = "") {
 		var selected_name_fields = document.getElementsByClassName("nav-info-column-filename");
 		for (let elem of selected_name_fields) {
-			elem.innerText = this.filename();
+			elem.innerHTML = this.filename();
+			elem.title = this.filename();
 		}
 		var html = "";
 		html += property_entry_html("Mode", this.stat["mode-str"]);
@@ -366,19 +368,24 @@ class NavFile extends NavEntry {
 	}
 	
 	async show_edit_file_contents() {
-		for (let button of document.getElementsByTagName("button")) {
-			if (!button.classList.contains("editor-btn"))
-				button.disabled = true;
-		}
-		document.getElementById("pwd").disabled = true;
+		this.nav_window_ref.disable_buttons_for_editing();
 		var proc_output = await cockpit.spawn(["file", "--mime-type", this.path_str()], {superuser: "try"});
 		var fields = proc_output.split(':');
 		var type = fields[1].trim();
-		if(!(type.match(/^text/) || type.match(/^inode\/x-empty$/) || this.stat["size"] === 0)){
-			if(!window.confirm("File is of type `" + type + "`. Are you sure you want to edit it?"))
+		if (!(type.match(/^text/) || type.match(/^inode\/x-empty$/) || this.stat["size"] === 0)) {
+			if (!window.confirm("File is of type `" + type + "`. Are you sure you want to edit it?")) {
+				this.nav_window_ref.enable_buttons();
 				return;
+			}
 		}
-		var contents = await cockpit.spawn(["cat", this.path_str()], {superuser: "try"});
+		var contents = "";
+		try {
+			contents = await cockpit.file(this.path_str(), {superuser: "try"}).read();
+		} catch (e) {
+			this.nav_window_ref.enable_buttons();
+			window.alert(e.message);
+			return;
+		}
 		document.getElementById("nav-edit-contents-textarea").value = contents;
 		document.getElementById("nav-cancel-edit-contents-btn").onclick = this.hide_edit_file_contents.bind(this);
 		document.getElementById("nav-continue-edit-contents-btn").onclick = this.write_to_file.bind(this);
@@ -389,7 +396,11 @@ class NavFile extends NavEntry {
 	
 	async write_to_file() {
 		var new_contents = document.getElementById("nav-edit-contents-textarea").value;
-		await cockpit.script("echo -n \"$1\" > $2", [new_contents, this.path_str()], {superuser: "try"});
+		try {
+			await cockpit.file(this.path_str(), {superuser: "try"}).replace(new_contents); // cockpit.script("echo -n \"$1\" > $2", [new_contents, this.path_str()], {superuser: "try"});
+		} catch (e) {
+			window.alert(e.message);
+		}
 		this.nav_window_ref.refresh();
 		this.hide_edit_file_contents();
 	}
@@ -397,10 +408,7 @@ class NavFile extends NavEntry {
 	hide_edit_file_contents() {
 		document.getElementById("nav-edit-contents-view").style.display = "none";
 		document.getElementById("nav-contents-view").style.display = "flex";
-		for (let button of document.getElementsByTagName("button")) {
-			button.disabled = false;
-		}
-		document.getElementById("pwd").disabled = false;
+		this.nav_window_ref.enable_buttons();
 	}
 }
 
@@ -443,20 +451,26 @@ class NavFileLink extends NavFile{
 	}
 
 	async show_edit_file_contents() {
-		for (let button of document.getElementsByTagName("button")) {
-			if (!button.classList.contains("editor-btn"))
-				button.disabled = true;
-		}
+		this.nav_window_ref.disable_buttons_for_editing();
 		document.getElementById("pwd").disabled = true;
 		var target_path = this.get_link_target_path();
 		var proc_output = await cockpit.spawn(["file", "--mime-type", target_path], {superuser: "try"});
 		var fields = proc_output.split(':');
 		var type = fields[1].trim();
-		if(!(type.match(/^text/) || type.match(/^inode\/x-empty$/) || this.stat["size"] === 0)){
-			if(!window.confirm("File is of type `" + type + "`. Are you sure you want to edit it?"))
+		if (!(type.match(/^text/) || type.match(/^inode\/x-empty$/) || this.stat["size"] === 0)) {
+			if (!window.confirm("File is of type `" + type + "`. Are you sure you want to edit it?")) {
+				this.nav_window_ref.enable_buttons();
 				return;
+			}
 		}
-		var contents = await cockpit.spawn(["cat", target_path], {superuser: "try"});
+		var contents = "";
+		try {
+			contents = await cockpit.file(this.path_str(), {superuser: "try"}).read();
+		} catch(e) {
+			this.nav_window_ref.enable_buttons();
+			window.alert(e.message);
+			return;
+		}
 		document.getElementById("nav-edit-contents-textarea").value = contents;
 		document.getElementById("nav-cancel-edit-contents-btn").onclick = this.hide_edit_file_contents.bind(this);
 		document.getElementById("nav-continue-edit-contents-btn").onclick = this.write_to_file.bind(this);
@@ -468,7 +482,11 @@ class NavFileLink extends NavFile{
 	async write_to_file() {
 		var target_path = this.get_link_target_path();
 		var new_contents = document.getElementById("nav-edit-contents-textarea").value;
-		await cockpit.script("echo -n \"$1\" > $2", [new_contents, target_path], {superuser: "try"});
+		try {
+			await cockpit.file(target_path, {superuser: "try"}).replace(new_contents);
+		} catch (e) {
+			window.alert(e.message);
+		}
 		this.nav_window_ref.refresh();
 		this.hide_edit_file_contents();
 	}
@@ -916,6 +934,29 @@ class NavWindow {
 		this.refresh();
 	}
 
+	async ln() {
+		var link_target = window.prompt("Link Target: ");
+		if (link_target === null)
+			return;
+		var link_name = window.prompt("Link Name: ");
+		if (link_name === null)
+			return;
+		if (link_name.includes("/")) {
+			window.alert("Link name can't contain `/`.");
+			return;
+		}
+		var link_path = this.pwd().path_str() + "/" + link_name;
+		var proc = cockpit.spawn(
+			["ln", "-sn", link_target, link_path],
+			{superuser: "try", err: "out"}
+		);
+		proc.fail((e, data) => {
+			window.alert(data);
+		});
+		await proc;
+		this.refresh();
+	}
+
 	/**
 	 * 
 	 * @param {Event} e 
@@ -993,6 +1034,7 @@ class NavWindow {
 		}
 		this.refresh();
 	}
+
 	async get_system_users() {
 		var proc = cockpit.spawn(["getent", "passwd"], {err: "ignore", superuser: "try"});
 		var list = document.getElementById("possible-owners");
@@ -1009,6 +1051,7 @@ class NavWindow {
 			list.appendChild(option);
 		}
 	}
+
 	async get_system_groups() {
 		var proc = cockpit.spawn(["getent", "group"], {err: "ignore", superuser: "try"});
 		var list = document.getElementById("possible-groups");
@@ -1025,6 +1068,21 @@ class NavWindow {
 			list.appendChild(option);
 		}
 	}
+
+	disable_buttons_for_editing() {
+		for (let button of document.getElementsByTagName("button")) {
+			if (!button.classList.contains("editor-btn"))
+				button.disabled = true;
+		}
+		document.getElementById("pwd").disabled = true;
+	}
+
+	enable_buttons() {
+		for (let button of document.getElementsByTagName("button")) {
+			button.disabled = false;
+		}
+		document.getElementById("pwd").disabled = false;
+	}
 }
 
 let nav_window = new NavWindow();
@@ -1036,6 +1094,7 @@ function set_up_buttons() {
 	document.getElementById("nav-refresh-btn").addEventListener("click", nav_window.refresh.bind(nav_window));
 	document.getElementById("nav-mkdir-btn").addEventListener("click", nav_window.mkdir.bind(nav_window));
 	document.getElementById("nav-touch-btn").addEventListener("click", nav_window.touch.bind(nav_window));
+	document.getElementById("nav-ln-btn").addEventListener("click", nav_window.ln.bind(nav_window));
 	document.getElementById("nav-delete-btn").addEventListener("click", nav_window.delete_selected.bind(nav_window));
 	document.getElementById("nav-edit-properties-btn").addEventListener("click", nav_window.show_edit_selected.bind(nav_window));
 	document.getElementById("nav-cancel-edit-btn").addEventListener("click", nav_window.hide_edit_selected.bind(nav_window));

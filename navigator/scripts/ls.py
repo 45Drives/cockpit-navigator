@@ -68,8 +68,8 @@ def main():
         sys.exit(1)
     try:
         nodes = os.listdir(sys.argv[1])
-    except:
-        print("No such file or directory")
+    except Exception as e:
+        print(e)
         sys.exit(1)
     response = {
         ".": get_stat(sys.argv[1]),
