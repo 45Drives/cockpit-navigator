@@ -153,7 +153,7 @@ body::-webkit-scrollbar-thumb {
 	margin-bottom: 1em;
 }
 
-.spacer-stretchy {
+.flex-grow {
 	flex-grow: 1;
 }
 
@@ -262,7 +262,6 @@ input[type="text"] {
 }
 
 .nav-info-column-filename {
-	flex: 1;
 	margin: 0 12px 0 12px;
 	font-weight: bolder;
 	font-size: 150%;
@@ -316,6 +315,20 @@ input[type="text"] {
 	justify-self: start;
 	padding-right: 5px;
 	padding-left: 50%;
+}
+
+#selected-files-list-header {
+	margin-left: 12px;
+	font-weight: bold;
+}
+
+#selected-files-list {
+	margin-left: 12px;
+}
+
+.monospace-sm {
+	font-family: 'Courier New', Courier, monospace;
+	font-size: 80%;
 }
 
 .nav-btn-group {
