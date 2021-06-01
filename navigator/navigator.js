@@ -720,6 +720,7 @@ class NavWindow {
 
 		var num_dirs = 0;
 		var num_files = 0;
+		var bytes_sum = 0;
 		var show_hidden = document.getElementById("nav-show-hidden").checked;
 		this.start_load();
 		var files = await this.pwd().get_children(this);
@@ -738,8 +739,10 @@ class NavWindow {
 		files.forEach((file) => {
 			if (file.nav_type === "dir")
 				num_dirs++;
-			else
+			else {
 				num_files++;
+				bytes_sum += file.stat["size"];
+			}
 			if(!file.is_hidden_file || show_hidden)
 				file.show();
 			this.entries.push(file);
@@ -749,6 +752,7 @@ class NavWindow {
 		this.show_selected_properties();
 		document.getElementById("nav-num-dirs").innerText = num_dirs.toString();
 		document.getElementById("nav-num-files").innerText = num_files.toString();
+		document.getElementById("nav-num-bytes"). innerText = format_bytes(bytes_sum);
 		this.stop_load();
 	}
 
