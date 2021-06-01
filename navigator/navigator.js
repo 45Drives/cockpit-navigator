@@ -173,7 +173,6 @@ class NavEntry {
 	handleEvent(e) {
 		switch (e.type) {
 			case "click":
-				this.show_properties();
 				this.nav_window_ref.set_selected(this, e.shiftKey, e.ctrlKey);
 				e.stopPropagation();
 				break;
@@ -817,6 +816,16 @@ class NavWindow {
 				i.dom_element.nav_item_icon.classList.add("fa-folder-open");
 			}
 		}
+		if (this.selected_entries.size > 1){
+			var name_fields = document.getElementsByClassName("nav-info-column-filename");
+			for (let name_field of name_fields) {
+				name_field.innerText = this.selected_entries.size.toString() + " selected"
+				name_field.title = name_field.innerText;
+			}
+			document.getElementById("nav-info-column-properties").innerHTML = "";
+		} else {
+			this.show_selected_properties();
+		}
 		this.last_selected_index = this.entries.indexOf(entry);
 	}
 	
@@ -848,18 +857,46 @@ class NavWindow {
 			"/usr/lib64",
 			"/usr/sbin",
 		];
-		if (dangerous_dirs.includes(this.selected_entry().path_str())) {
-			if (
-				!window.confirm(
-					"Warning: editing `" +
-					this.selected_entry().path_str() +
-					"` can be dangerous. Are you sure?"
-				)
-			) {
+		var dangerous_selected = [];
+		for (let i of this.selected_entries) {
+			var path = i.path_str();
+			if (dangerous_dirs.includes(path)) {
+				dangerous_selected.push(path);
+			}
+		}
+		if (dangerous_selected.length > 0) {
+			var last = dangerous_selected.pop();
+			var dangerous_selected_str = dangerous_selected.join(", ");
+			dangerous_selected_str += ", and " + last;
+			if (!window.confirm(
+				"Warning: editing " +
+				dangerous_selected_str +
+				" can be dangerous. Are you sure?"
+			)) {
+				return;
+			}
+		} else if (this.selected_entries.size > 1) {
+			if (!window.confirm(
+				"Warning: are you sure you want to edit permissions for " +
+				this.selected_entries.size +
+				" files?"
+			)) {
 				return;
 			}
 		}
-		this.selected_entry().populate_edit_fields();
+		if (this.selected_entries.size === 1) {
+			this.selected_entry().populate_edit_fields();
+		} else {
+			for (let field of ["owner", "group"]) {
+				document.getElementById("nav-edit-" + field).value = "";
+			}
+			var filename = document.getElementById("nav-edit-filename");
+			filename.value = "N/A";
+			filename.disabled = true;
+			for (let checkbox of document.getElementsByClassName("mode-checkbox")) {
+				checkbox.checked = false;
+			}
+		}
 		this.update_permissions_preview();
 		document.getElementById("nav-edit-properties").style.display = "block";
 		document.getElementById("nav-show-properties").style.display = "none";
