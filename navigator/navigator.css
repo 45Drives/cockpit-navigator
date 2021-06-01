@@ -127,6 +127,15 @@ body::-webkit-scrollbar-thumb {
 	border: 3px solid var(--scrollbar-bg);
 }
 
+.no-select {
+	-webkit-touch-callout: none; /* iOS Safari */
+	-webkit-user-select: none; /* Safari */
+	-khtml-user-select: none; /* Konqueror HTML */
+	-moz-user-select: none; /* Old versions of Firefox */
+	-ms-user-select: none; /* Internet Explorer/Edge */
+	user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+}
+
 .flex-row {
 	display: flex;
 	flex-direction: row;
@@ -153,7 +162,7 @@ body::-webkit-scrollbar-thumb {
 	margin-bottom: 1em;
 }
 
-.spacer-stretchy {
+.flex-grow {
 	flex-grow: 1;
 }
 
@@ -262,7 +271,6 @@ input[type="text"] {
 }
 
 .nav-info-column-filename {
-	flex: 1;
 	margin: 0 12px 0 12px;
 	font-weight: bolder;
 	font-size: 150%;
@@ -316,6 +324,20 @@ input[type="text"] {
 	justify-self: start;
 	padding-right: 5px;
 	padding-left: 50%;
+}
+
+#selected-files-list-header {
+	margin-left: 12px;
+	font-weight: bold;
+}
+
+#selected-files-list {
+	margin-left: 12px;
+}
+
+.monospace-sm {
+	font-family: 'Courier New', Courier, monospace;
+	font-size: 80%;
 }
 
 .nav-btn-group {
@@ -446,4 +468,20 @@ input:checked + .slider:before {
 	font-size: 60%;
 	top: -10%;
 	left: -30%;
+}
+
+.nav-context-menu {
+	position: absolute;
+	background-color: var(--container);
+	border: 1px solid var(--border);
+	color: var(--font);
+}
+
+.nav-context-menu-item {
+	padding: 0 12px 0 12px;
+	cursor: pointer;
+}
+
+.nav-context-menu-item:hover {
+	background-color: var(--border);
 }

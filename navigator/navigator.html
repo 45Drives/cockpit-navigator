@@ -77,8 +77,8 @@
 				</div>
 			</div>
 			<div class="horizontal-spacer"></div>
-			<div class="nav-info-column min-width-0" id="nav-info-column">
-				<div id="nav-show-properties">
+			<div class="nav-info-column min-width-0 flex-col" id="nav-info-column">
+				<div class="flex-col flex-grow" id="nav-show-properties">
 					<div class="flex-row space-between">
 						<div class="nav-info-column-filename"></div>
 						<div class="nav-btn-group">
@@ -89,7 +89,7 @@
 					</div>
 					<div class="nav-info-column-properties" id="nav-info-column-properties"></div>
 				</div>
-				<div class="nav-hidden" id="nav-edit-properties">
+				<div class="nav-hidden flex-col flex-grow" id="nav-edit-properties">
 					<div class="nav-info-column-filename"></div>
 					<div class="nav-property-pair">
 						<span class="nav-property-pair-key">Name</span>
@@ -134,6 +134,9 @@
 						<input type="checkbox" class="mode-checkbox" id="other-exec"></input>
 					</div>
 					<div class="vertical-spacer"></div>
+					<div id="selected-files-list-header"></div>
+					<div class="flex-grow monospace-sm" id="selected-files-list"></div>
+					<div class="vertical-spacer"></div>
 					<div class="nav-btn-group">
 						<button class="pf-c-button pf-m-danger" id="nav-cancel-edit-btn" title="Cancel"><i class="fas fa-times"></i></button>
 						<div class="horizontal-spacer"></div>
@@ -144,13 +147,13 @@
 		</div>
 		<div class="flex-row nav-footer">
 			<div>
-				<span id="nav-num-dirs">-</span> Directories, <span id="nav-num-files">-</span> Files
+				<span id="nav-num-dirs">-</span> Directories, <span id="nav-num-files">-</span> Files (<span id="nav-num-bytes">-</span>)
 			</div>
-			<div class="spacer-stretchy"></div>
+			<div class="flex-grow"></div>
 			<a href="https://45drives.com" target="_blank" title="Visit 45Drives.com">
 				<img src="branding/logo-light.svg" id="logo-45d"><span class="logo-45">45</span><span class="logo-drives">Drives</span>
 			</a>
-			<div class="spacer-stretchy"></div>
+			<div class="flex-grow"></div>
 			<div class="nav-toggle">
 				<div class="nav-btn-group">
 					<i class="fas fa-low-vision" id="nav-show-hidden-icon"></i>
@@ -175,4 +178,6 @@
 		</div>
 	</div>
 </body>
+<div class="nav-context-menu flex-col" id="nav-context-menu" hidden>
+</div>
 </html>

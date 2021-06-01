@@ -1,5 +1,5 @@
 Name:           cockpit-navigator
-Version:        0.1.0
+Version:        0.2.0
 Release:        1%{?dist}
 Summary:        A File System Browser for Cockpit.
 License:        GPL-3.0+
@@ -32,5 +32,10 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Tue Jun 01 2021 Josh Boudreau <jboudreau@45drives.com> 0.2.0-1
+- Allow for batch editing permissions and deletion by
+  holding shift or control while clicking to select multiple
+  entries.
+- Add custom right click menu.
 * Fri May 28 2021 Josh Boudreau <jboudreau@45drives.com> 0.1.0-1
 - First Build
