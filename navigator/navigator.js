@@ -255,8 +255,21 @@ class NavEntry {
 	 * @param {string} new_group 
 	 */
 	async chown(new_owner, new_group) {
+		if (!new_owner && !new_group)
+			return;
+		var cmd = "";
+		var arg = "";
+		if (new_group && !new_owner) {
+			cmd = "chgrp";
+			arg = new_group;
+		} else {
+			cmd = "chown";
+			arg = new_owner;
+			if (new_group)
+				arg += ":" + new_group;
+		}
 		var proc = cockpit.spawn(
-			["chown", [new_owner, new_group].join(":"), this.path_str()],
+			[cmd, arg, this.path_str()],
 			{superuser: "try", err: "out"}
 		);
 		proc.fail((e, data) => {
@@ -865,9 +878,16 @@ class NavWindow {
 			}
 		}
 		if (dangerous_selected.length > 0) {
-			var last = dangerous_selected.pop();
-			var dangerous_selected_str = dangerous_selected.join(", ");
-			dangerous_selected_str += ", and " + last;
+			var dangerous_selected_str = "";
+			if (dangerous_selected.length > 2) {
+				var last = dangerous_selected.pop();
+				dangerous_selected_str = dangerous_selected.join(", ");
+				dangerous_selected_str += ", and " + last;
+			} else if (dangerous_selected.length === 2) {
+				dangerous_selected_str = dangerous_selected.join(" and ");
+			} else {
+				dangerous_selected_str = dangerous_selected[0];
+			}
 			if (!window.confirm(
 				"Warning: editing " +
 				dangerous_selected_str +
@@ -886,6 +906,9 @@ class NavWindow {
 		}
 		if (this.selected_entries.size === 1) {
 			this.selected_entry().populate_edit_fields();
+			document.getElementById("selected-files-list-header").innerText = "";
+			document.getElementById("selected-files-list").innerText = "";
+			document.getElementById("nav-edit-filename").disabled = false;
 		} else {
 			for (let field of ["owner", "group"]) {
 				document.getElementById("nav-edit-" + field).value = "";
@@ -896,14 +919,21 @@ class NavWindow {
 			for (let checkbox of document.getElementsByClassName("mode-checkbox")) {
 				checkbox.checked = false;
 			}
+			var targets = [];
+			for (let target of this.selected_entries) {
+				targets.push(target.filename());
+			}
+			var targets_str = targets.join(", ");
+			document.getElementById("selected-files-list-header").innerText = "Applying edits to:";
+			document.getElementById("selected-files-list").innerText = targets_str;
 		}
 		this.update_permissions_preview();
-		document.getElementById("nav-edit-properties").style.display = "block";
+		document.getElementById("nav-edit-properties").style.display = "flex";
 		document.getElementById("nav-show-properties").style.display = "none";
 	}
 	
 	hide_edit_selected() {
-		document.getElementById("nav-show-properties").style.display = "block";
+		document.getElementById("nav-show-properties").style.display = "flex";
 		document.getElementById("nav-edit-properties").style.display = "none";
 	}
 	
@@ -937,33 +967,42 @@ class NavWindow {
 		// do mv last so the rest don't fail from not finding path
 		var new_owner = document.getElementById("nav-edit-owner").value;
 		var new_group = document.getElementById("nav-edit-group").value;
-		if (
-			new_owner !== this.selected_entry.stat["owner"] ||
-			new_group !== this.selected_entry.stat["group"]
-		) {
-			await this.selected_entry().chown(new_owner, new_group).catch(/*ignore, caught in chown*/);
-		}
 		var new_perms = this.get_new_permissions();
-		if ((new_perms & 0o777) !== (this.selected_entry.stat["mode"] & 0o777)) {
-			await this.selected_entry().chmod(new_perms).catch(/*ignore, caught in chmod*/);
+
+		for (let entry of this.selected_entries) {
+			if (
+				new_owner !== entry.stat["owner"] ||
+				new_group !== entry.stat["group"]
+			) {
+				await entry.chown(new_owner, new_group).catch(/*ignore, caught in chown*/);
+			}
+			if ((new_perms & 0o777) !== (entry.stat["mode"] & 0o777)) {
+				await entry.chmod(new_perms).catch(/*ignore, caught in chmod*/);
+			}
 		}
-		var new_name = document.getElementById("nav-edit-filename").value;
-		if (new_name !== this.selected_entry.filename()) {
-			await this.selected_entry().mv(new_name).catch(/*ignore, caught in mv*/);
+		if (this.selected_entries.size === 1) {
+			var new_name = document.getElementById("nav-edit-filename").value;
+			if (new_name !== this.selected_entry().filename()) {
+				await this.selected_entry().mv(new_name).catch(/*ignore, caught in mv*/);
+			}
 		}
 		this.refresh();
 		this.hide_edit_selected();
 	}
 
 	async delete_selected() {
-		if (
-			!window.confirm(
-				"Deleting `" + this.selected_entry.path_str() + "` cannot be undone. Are you sure?"
-			)
-		) {
+		var prompt = "";
+		if (this.selected_entries.size > 1) {
+			prompt = "Deleting " + this.selected_entries.size + " files. This cannot be undone. Are you sure?";
+		} else {
+			prompt = "Deleting `" + this.selected_entry().path_str() + "` cannot be undone. Are you sure?";
+		}
+		if (!window.confirm(prompt)) {
 			return;
 		}
-		await this.selected_entry().rm().catch(/*ignore, caught in rm*/);
+		for (let target of this.selected_entries) {
+			await target.rm().catch(/*ignore, caught in rm*/);
+		}
 		this.refresh();
 	}
 
