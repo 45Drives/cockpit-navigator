@@ -3,6 +3,7 @@ cockpit-navigator (0.2.0-1focal) focal; urgency=medium
   * Allow for batch editing permissions and deletion by
     holding shift or control while clicking to select multiple
     entries.
+  * Add custom right click menu.
 
  -- Josh Boudreau <jboudreau@45drives.com>  Tue, 01 Jun 2021 13:46:00 -0300
 

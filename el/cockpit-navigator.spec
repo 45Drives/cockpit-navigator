@@ -36,5 +36,6 @@ rm -rf %{buildroot}
 - Allow for batch editing permissions and deletion by
   holding shift or control while clicking to select multiple
   entries.
+- Add custom right click menu.
 * Fri May 28 2021 Josh Boudreau <jboudreau@45drives.com> 0.1.0-1
 - First Build
