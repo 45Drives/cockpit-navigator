@@ -156,7 +156,7 @@ class NavEntry {
 		let icon = this.dom_element.nav_item_icon = document.createElement("i");
 		icon.classList.add("nav-item-icon");
 		let title = this.dom_element.nav_item_title = document.createElement("div");
-		title.classList.add("nav-item-title");
+		title.classList.add("nav-item-title", "no-select");
 		title.innerText = this.filename();
 		this.dom_element.appendChild(icon);
 		this.dom_element.appendChild(title);
