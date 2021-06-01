@@ -1,5 +1,14 @@
+cockpit-navigator (0.2.0-1focal) focal; urgency=medium
+
+  * Allow for batch editing permissions and deletion by
+    holding shift or control while clicking to select multiple
+    entries.
+
+ -- Josh Boudreau <jboudreau@45drives.com>  Tue, 01 Jun 2021 13:46:00 -0300
+
+
 cockpit-navigator (0.1.0-1focal) focal; urgency=medium
 
   * Initial packaging of cockpit-navigator for Ubuntu Focal.
 
- -- Josh Boudreau <jboudreau@45drives.com>  Fri, 28 May 2021 3:58:00 -0300
+ -- Josh Boudreau <jboudreau@45drives.com>  Fri, 28 May 2021 15:58:00 -0300
