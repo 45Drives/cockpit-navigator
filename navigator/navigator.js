@@ -162,6 +162,7 @@ class NavEntry {
 		this.dom_element.appendChild(title);
 		this.stat = stat;
 		this.dom_element.addEventListener("click", this);
+		this.dom_element.addEventListener("contextmenu", this);
 		this.is_hidden_file = this.filename().startsWith('.');
 		this.dom_element.title = this.filename();
 	}
@@ -174,6 +175,12 @@ class NavEntry {
 		switch (e.type) {
 			case "click":
 				this.nav_window_ref.set_selected(this, e.shiftKey, e.ctrlKey);
+				this.context_menu_ref.hide();
+				e.stopPropagation();
+				break;
+			case "contextmenu":
+				this.context_menu_ref.show(e, this);
+				e.preventDefault();
 				e.stopPropagation();
 				break;
 		}
@@ -693,6 +700,108 @@ class NavDirLink extends NavDir{
 	}
 }
 
+class NavContextMenu {
+	/**
+	 * 
+	 * @param {string} id 
+	 */
+	constructor(id, nav_window_ref) {
+		this.dom_element = document.getElementById(id);
+		this.nav_window_ref = nav_window_ref;
+		this.menu_options = {};
+		window.addEventListener("click", (event) => {
+			if (event.target !== this.dom_element)
+				this.hide();
+		});
+		
+		var functions = ["paste", "new_dir", "new_file", "new_link", "properties", "copy", "move", "delete"];
+		for (let func of functions) {
+			var elem = document.createElement("div");
+			var name_list = func.split("_");
+			name_list.forEach((word, index) => {name_list[index] = word.charAt(0).toUpperCase() + word.slice(1)});
+			elem.innerText = name_list.join(" ");
+			elem.addEventListener("click", (e) => {this[func].bind(this).apply()});
+			elem.classList.add("nav-context-menu-item")
+			elem.id = "nav-context-menu-" + func;
+			this.dom_element.appendChild(elem);
+			this.menu_options[func] = elem;
+		}
+		this.menu_options["paste"].hidden = true;
+	}
+
+	paste() {
+		this.nav_window_ref.paste_clipboard();
+		this.hide_paste();
+	}
+
+	new_dir() {
+		this.nav_window_ref.mkdir();
+	}
+
+	new_file() {
+		this.nav_window_ref.touch();
+	}
+
+	new_link() {
+		this.nav_window_ref.ln();
+	}
+
+	properties() {
+		this.nav_window_ref.show_edit_selected();
+		this.hide();
+	}
+
+	copy() {
+		this.nav_window_ref.clip_board = [...this.nav_window_ref.selected_entries];
+		this.menu_options["paste"].hidden = false;
+		this.nav_window_ref.copy_or_move = "copy";
+	}
+
+	move() {
+		this.nav_window_ref.clip_board = [...this.nav_window_ref.selected_entries];
+		this.menu_options["paste"].hidden = false;
+		this.nav_window_ref.copy_or_move = "move";
+	}
+
+	delete() {
+		this.nav_window_ref.delete_selected();
+	}
+
+	/**
+	 * 
+	 * @param {Event} event 
+	 * @param {NavEntry} target 
+	 */
+	show(event, target) {
+		if (this.nav_window_ref.selected_entries.size > 1) {
+			if (event.shiftKey || event.ctrlKey)
+				this.nav_window_ref.set_selected(target, event.shiftKey, event.ctrlKey);
+		} else {
+			this.nav_window_ref.set_selected(target, false, false);
+		}
+		if (target === this.nav_window_ref.pwd()) {
+			this.menu_options["copy"].hidden = true;
+			this.menu_options["move"].hidden = true;
+			this.menu_options["delete"].hidden = true;
+		} else {
+			this.menu_options["copy"].hidden = false;
+			this.menu_options["move"].hidden = false;
+			this.menu_options["delete"].hidden = false;
+		}
+		this.dom_element.hidden = false;
+		this.dom_element.style.left = event.clientX + "px";
+		this.dom_element.style.top = event.clientY + "px";
+	}
+
+	hide() {
+		this.dom_element.hidden = true;
+	}
+
+	hide_paste() {
+		this.menu_options["paste"].hidden = true;
+	}
+}
+
 class NavWindow {
 	constructor() {
 		this.path_stack = (localStorage.getItem('navigator-path') ?? '/').split('/');
@@ -703,14 +812,27 @@ class NavWindow {
 		this.entries = [];
 		this.window = document.getElementById("nav-contents-view");
 		this.window.addEventListener("click", this);
+		this.window.addEventListener("contextmenu", this);
 		this.last_selected_index = -1;
+
+		this.context_menu = new NavContextMenu("nav-context-menu", this);
+
+		this.clip_board = [];
 	}
 
+	/**
+	 * 
+	 * @param {Event} e 
+	 */
 	handleEvent(e) {
 		switch (e.type) {
 			case "click":
 				this.clear_selected();
 				this.show_selected_properties();
+				break;
+			case "contextmenu":
+				this.context_menu.show(e, this.pwd());
+				e.preventDefault();
 				break;
 		}
 	}
@@ -746,6 +868,7 @@ class NavWindow {
 			if(!file.is_hidden_file || show_hidden)
 				file.show();
 			this.entries.push(file);
+			file.context_menu_ref = this.context_menu;
 		});
 		document.getElementById("pwd").value = this.pwd().path_str();
 		this.set_selected(this.pwd(), false, false);
@@ -1067,6 +1190,36 @@ class NavWindow {
 		proc.fail((e, data) => {
 			window.alert(data);
 		});
+		await proc;
+		this.refresh();
+	}
+
+	async paste_clipboard() {
+		this.context_menu.hide_paste();
+		var cmd = [];
+		var dest = this.pwd().path_str();
+		switch (this.copy_or_move) {
+			case "copy":
+				cmd = ["cp", "-an"];
+				break;
+			case "move":
+				cmd = ["mv", "-n"];
+				break;
+			default:
+				return;
+		}
+		for (let item of this.clip_board) {
+			cmd.push(item.path_str());
+		}
+		cmd.push(dest);
+		console.log(cmd);
+		var proc = cockpit.spawn(
+			cmd,
+			{superuser: "try", err: "out"}
+		);
+		proc.fail((e, data) => {
+			window.alert(data);
+		})
 		await proc;
 		this.refresh();
 	}

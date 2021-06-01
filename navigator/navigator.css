@@ -469,3 +469,19 @@ input:checked + .slider:before {
 	top: -10%;
 	left: -30%;
 }
+
+.nav-context-menu {
+	position: absolute;
+	background-color: var(--container);
+	border: 1px solid var(--border);
+	color: var(--font);
+}
+
+.nav-context-menu-item {
+	padding: 0 12px 0 12px;
+	cursor: pointer;
+}
+
+.nav-context-menu-item:hover {
+	background-color: var(--border);
+}
