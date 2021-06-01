@@ -1055,6 +1055,7 @@ class NavWindow {
 			document.getElementById("selected-files-list").innerText = targets_str;
 		}
 		this.update_permissions_preview();
+		this.changed_mode = false;
 		document.getElementById("nav-edit-properties").style.display = "flex";
 		document.getElementById("nav-show-properties").style.display = "none";
 	}
@@ -1088,6 +1089,7 @@ class NavWindow {
 		var text = format_permissions(new_perms);
 		text += " (" + (new_perms & 0o777).toString(8) + ")";
 		document.getElementById("nav-mode-preview").innerText = text;
+		this.changed_mode = true;
 	}
 
 	async apply_edit_selected() {
@@ -1103,7 +1105,7 @@ class NavWindow {
 			) {
 				await entry.chown(new_owner, new_group).catch(/*ignore, caught in chown*/);
 			}
-			if ((new_perms & 0o777) !== (entry.stat["mode"] & 0o777)) {
+			if (this.changed_mode && (new_perms & 0o777) !== (entry.stat["mode"] & 0o777)) {
 				await entry.chmod(new_perms).catch(/*ignore, caught in chmod*/);
 			}
 		}
