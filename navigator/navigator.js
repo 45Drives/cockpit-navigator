@@ -323,7 +323,7 @@ class NavEntry {
 	}
 	
 	populate_edit_fields() {
-		document.getElementById("nav-edit-filename").value = this.filename();
+		document.getElementById("nav-edit-filename").innerText = this.filename();
 		var mode_bits = [
 			"other-exec", "other-write", "other-read",
 			"group-exec", "group-write", "group-read",
@@ -726,7 +726,7 @@ class NavContextMenu {
 				this.hide();
 		});
 		
-		var functions = ["paste", "new_dir", "new_file", "new_link", "properties", "copy", "cut", "delete"];
+		var functions = ["new_dir", "new_file", "new_link", "cut", "copy", "paste", "rename", "delete", "properties"];
 		for (let func of functions) {
 			var elem = document.createElement("div");
 			var name_list = func.split("_");
@@ -741,11 +741,6 @@ class NavContextMenu {
 		this.menu_options["paste"].hidden = true;
 	}
 
-	paste() {
-		this.nav_window_ref.paste_clipboard();
-		this.hide_paste();
-	}
-
 	new_dir() {
 		this.nav_window_ref.mkdir();
 	}
@@ -758,9 +753,11 @@ class NavContextMenu {
 		this.nav_window_ref.ln();
 	}
 
-	properties() {
-		this.nav_window_ref.show_edit_selected();
-		this.hide();
+	cut() {
+		this.nav_window_ref.clip_board = [...this.nav_window_ref.selected_entries];
+		this.nav_window_ref.copy_or_move = "move";
+		this.nav_window_ref.paste_cwd = this.nav_window_ref.pwd().path_str();
+		this.menu_options["paste"].hidden = false;
 	}
 
 	copy() {
@@ -770,15 +767,30 @@ class NavContextMenu {
 		this.menu_options["paste"].hidden = false;
 	}
 
-	cut() {
-		this.nav_window_ref.clip_board = [...this.nav_window_ref.selected_entries];
-		this.nav_window_ref.copy_or_move = "move";
-		this.nav_window_ref.paste_cwd = this.nav_window_ref.pwd().path_str();
-		this.menu_options["paste"].hidden = false;
+	paste() {
+		this.nav_window_ref.paste_clipboard();
+		this.hide_paste();
+	}
+
+	rename() {
+		this.hide();
+		var new_name = window.prompt("New Name: ");
+		if (new_name === null)
+			return;
+		if (new_name.includes("/")) {
+			window.alert("File name can't contain `/`.");
+			return;
+		}
+		this.target.mv(new_name);
+		this.nav_window_ref.refresh();
 	}
 
 	delete() {
 		this.nav_window_ref.delete_selected();
+	}
+
+	properties() {
+		this.nav_window_ref.show_edit_selected();
 	}
 
 	/**
@@ -795,13 +807,14 @@ class NavContextMenu {
 		}
 		if (target === this.nav_window_ref.pwd()) {
 			this.menu_options["copy"].hidden = true;
-			this.menu_options["move"].hidden = true;
+			this.menu_options["cut"].hidden = true;
 			this.menu_options["delete"].hidden = true;
 		} else {
 			this.menu_options["copy"].hidden = false;
-			this.menu_options["move"].hidden = false;
+			this.menu_options["cut"].hidden = false;
 			this.menu_options["delete"].hidden = false;
 		}
+		this.target = target;
 		this.dom_element.hidden = false;
 		this.dom_element.style.left = event.clientX + "px";
 		this.dom_element.style.top = event.clientY + "px";
@@ -1049,7 +1062,6 @@ class NavWindow {
 			this.selected_entry().populate_edit_fields();
 			document.getElementById("selected-files-list-header").innerText = "";
 			document.getElementById("selected-files-list").innerText = "";
-			document.getElementById("nav-edit-filename").disabled = false;
 		} else {
 			for (let field of ["owner", "group"]) {
 				document.getElementById("nav-edit-" + field).value = "";
@@ -1070,6 +1082,7 @@ class NavWindow {
 		}
 		this.update_permissions_preview();
 		this.changed_mode = false;
+		document.getElementById("nav-mode-preview").innerText = "unchanged";
 		document.getElementById("nav-edit-properties").style.display = "flex";
 		document.getElementById("nav-show-properties").style.display = "none";
 	}
@@ -1107,7 +1120,6 @@ class NavWindow {
 	}
 
 	async apply_edit_selected() {
-		// do mv last so the rest don't fail from not finding path
 		var new_owner = document.getElementById("nav-edit-owner").value;
 		var new_group = document.getElementById("nav-edit-group").value;
 		var new_perms = this.get_new_permissions();
@@ -1121,12 +1133,6 @@ class NavWindow {
 			}
 			if (this.changed_mode && (new_perms & 0o777) !== (entry.stat["mode"] & 0o777)) {
 				await entry.chmod(new_perms).catch(/*ignore, caught in chmod*/);
-			}
-		}
-		if (this.selected_entries.size === 1) {
-			var new_name = document.getElementById("nav-edit-filename").value;
-			if (new_name !== this.selected_entry().filename()) {
-				await this.selected_entry().mv(new_name).catch(/*ignore, caught in mv*/);
 			}
 		}
 		this.refresh();
@@ -1177,7 +1183,7 @@ class NavWindow {
 			return;
 		}
 		var proc = cockpit.spawn(
-			["touch", this.pwd().path_str() + "/" + new_file_name],
+			["/usr/share/cockpit/navigator/scripts/touch.py", this.pwd().path_str() + "/" + new_file_name],
 			{superuser: "try", err: "out"}
 		);
 		proc.fail((e, data) => {
