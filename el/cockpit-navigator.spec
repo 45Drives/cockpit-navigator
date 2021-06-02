@@ -6,7 +6,7 @@ License:        GPL-3.0+
 URL:            github.com/45drives/cockpit-navigator/blob/main/README.md
 Source0:        %{name}-%{version}.tar.gz
 BuildArch:      noarch
-Requires:       cockpit python3
+Requires:       cockpit python3 rsync
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 

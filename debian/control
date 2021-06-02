@@ -9,5 +9,5 @@ Homepage: https://github.com/45Drives/cockpit-navigator
 Package: cockpit-navigator
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends},
-        cockpit, python3
+        cockpit, python3, rsync
 Description: A File System Browser for Cockpit.
