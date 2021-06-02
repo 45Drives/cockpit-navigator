@@ -753,14 +753,16 @@ class NavContextMenu {
 
 	copy() {
 		this.nav_window_ref.clip_board = [...this.nav_window_ref.selected_entries];
-		this.menu_options["paste"].hidden = false;
 		this.nav_window_ref.copy_or_move = "copy";
+		this.nav_window_ref.paste_cwd = this.nav_window_ref.pwd().path_str();
+		this.menu_options["paste"].hidden = false;
 	}
 
 	move() {
 		this.nav_window_ref.clip_board = [...this.nav_window_ref.selected_entries];
-		this.menu_options["paste"].hidden = false;
 		this.nav_window_ref.copy_or_move = "move";
+		this.nav_window_ref.paste_cwd = this.nav_window_ref.pwd().path_str();
+		this.menu_options["paste"].hidden = false;
 	}
 
 	delete() {
@@ -1197,32 +1199,36 @@ class NavWindow {
 	}
 
 	async paste_clipboard() {
+		this.start_load();
 		this.context_menu.hide_paste();
-		var cmd = [];
+		var cmd = ["/usr/share/cockpit/navigator/scripts/paste.py"];
 		var dest = this.pwd().path_str();
-		switch (this.copy_or_move) {
-			case "copy":
-				cmd = ["cp", "-an"];
-				break;
-			case "move":
-				cmd = ["mv", "-n"];
-				break;
-			default:
-				return;
+		if (this.copy_or_move === "move") {
+			cmd.push("-m");
 		}
+		cmd.push(this.paste_cwd);
 		for (let item of this.clip_board) {
 			cmd.push(item.path_str());
 		}
 		cmd.push(dest);
-		console.log(cmd);
 		var proc = cockpit.spawn(
 			cmd,
-			{superuser: "try", err: "out"}
+			{superuser: "try", err: "ignore"}
 		);
+		proc.stream((data) => {
+			var payload = JSON.parse(data);
+			if (payload["wants-response"]) {
+				var user_response = window.confirm(payload["message"]);
+				proc.input(JSON.stringify(user_response) + "\n", true);
+			} else {
+				window.alert(payload["message"]);
+			}
+		});
 		proc.fail((e, data) => {
-			window.alert(data);
-		})
+			window.alert("Paste failed.");
+		});
 		await proc;
+		this.stop_load();
 		this.refresh();
 	}
 
