@@ -1,5 +1,5 @@
 Name:           cockpit-navigator
-Version:        0.2.2
+Version:        0.2.3
 Release:        1%{?dist}
 Summary:        A File System Browser for Cockpit.
 License:        GPL-3.0+
@@ -32,6 +32,10 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Wed Jun 02 2021 Josh Boudreau <jboudreau@45drives.com> 0.2.3-1
+- Fix closing contextmenu in el7.
+- Hide rename in right click menu with multiple selected entries.
+- Populate default link target to selected item from right click menu.
 * Wed Jun 02 2021 Josh Boudreau <jboudreau@45drives.com> 0.2.2-1
 - Set default value in rename prompt to current filename.
 * Wed Jun 02 2021 Josh Boudreau <jboudreau@45drives.com> 0.2.1-1

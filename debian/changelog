@@ -1,3 +1,11 @@
+cockpit-navigator (0.2.3-1focal) focal; urgency=medium
+
+  * Fix closing contextmenu in el7.
+  * Hide rename in right click menu with multiple selected entries.
+  * Populate default link target to selected item from right click menu.
+
+ -- Josh Boudreau <jboudreau@45drives.com>  Wed, 02 Jun 2021 13:57:00 -0300
+
 cockpit-navigator (0.2.2-1focal) focal; urgency=low
 
   * Set default value in rename prompt to current filename.
