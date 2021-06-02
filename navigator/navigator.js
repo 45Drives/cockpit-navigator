@@ -721,7 +721,7 @@ class NavContextMenu {
 		this.dom_element = document.getElementById(id);
 		this.nav_window_ref = nav_window_ref;
 		this.menu_options = {};
-		window.addEventListener("click", (event) => {
+		document.documentElement.addEventListener("click", (event) => {
 			if (event.target !== this.dom_element)
 				this.hide();
 		});
@@ -738,7 +738,7 @@ class NavContextMenu {
 			this.dom_element.appendChild(elem);
 			this.menu_options[func] = elem;
 		}
-		this.menu_options["paste"].hidden = true;
+		this.menu_options["paste"].style.display = "none";
 	}
 
 	new_dir() {
@@ -750,7 +750,10 @@ class NavContextMenu {
 	}
 
 	new_link() {
-		this.nav_window_ref.ln();
+		var default_target = "";
+		if (this.nav_window_ref.selected_entries.size <= 1 && this.target !== this.nav_window_ref.pwd())
+			default_target = this.target.filename();
+		this.nav_window_ref.ln(default_target);
 	}
 
 	cut() {
@@ -814,14 +817,19 @@ class NavContextMenu {
 			this.menu_options["cut"].hidden = false;
 			this.menu_options["delete"].hidden = false;
 		}
+		if (this.nav_window_ref.selected_entries.size > 1) {
+			this.menu_options["rename"].hidden = true;
+		} else {
+			this.menu_options["rename"].hidden = false;
+		}
 		this.target = target;
-		this.dom_element.hidden = false;
+		this.dom_element.style.display = "inline";
 		this.dom_element.style.left = event.clientX + "px";
 		this.dom_element.style.top = event.clientY + "px";
 	}
 
 	hide() {
-		this.dom_element.hidden = true;
+		this.dom_element.style.display = "none";
 	}
 
 	hide_paste() {
@@ -1193,8 +1201,8 @@ class NavWindow {
 		this.refresh();
 	}
 
-	async ln() {
-		var link_target = window.prompt("Link Target: ");
+	async ln(default_target = "") {
+		var link_target = window.prompt("Link Target: ", default_target);
 		if (link_target === null)
 			return;
 		var link_name = window.prompt("Link Name: ");
@@ -1389,7 +1397,7 @@ function set_up_buttons() {
 	document.getElementById("nav-refresh-btn").addEventListener("click", nav_window.refresh.bind(nav_window));
 	document.getElementById("nav-mkdir-btn").addEventListener("click", nav_window.mkdir.bind(nav_window));
 	document.getElementById("nav-touch-btn").addEventListener("click", nav_window.touch.bind(nav_window));
-	document.getElementById("nav-ln-btn").addEventListener("click", nav_window.ln.bind(nav_window));
+	document.getElementById("nav-ln-btn").addEventListener("click", nav_window.ln.bind(nav_window, ""));
 	document.getElementById("nav-delete-btn").addEventListener("click", nav_window.delete_selected.bind(nav_window));
 	document.getElementById("nav-edit-properties-btn").addEventListener("click", nav_window.show_edit_selected.bind(nav_window));
 	document.getElementById("nav-cancel-edit-btn").addEventListener("click", nav_window.hide_edit_selected.bind(nav_window));

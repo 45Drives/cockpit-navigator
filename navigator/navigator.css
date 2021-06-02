@@ -471,6 +471,7 @@ input:checked + .slider:before {
 }
 
 .nav-context-menu {
+	display: none;
 	position: absolute;
 	background-color: var(--container);
 	border: 1px solid var(--border);
