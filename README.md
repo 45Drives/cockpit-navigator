@@ -26,6 +26,7 @@ With no command line use needed, you can:
 ### EL8
 1. `# dnf install https://github.com/45Drives/cockpit-navigator/releases/download/v0.2.1/cockpit-navigator-0.2.1-1.el8.noarch.rpm`
 ## From Source
+1. Ensure dependencies are installed: `cockpit`, `python3`, `rsync`.
 1. `$ git clone https://github.com/45Drives/cockpit-navigator.git`
 1. `$ cd cockpit-navigator`
 1. `$ git checkout <version>` (v0.2.1 is latest)
