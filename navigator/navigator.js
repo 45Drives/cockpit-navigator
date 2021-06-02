@@ -774,7 +774,7 @@ class NavContextMenu {
 
 	rename() {
 		this.hide();
-		var new_name = window.prompt("New Name: ");
+		var new_name = window.prompt("New Name: ", this.target.filename());
 		if (new_name === null)
 			return;
 		if (new_name.includes("/")) {

@@ -1,5 +1,5 @@
 Name:           cockpit-navigator
-Version:        0.2.1
+Version:        0.2.2
 Release:        1%{?dist}
 Summary:        A File System Browser for Cockpit.
 License:        GPL-3.0+
@@ -32,6 +32,8 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Wed Jun 02 2021 Josh Boudreau <jboudreau@45drives.com> 0.2.2-1
+- Set default value in rename prompt to current filename.
 * Wed Jun 02 2021 Josh Boudreau <jboudreau@45drives.com> 0.2.1-1
 - Rename "Move" to "Cut" in right click context menu.
 - Improve pasting files after copying/cutting with a custom python
