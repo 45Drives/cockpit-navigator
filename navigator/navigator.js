@@ -751,7 +751,7 @@ class NavContextMenu {
 
 	new_link() {
 		var default_target = "";
-		if (this.target !== this.nav_window_ref.pwd())
+		if (this.nav_window_ref.selected_entries.size <= 1 && this.target !== this.nav_window_ref.pwd())
 			default_target = this.target.filename();
 		this.nav_window_ref.ln(default_target);
 	}
