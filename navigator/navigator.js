@@ -360,15 +360,22 @@ class NavFile extends NavEntry {
 	handleEvent(e) {
 		switch(e.type){
 			case "click":
-				if(this.double_click)
+				if (this.double_click)
 					this.show_edit_file_contents();
-				else{ // single click
+				else { // single click
 					this.double_click = true;
 					if(this.timeout)
 						clearTimeout(this.timeout)
 					this.timeout = setTimeout(() => {
 						this.double_click = false;
 					}, 500);
+				}
+				break;
+			case "keydown":
+				if (e.keyCode === 83 && e.ctrlKey === true) {
+					e.preventDefault();
+					e.stopPropagation();
+					this.write_to_file();
 				}
 				break;
 		}
@@ -405,7 +412,9 @@ class NavFile extends NavEntry {
 			window.alert(e.message);
 			return;
 		}
-		document.getElementById("nav-edit-contents-textarea").value = contents;
+		var text_area = document.getElementById("nav-edit-contents-textarea");
+		text_area.value = contents;
+		text_area.addEventListener("keydown", this);
 		document.getElementById("nav-cancel-edit-contents-btn").onclick = this.hide_edit_file_contents.bind(this);
 		document.getElementById("nav-continue-edit-contents-btn").onclick = this.write_to_file.bind(this);
 		document.getElementById("nav-edit-contents-header").innerText = "Editing " + this.path_str();
@@ -425,6 +434,7 @@ class NavFile extends NavEntry {
 	}
 	
 	hide_edit_file_contents() {
+		document.getElementById("nav-edit-contents-textarea").removeEventListener("keydown", this);
 		document.getElementById("nav-edit-contents-view").style.display = "none";
 		document.getElementById("nav-contents-view").style.display = "flex";
 		this.nav_window_ref.enable_buttons();
@@ -490,7 +500,9 @@ class NavFileLink extends NavFile{
 			window.alert(e.message);
 			return;
 		}
-		document.getElementById("nav-edit-contents-textarea").value = contents;
+		var text_area = document.getElementById("nav-edit-contents-textarea");
+		text_area.value = contents;
+		text_area.addEventListener("keydown", this);
 		document.getElementById("nav-cancel-edit-contents-btn").onclick = this.hide_edit_file_contents.bind(this);
 		document.getElementById("nav-continue-edit-contents-btn").onclick = this.write_to_file.bind(this);
 		document.getElementById("nav-edit-contents-header").innerHTML = "Editing " + this.path_str() + ' <i class="fas fa-long-arrow-alt-right"></i> ' + this.get_link_target_path();
