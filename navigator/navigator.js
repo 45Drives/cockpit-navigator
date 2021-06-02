@@ -726,7 +726,7 @@ class NavContextMenu {
 				this.hide();
 		});
 		
-		var functions = ["paste", "new_dir", "new_file", "new_link", "properties", "copy", "move", "delete"];
+		var functions = ["paste", "new_dir", "new_file", "new_link", "properties", "copy", "cut", "delete"];
 		for (let func of functions) {
 			var elem = document.createElement("div");
 			var name_list = func.split("_");
@@ -770,7 +770,7 @@ class NavContextMenu {
 		this.menu_options["paste"].hidden = false;
 	}
 
-	move() {
+	cut() {
 		this.nav_window_ref.clip_board = [...this.nav_window_ref.selected_entries];
 		this.nav_window_ref.copy_or_move = "move";
 		this.nav_window_ref.paste_cwd = this.nav_window_ref.pwd().path_str();
