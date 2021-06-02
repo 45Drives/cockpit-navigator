@@ -1,3 +1,14 @@
+cockpit-navigator (0.2.1-1focal) focal; urgency=medium
+
+  * Rename "Move" to "Cut" in right click context menu.
+  * Improve pasting files after copying/cutting with a custom python
+    script to handle checking for file conflicts before calling rsync.
+  * Control+S saves file that's open for editing.
+  * Moved renaming file from properties to right click menu with prompt.
+  * Creating files now fails verbosely if the destination exists.
+
+ -- Josh Boudreau <jboudreau@45drives.com>  Wed, 02 Jun 2021 12:09:00 -0300
+
 cockpit-navigator (0.2.0-1focal) focal; urgency=medium
 
   * Allow for batch editing permissions and deletion by
@@ -6,7 +17,6 @@ cockpit-navigator (0.2.0-1focal) focal; urgency=medium
   * Add custom right click menu.
 
  -- Josh Boudreau <jboudreau@45drives.com>  Tue, 01 Jun 2021 13:46:00 -0300
-
 
 cockpit-navigator (0.1.0-1focal) focal; urgency=medium
 

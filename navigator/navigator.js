@@ -323,7 +323,7 @@ class NavEntry {
 	}
 	
 	populate_edit_fields() {
-		document.getElementById("nav-edit-filename").value = this.filename();
+		document.getElementById("nav-edit-filename").innerText = this.filename();
 		var mode_bits = [
 			"other-exec", "other-write", "other-read",
 			"group-exec", "group-write", "group-read",
@@ -360,15 +360,22 @@ class NavFile extends NavEntry {
 	handleEvent(e) {
 		switch(e.type){
 			case "click":
-				if(this.double_click)
+				if (this.double_click)
 					this.show_edit_file_contents();
-				else{ // single click
+				else { // single click
 					this.double_click = true;
 					if(this.timeout)
 						clearTimeout(this.timeout)
 					this.timeout = setTimeout(() => {
 						this.double_click = false;
 					}, 500);
+				}
+				break;
+			case "keydown":
+				if (e.keyCode === 83 && e.ctrlKey === true) {
+					e.preventDefault();
+					e.stopPropagation();
+					this.write_to_file();
 				}
 				break;
 		}
@@ -405,7 +412,9 @@ class NavFile extends NavEntry {
 			window.alert(e.message);
 			return;
 		}
-		document.getElementById("nav-edit-contents-textarea").value = contents;
+		var text_area = document.getElementById("nav-edit-contents-textarea");
+		text_area.value = contents;
+		text_area.addEventListener("keydown", this);
 		document.getElementById("nav-cancel-edit-contents-btn").onclick = this.hide_edit_file_contents.bind(this);
 		document.getElementById("nav-continue-edit-contents-btn").onclick = this.write_to_file.bind(this);
 		document.getElementById("nav-edit-contents-header").innerText = "Editing " + this.path_str();
@@ -425,6 +434,7 @@ class NavFile extends NavEntry {
 	}
 	
 	hide_edit_file_contents() {
+		document.getElementById("nav-edit-contents-textarea").removeEventListener("keydown", this);
 		document.getElementById("nav-edit-contents-view").style.display = "none";
 		document.getElementById("nav-contents-view").style.display = "flex";
 		this.nav_window_ref.enable_buttons();
@@ -490,7 +500,9 @@ class NavFileLink extends NavFile{
 			window.alert(e.message);
 			return;
 		}
-		document.getElementById("nav-edit-contents-textarea").value = contents;
+		var text_area = document.getElementById("nav-edit-contents-textarea");
+		text_area.value = contents;
+		text_area.addEventListener("keydown", this);
 		document.getElementById("nav-cancel-edit-contents-btn").onclick = this.hide_edit_file_contents.bind(this);
 		document.getElementById("nav-continue-edit-contents-btn").onclick = this.write_to_file.bind(this);
 		document.getElementById("nav-edit-contents-header").innerHTML = "Editing " + this.path_str() + ' <i class="fas fa-long-arrow-alt-right"></i> ' + this.get_link_target_path();
@@ -714,7 +726,7 @@ class NavContextMenu {
 				this.hide();
 		});
 		
-		var functions = ["paste", "new_dir", "new_file", "new_link", "properties", "copy", "move", "delete"];
+		var functions = ["new_dir", "new_file", "new_link", "cut", "copy", "paste", "rename", "delete", "properties"];
 		for (let func of functions) {
 			var elem = document.createElement("div");
 			var name_list = func.split("_");
@@ -729,11 +741,6 @@ class NavContextMenu {
 		this.menu_options["paste"].hidden = true;
 	}
 
-	paste() {
-		this.nav_window_ref.paste_clipboard();
-		this.hide_paste();
-	}
-
 	new_dir() {
 		this.nav_window_ref.mkdir();
 	}
@@ -746,25 +753,44 @@ class NavContextMenu {
 		this.nav_window_ref.ln();
 	}
 
-	properties() {
-		this.nav_window_ref.show_edit_selected();
-		this.hide();
+	cut() {
+		this.nav_window_ref.clip_board = [...this.nav_window_ref.selected_entries];
+		this.nav_window_ref.copy_or_move = "move";
+		this.nav_window_ref.paste_cwd = this.nav_window_ref.pwd().path_str();
+		this.menu_options["paste"].hidden = false;
 	}
 
 	copy() {
 		this.nav_window_ref.clip_board = [...this.nav_window_ref.selected_entries];
-		this.menu_options["paste"].hidden = false;
 		this.nav_window_ref.copy_or_move = "copy";
+		this.nav_window_ref.paste_cwd = this.nav_window_ref.pwd().path_str();
+		this.menu_options["paste"].hidden = false;
 	}
 
-	move() {
-		this.nav_window_ref.clip_board = [...this.nav_window_ref.selected_entries];
-		this.menu_options["paste"].hidden = false;
-		this.nav_window_ref.copy_or_move = "move";
+	paste() {
+		this.nav_window_ref.paste_clipboard();
+		this.hide_paste();
+	}
+
+	rename() {
+		this.hide();
+		var new_name = window.prompt("New Name: ");
+		if (new_name === null)
+			return;
+		if (new_name.includes("/")) {
+			window.alert("File name can't contain `/`.");
+			return;
+		}
+		this.target.mv(new_name);
+		this.nav_window_ref.refresh();
 	}
 
 	delete() {
 		this.nav_window_ref.delete_selected();
+	}
+
+	properties() {
+		this.nav_window_ref.show_edit_selected();
 	}
 
 	/**
@@ -781,13 +807,14 @@ class NavContextMenu {
 		}
 		if (target === this.nav_window_ref.pwd()) {
 			this.menu_options["copy"].hidden = true;
-			this.menu_options["move"].hidden = true;
+			this.menu_options["cut"].hidden = true;
 			this.menu_options["delete"].hidden = true;
 		} else {
 			this.menu_options["copy"].hidden = false;
-			this.menu_options["move"].hidden = false;
+			this.menu_options["cut"].hidden = false;
 			this.menu_options["delete"].hidden = false;
 		}
+		this.target = target;
 		this.dom_element.hidden = false;
 		this.dom_element.style.left = event.clientX + "px";
 		this.dom_element.style.top = event.clientY + "px";
@@ -1035,7 +1062,6 @@ class NavWindow {
 			this.selected_entry().populate_edit_fields();
 			document.getElementById("selected-files-list-header").innerText = "";
 			document.getElementById("selected-files-list").innerText = "";
-			document.getElementById("nav-edit-filename").disabled = false;
 		} else {
 			for (let field of ["owner", "group"]) {
 				document.getElementById("nav-edit-" + field).value = "";
@@ -1056,6 +1082,7 @@ class NavWindow {
 		}
 		this.update_permissions_preview();
 		this.changed_mode = false;
+		document.getElementById("nav-mode-preview").innerText = "unchanged";
 		document.getElementById("nav-edit-properties").style.display = "flex";
 		document.getElementById("nav-show-properties").style.display = "none";
 	}
@@ -1093,7 +1120,6 @@ class NavWindow {
 	}
 
 	async apply_edit_selected() {
-		// do mv last so the rest don't fail from not finding path
 		var new_owner = document.getElementById("nav-edit-owner").value;
 		var new_group = document.getElementById("nav-edit-group").value;
 		var new_perms = this.get_new_permissions();
@@ -1107,12 +1133,6 @@ class NavWindow {
 			}
 			if (this.changed_mode && (new_perms & 0o777) !== (entry.stat["mode"] & 0o777)) {
 				await entry.chmod(new_perms).catch(/*ignore, caught in chmod*/);
-			}
-		}
-		if (this.selected_entries.size === 1) {
-			var new_name = document.getElementById("nav-edit-filename").value;
-			if (new_name !== this.selected_entry().filename()) {
-				await this.selected_entry().mv(new_name).catch(/*ignore, caught in mv*/);
 			}
 		}
 		this.refresh();
@@ -1163,7 +1183,7 @@ class NavWindow {
 			return;
 		}
 		var proc = cockpit.spawn(
-			["touch", this.pwd().path_str() + "/" + new_file_name],
+			["/usr/share/cockpit/navigator/scripts/touch.py", this.pwd().path_str() + "/" + new_file_name],
 			{superuser: "try", err: "out"}
 		);
 		proc.fail((e, data) => {
@@ -1197,32 +1217,36 @@ class NavWindow {
 	}
 
 	async paste_clipboard() {
+		this.start_load();
 		this.context_menu.hide_paste();
-		var cmd = [];
+		var cmd = ["/usr/share/cockpit/navigator/scripts/paste.py"];
 		var dest = this.pwd().path_str();
-		switch (this.copy_or_move) {
-			case "copy":
-				cmd = ["cp", "-an"];
-				break;
-			case "move":
-				cmd = ["mv", "-n"];
-				break;
-			default:
-				return;
+		if (this.copy_or_move === "move") {
+			cmd.push("-m");
 		}
+		cmd.push(this.paste_cwd);
 		for (let item of this.clip_board) {
 			cmd.push(item.path_str());
 		}
 		cmd.push(dest);
-		console.log(cmd);
 		var proc = cockpit.spawn(
 			cmd,
-			{superuser: "try", err: "out"}
+			{superuser: "try", err: "ignore"}
 		);
+		proc.stream((data) => {
+			var payload = JSON.parse(data);
+			if (payload["wants-response"]) {
+				var user_response = window.confirm(payload["message"]);
+				proc.input(JSON.stringify(user_response) + "\n", true);
+			} else {
+				window.alert(payload["message"]);
+			}
+		});
 		proc.fail((e, data) => {
-			window.alert(data);
-		})
+			window.alert("Paste failed.");
+		});
 		await proc;
+		this.stop_load();
 		this.refresh();
 	}
 
