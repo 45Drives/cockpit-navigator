@@ -1,3 +1,11 @@
+cockpit-navigator (0.3.0-1focal) focal; urgency=medium
+
+  * Add drag and drop uploading of files.
+  * Add event listeners for ctrl+a to select all, ctrl+x to cut,
+    ctrl+c to copy, ctrl+v to paste, and delete to remove a file.
+
+ -- Josh Boudreau <jboudreau@45drives.com>  Thu, 03 Jun 2021 16:33:00 -0300
+
 cockpit-navigator (0.2.3-1focal) focal; urgency=medium
 
   * Fix closing contextmenu in el7.
