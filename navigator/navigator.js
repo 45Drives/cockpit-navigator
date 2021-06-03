@@ -979,26 +979,20 @@ class NavDragDrop {
 					for (let item of e.dataTransfer.items) {
 						if (item.kind === 'file') {
 							var file = item.getAsFile();
+							if (file.type === "") {
+								window.alert(file.name + ": Cannot upload folders.");
+								continue;
+							}
 							var uploader = new FileUpload(file, 4096, this.nav_window_ref);
 							uploader.upload();
-							// reader.onloadend = (function(file_, nav_window_ref) {
-							// 	return function(evt) {
-							// 		nav_window_ref.upload(evt, file_);
-							// 	};
-							// })(file, this.nav_window_ref);
-							// reader.readAsArrayBuffer(file);
 						}
 					}
 				} else {
 					for (let file of ev.dataTransfer.files) {
+						if (file.type === "")
+							continue;
 						var uploader = new FileUpload(file, 4096, this.nav_window_ref);
 						uploader.upload();
-						// reader.onloadend = (function(file_, nav_window_ref) {
-						// 	return function(evt) {
-						// 		nav_window_ref.upload(evt, file_);
-						// 	};
-						// })(file, this.nav_window_ref);
-						// reader.readAsArrayBuffer(file);
 					}
 				}
 				this.drop_area.classList.remove("drag-enter");
@@ -1562,27 +1556,6 @@ class NavWindow {
 		}
 		document.getElementById("pwd").disabled = false;
 	}
-
-	// /**
-	//  * 
-	//  * @param {Event} event 
-	//  * @param {*} file 
-	//  */
-	// async upload(event, file) {
-	// 	var bytes = new Uint8Array(event.target.result);
-	// 	console.log(bytes, file);
-	// 	var out_path = this.pwd().path_str() + "/" + file.name;
-	// 	var proc = cockpit.spawn(["dd", "of=" + out_path], {superuser: "try", err: "out"});
-	// 	// for (let i = 0; i < bytes.byteLength; i++) {
-	// 	// 	proc.input(bytes[i], true);
-	// 	// }
-	// 	proc.input(bytes);
-	// 	proc.fail((e, data) => {
-	// 		window.alert(data);
-	// 	});
-	// 	await proc;
-	// 	this.refresh();
-	// }
 }
 
 let nav_window = new NavWindow();
