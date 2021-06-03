@@ -728,17 +728,27 @@ class NavContextMenu {
 				this.hide();
 		});
 		
-		var functions = ["new_dir", "new_file", "new_link", "cut", "copy", "paste", "rename", "delete", "properties"];
+		var functions = [
+			["new_dir", '<div><i class="fas fa-folder-plus"></i></div>'],
+			["new_file", '<div><i class="fas fa-file-medical"></i></div>'],
+			["new_link", '<div><i class="fas fa-link nav-icon-decorated"><i class="fas fa-plus nav-icon-decoration"></i></i></div>'],
+			["cut", '<div><i class="fas fa-cut"></i></div>'],
+			["copy", '<div><i class="fas fa-copy"></i></div>'],
+			["paste", '<div><i class="fas fa-paste"></i></div>'],
+			["rename", '<div><i class="fas fa-i-cursor"></i></div>'],
+			["delete", '<div><i class="fas fa-trash-alt"></i></div>'],
+			["properties", '<div><i class="fas fa-sliders-h"></i></div>']
+		];
 		for (let func of functions) {
 			var elem = document.createElement("div");
-			var name_list = func.split("_");
+			var name_list = func[0].split("_");
 			name_list.forEach((word, index) => {name_list[index] = word.charAt(0).toUpperCase() + word.slice(1)});
-			elem.innerText = name_list.join(" ");
-			elem.addEventListener("click", (e) => {this[func].bind(this).apply()});
+			elem.innerHTML = func[1] + name_list.join(" ");
+			elem.addEventListener("click", (e) => {this[func[0]].bind(this).apply()});
 			elem.classList.add("nav-context-menu-item")
-			elem.id = "nav-context-menu-" + func;
+			elem.id = "nav-context-menu-" + func[0];
 			this.dom_element.appendChild(elem);
-			this.menu_options[func] = elem;
+			this.menu_options[func[0]] = elem;
 		}
 		this.menu_options["paste"].style.display = "none";
 	}
@@ -808,14 +818,14 @@ class NavContextMenu {
 			this.menu_options["cut"].style.display = "none";
 			this.menu_options["delete"].style.display = "none";
 		} else {
-			this.menu_options["copy"].style.display = "block";
-			this.menu_options["cut"].style.display = "block";
-			this.menu_options["delete"].style.display = "block";
+			this.menu_options["copy"].style.display = "flex";
+			this.menu_options["cut"].style.display = "flex";
+			this.menu_options["delete"].style.display = "flex";
 		}
 		if (this.nav_window_ref.selected_entries.size > 1) {
 			this.menu_options["rename"].style.display = "none";
 		} else {
-			this.menu_options["rename"].style.display = "block";
+			this.menu_options["rename"].style.display = "flex";
 		}
 		this.target = target;
 		this.dom_element.style.display = "inline";
@@ -1424,14 +1434,14 @@ class NavWindow {
 		this.clip_board = [...this.selected_entries];
 		this.copy_or_move = "move";
 		this.paste_cwd = this.pwd().path_str();
-		this.context_menu.menu_options["paste"].style.display = "block";
+		this.context_menu.menu_options["paste"].style.display = "flex";
 	}
 
 	copy() {
 		this.clip_board = [...this.selected_entries];
 		this.copy_or_move = "copy";
 		this.paste_cwd = this.pwd().path_str();
-		this.context_menu.menu_options["paste"].style.display = "block";
+		this.context_menu.menu_options["paste"].style.display = "flex";
 	}
 
 	paste() {

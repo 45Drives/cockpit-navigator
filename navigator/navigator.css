@@ -480,12 +480,22 @@ input:checked + .slider:before {
 }
 
 .nav-context-menu-item {
-	padding: 0 12px 0 12px;
+	padding: 0 12px 0 0;
 	cursor: pointer;
+	display: flex;
+	flex-flow: row nowrap;
+	align-items: baseline;
 }
 
 .nav-context-menu-item:hover {
 	background-color: var(--border);
+}
+
+.nav-context-menu-item > div {
+	width: 40px;
+	display: flex;
+	flex-flow: row nowrap;
+	justify-content: center;
 }
 
 .drag-enter {
