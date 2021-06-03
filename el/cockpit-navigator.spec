@@ -1,5 +1,5 @@
 Name:           cockpit-navigator
-Version:        0.2.3
+Version:        0.3.0
 Release:        1%{?dist}
 Summary:        A File System Browser for Cockpit.
 License:        GPL-3.0+
@@ -32,6 +32,10 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Thu Jun 03 2021 Josh Boudreau <jboudreau@45drives.com> 0.3.0-1
+- Add drag and drop uploading of files.
+- Add event listeners for ctrl+a to select all, ctrl+x to cut,
+  ctrl+c to copy, ctrl+v to paste, and delete to remove a file.
 * Wed Jun 02 2021 Josh Boudreau <jboudreau@45drives.com> 0.2.3-1
 - Fix closing contextmenu in el7.
 - Hide rename in right click menu with multiple selected entries.

@@ -207,6 +207,7 @@ input[type="text"] {
 	align-items: flex-start;
 	align-content: flex-start;
 	overflow: auto;
+	position: relative;
 }
 
 .nav-item {
@@ -486,3 +487,45 @@ input:checked + .slider:before {
 .nav-context-menu-item:hover {
 	background-color: var(--border);
 }
+
+.drag-enter {
+	border: 1px dashed var(--border);
+}
+
+.nav-notifications {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	padding: 5px;
+	display: flex;
+	flex-flow: column-reverse nowrap;
+	align-items: stretch;
+	max-height: 50%;
+	overflow-y: auto;
+}
+
+.nav-notification {
+	margin: 5px;
+	position: relative;
+	display: flex;
+	flex-flow: column nowrap;
+	align-items: stretch;
+	z-index: 10;
+	flex-grow: 0;
+	padding: 5px;
+	background-color: var(--container);
+	border-radius: var(--nav-border-radius);
+	color: var(--font);
+}
+
+.nav-notification-header {
+	position: relative;
+	z-index: 10;
+	font-weight: bold;
+}
+
+.nav-notification-header > progress {
+	position: relative;
+	z-index: 10;
+}
+

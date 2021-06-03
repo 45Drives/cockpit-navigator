@@ -164,6 +164,8 @@ class NavEntry {
 		this.dom_element.addEventListener("click", this);
 		this.dom_element.addEventListener("contextmenu", this);
 		this.is_hidden_file = this.filename().startsWith('.');
+		if (this.is_hidden_file)
+			icon.style.opacity = 0.5;
 		this.dom_element.title = this.filename();
 	}
 
@@ -757,22 +759,15 @@ class NavContextMenu {
 	}
 
 	cut() {
-		this.nav_window_ref.clip_board = [...this.nav_window_ref.selected_entries];
-		this.nav_window_ref.copy_or_move = "move";
-		this.nav_window_ref.paste_cwd = this.nav_window_ref.pwd().path_str();
-		this.menu_options["paste"].hidden = false;
+		this.nav_window_ref.cut();
 	}
 
 	copy() {
-		this.nav_window_ref.clip_board = [...this.nav_window_ref.selected_entries];
-		this.nav_window_ref.copy_or_move = "copy";
-		this.nav_window_ref.paste_cwd = this.nav_window_ref.pwd().path_str();
-		this.menu_options["paste"].hidden = false;
+		this.nav_window_ref.copy();
 	}
 
 	paste() {
-		this.nav_window_ref.paste_clipboard();
-		this.hide_paste();
+		this.nav_window_ref.paste();
 	}
 
 	rename() {
@@ -809,18 +804,18 @@ class NavContextMenu {
 			this.nav_window_ref.set_selected(target, false, false);
 		}
 		if (target === this.nav_window_ref.pwd()) {
-			this.menu_options["copy"].hidden = true;
-			this.menu_options["cut"].hidden = true;
-			this.menu_options["delete"].hidden = true;
+			this.menu_options["copy"].style.display = "none";
+			this.menu_options["cut"].style.display = "none";
+			this.menu_options["delete"].style.display = "none";
 		} else {
-			this.menu_options["copy"].hidden = false;
-			this.menu_options["cut"].hidden = false;
-			this.menu_options["delete"].hidden = false;
+			this.menu_options["copy"].style.display = "block";
+			this.menu_options["cut"].style.display = "block";
+			this.menu_options["delete"].style.display = "block";
 		}
 		if (this.nav_window_ref.selected_entries.size > 1) {
-			this.menu_options["rename"].hidden = true;
+			this.menu_options["rename"].style.display = "none";
 		} else {
-			this.menu_options["rename"].hidden = false;
+			this.menu_options["rename"].style.display = "block";
 		}
 		this.target = target;
 		this.dom_element.style.display = "inline";
@@ -833,7 +828,189 @@ class NavContextMenu {
 	}
 
 	hide_paste() {
-		this.menu_options["paste"].hidden = true;
+		this.menu_options["paste"].style.display = "none";
+	}
+}
+
+class FileUpload {
+	/**
+	 * 
+	 * @param {File|Blob} file 
+	 * @param {Number} chunk_size 
+	 * @param {NavWindow} nav_window_ref
+	 */
+	constructor(file, chunk_size, nav_window_ref) {
+		this.chunk_size = chunk_size;
+		this.filename = file.name;
+		this.nav_window_ref = nav_window_ref;
+		this.path = nav_window_ref.pwd().path_str() + "/" + file.name;
+		this.reader = new FileReader();
+		this.chunks = this.slice_file(file);
+		this.chunk_index = 0;
+	}
+
+	check_if_exists() {
+		return new Promise((resolve, reject) => {
+			var proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/fail-if-exists.py", this.path], {superuser: "try"});
+			proc.done((data) => {resolve(false)});
+			proc.fail((e, data) => {resolve(true)});
+		});
+	}
+
+	make_html_element() {
+		var notification = document.createElement("div");
+		notification.classList.add("nav-notification");
+		var header = document.createElement("div");
+		header.classList.add("nav-notification-header");
+		notification.appendChild(header);
+		header.innerText = "Uploading " + this.filename;
+		var progress = document.createElement("progress");
+		progress.max = this.num_chunks;
+		notification.appendChild(progress);
+		this.progress = progress;
+		this.html_elements = [progress, header, notification];
+		document.getElementById("nav-notifications").appendChild(notification);
+	}
+
+	remove_html_element() {
+		for (let elem of this.html_elements) {
+			elem.parentElement.removeChild(elem);
+		}
+	}
+
+	/**
+	 * 
+	 * @param {File|Blob} file 
+	 * @returns {Array}
+	 */
+	slice_file(file) {
+		var offset = 0;
+		var chunks = [];
+		this.num_chunks = Math.ceil(file.size / this.chunk_size);
+		for (let i = 0; i < this.num_chunks; i++) {
+			var next_offset = Math.min(this.chunk_size * (i + 1), file.size);
+			chunks.push(file.slice(offset, next_offset));
+			offset = next_offset;
+		}
+		return chunks;
+	}
+
+	async upload() {
+		if (await this.check_if_exists()) {
+			window.alert(this.filename + ": File exists.");
+			return;
+		}
+		this.make_html_element();
+		this.proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/write-chunks.py", this.path], {err: "out", superuser: "try"});
+		this.proc.fail((e, data) => {
+			this.reader.onload = () => {}
+			this.done();
+			window.alert(data);
+		})
+		this.proc.done((data) => {
+			
+		})
+		this.reader.onload = (function(uploader_ref) {
+			return async function(evt) {
+				uploader_ref.write_to_file(evt, uploader_ref.chunk_index * uploader_ref.chunk_size);
+				uploader_ref.chunk_index++;
+				uploader_ref.progress.value = uploader_ref.chunk_index;
+				if (uploader_ref.chunk_index < uploader_ref.num_chunks)
+					uploader_ref.reader.readAsArrayBuffer(uploader_ref.chunks[uploader_ref.chunk_index]);
+				else {
+					uploader_ref.done();
+				}
+			};
+		})(this);
+		this.reader.readAsArrayBuffer(this.chunks[0]);
+	}
+
+	arrayBufferToBase64(buffer) {
+		let binary = '';
+		let bytes = new Uint8Array(buffer);
+		let len = bytes.byteLength;
+		for (let i = 0; i < len; i++) {
+			binary += String.fromCharCode(bytes[i]);
+		}
+		return window.btoa(binary);
+	}
+
+	/**
+	 * 
+	 * @param {Event} evt 
+	 * @param {Number} offset 
+	 */
+	write_to_file(evt, offset) {
+		var chunk_b64 = this.arrayBufferToBase64(evt.target.result);
+		const seek = this.chunk_index * this.chunk_size;
+		var obj = {
+			seek: seek,
+			chunk: chunk_b64
+		};
+		this.proc.input(JSON.stringify(obj) + "\n", true);
+	}
+
+	done() {
+		this.proc.input(); // close stdin
+		this.nav_window_ref.refresh();
+		this.remove_html_element();
+	}
+}
+
+class NavDragDrop {
+	/**
+	 * 
+	 * @param {HTMLDivElement} drop_area 
+	 * @param {NavWindow} nav_window_ref 
+	 */
+	constructor(drop_area, nav_window_ref) {
+		drop_area.addEventListener("dragenter", this);
+		drop_area.addEventListener("dragover", this);
+		drop_area.addEventListener("dragleave", this);
+		drop_area.addEventListener("drop", this);
+		this.drop_area = drop_area;
+		this.nav_window_ref = nav_window_ref;
+	}
+
+	handleEvent(e) {
+		e.preventDefault();
+		switch(e.type){
+			case "dragenter":
+				this.drop_area.classList.add("drag-enter");
+				break;
+			case "dragover":
+				break;
+			case "dragleave":
+				this.drop_area.classList.remove("drag-enter");
+				break;
+			case "drop":
+				if (e.dataTransfer.items) {
+					for (let item of e.dataTransfer.items) {
+						if (item.kind === 'file') {
+							var file = item.getAsFile();
+							if (file.type === "") {
+								window.alert(file.name + ": Cannot upload folders.");
+								continue;
+							}
+							var uploader = new FileUpload(file, 4096, this.nav_window_ref);
+							uploader.upload();
+						}
+					}
+				} else {
+					for (let file of ev.dataTransfer.files) {
+						if (file.type === "")
+							continue;
+						var uploader = new FileUpload(file, 4096, this.nav_window_ref);
+						uploader.upload();
+					}
+				}
+				this.drop_area.classList.remove("drag-enter");
+				break;
+			default:
+				this.drop_area.classList.remove("drag-enter");
+				break;
+		}
+		e.stopPropagation();
 	}
 }
 
@@ -848,11 +1025,14 @@ class NavWindow {
 		this.window = document.getElementById("nav-contents-view");
 		this.window.addEventListener("click", this);
 		this.window.addEventListener("contextmenu", this);
+		window.addEventListener("keydown", this);
 		this.last_selected_index = -1;
 
 		this.context_menu = new NavContextMenu("nav-context-menu", this);
 
 		this.clip_board = [];
+
+		this.uploader = new NavDragDrop(this.window, this);
 	}
 
 	/**
@@ -869,6 +1049,22 @@ class NavWindow {
 				this.context_menu.show(e, this.pwd());
 				e.preventDefault();
 				break;
+			case "keydown":
+				if (e.keyCode === 46) {
+					this.delete_selected();
+				} else if (e.keyCode === 65 && e.ctrlKey) {
+					this.select_all();
+					e.preventDefault();
+				} else if (e.keyCode === 67 && e.ctrlKey) {
+					this.copy();
+				} else if (e.keyCode === 86 && e.ctrlKey) {
+					this.paste();
+				} else if (e.keyCode === 88 && e.ctrlKey) {
+					this.cut();
+				}
+				break;
+			default:
+				break;
 		}
 	}
 
@@ -878,7 +1074,7 @@ class NavWindow {
 		var num_dirs = 0;
 		var num_files = 0;
 		var bytes_sum = 0;
-		var show_hidden = document.getElementById("nav-show-hidden").checked;
+		this.show_hidden = document.getElementById("nav-show-hidden").checked;
 		this.start_load();
 		var files = await this.pwd().get_children(this);
 		while (this.entries.length) {
@@ -900,7 +1096,7 @@ class NavWindow {
 				num_files++;
 				bytes_sum += file.stat["size"];
 			}
-			if(!file.is_hidden_file || show_hidden)
+			if(!file.is_hidden_file || this.show_hidden)
 				file.show();
 			this.entries.push(file);
 			file.context_menu_ref = this.context_menu;
@@ -1224,6 +1420,25 @@ class NavWindow {
 		this.refresh();
 	}
 
+	cut() {
+		this.clip_board = [...this.selected_entries];
+		this.copy_or_move = "move";
+		this.paste_cwd = this.pwd().path_str();
+		this.context_menu.menu_options["paste"].style.display = "block";
+	}
+
+	copy() {
+		this.clip_board = [...this.selected_entries];
+		this.copy_or_move = "copy";
+		this.paste_cwd = this.pwd().path_str();
+		this.context_menu.menu_options["paste"].style.display = "block";
+	}
+
+	paste() {
+		this.paste_clipboard();
+		this.context_menu.hide_paste();
+	}
+
 	async paste_clipboard() {
 		this.start_load();
 		this.context_menu.hide_paste();
@@ -1253,9 +1468,10 @@ class NavWindow {
 		proc.fail((e, data) => {
 			window.alert("Paste failed.");
 		});
-		await proc;
-		this.stop_load();
-		this.refresh();
+		proc.always(() => {
+			this.stop_load();
+			this.refresh();
+		});
 	}
 
 	/**
@@ -1305,7 +1521,7 @@ class NavWindow {
 	}
 
 	start_load() {
-		document.getElementById("nav-loader-container").hidden = false;
+		document.getElementById("nav-loader-container").style.display = "block";
 		var buttons = document.getElementsByTagName("button");
 		for (let button of buttons) {
 			button.disabled = true;
@@ -1313,7 +1529,7 @@ class NavWindow {
 	}
 
 	stop_load() {
-		document.getElementById("nav-loader-container").hidden = true;
+		document.getElementById("nav-loader-container").style.display = "none";
 		var buttons = document.getElementsByTagName("button");
 		for (let button of buttons) {
 			button.disabled = false;
@@ -1385,6 +1601,14 @@ class NavWindow {
 			button.disabled = false;
 		}
 		document.getElementById("pwd").disabled = false;
+	}
+
+	select_all() {
+		for (let entry of this.entries) {
+			if (!entry.is_hidden_file || this.show_hidden) {
+				this.set_selected(entry, false, true);
+			}
+		}
 	}
 }
 
