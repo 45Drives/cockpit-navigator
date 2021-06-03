@@ -759,22 +759,15 @@ class NavContextMenu {
 	}
 
 	cut() {
-		this.nav_window_ref.clip_board = [...this.nav_window_ref.selected_entries];
-		this.nav_window_ref.copy_or_move = "move";
-		this.nav_window_ref.paste_cwd = this.nav_window_ref.pwd().path_str();
-		this.menu_options["paste"].style.display = "block";
+		this.nav_window_ref.cut();
 	}
 
 	copy() {
-		this.nav_window_ref.clip_board = [...this.nav_window_ref.selected_entries];
-		this.nav_window_ref.copy_or_move = "copy";
-		this.nav_window_ref.paste_cwd = this.nav_window_ref.pwd().path_str();
-		this.menu_options["paste"].style.display = "block";
+		this.nav_window_ref.copy();
 	}
 
 	paste() {
-		this.nav_window_ref.paste_clipboard();
-		this.hide_paste();
+		this.nav_window_ref.paste();
 	}
 
 	rename() {
@@ -1063,11 +1056,11 @@ class NavWindow {
 					this.select_all();
 					e.preventDefault();
 				} else if (e.keyCode === 67 && e.ctrlKey) {
-					this.context_menu.copy();
+					this.copy();
 				} else if (e.keyCode === 86 && e.ctrlKey) {
-					this.context_menu.paste();
+					this.paste();
 				} else if (e.keyCode === 88 && e.ctrlKey) {
-					this.context_menu.cut();
+					this.cut();
 				}
 				break;
 			default:
@@ -1425,6 +1418,25 @@ class NavWindow {
 		});
 		await proc;
 		this.refresh();
+	}
+
+	cut() {
+		this.clip_board = [...this.selected_entries];
+		this.copy_or_move = "move";
+		this.paste_cwd = this.pwd().path_str();
+		this.context_menu.menu_options["paste"].style.display = "block";
+	}
+
+	copy() {
+		this.clip_board = [...this.selected_entries];
+		this.copy_or_move = "copy";
+		this.paste_cwd = this.pwd().path_str();
+		this.context_menu.menu_options["paste"].style.display = "block";
+	}
+
+	paste() {
+		this.paste_clipboard();
+		this.context_menu.hide_paste();
 	}
 
 	async paste_clipboard() {
