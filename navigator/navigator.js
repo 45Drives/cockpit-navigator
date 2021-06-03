@@ -894,7 +894,7 @@ class FileUpload {
 
 	upload() {
 		this.make_html_element();
-		this.proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/write-chunk.py", this.path], {err: "out", superuser: "try"});
+		this.proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/write-chunks.py", this.path], {err: "out", superuser: "try"});
 		this.proc.fail((e, data) => {
 			window.alert(data);
 		})
