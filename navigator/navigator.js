@@ -1032,6 +1032,7 @@ class NavWindow {
 		this.window = document.getElementById("nav-contents-view");
 		this.window.addEventListener("click", this);
 		this.window.addEventListener("contextmenu", this);
+		window.addEventListener("keydown", this);
 		this.last_selected_index = -1;
 
 		this.context_menu = new NavContextMenu("nav-context-menu", this);
@@ -1055,6 +1056,16 @@ class NavWindow {
 				this.context_menu.show(e, this.pwd());
 				e.preventDefault();
 				break;
+			case "keydown":
+				if (e.keyCode === 46) {
+					this.delete_selected();
+				} else if (e.keyCode === 65 && e.ctrlKey) {
+					this.select_all();
+					e.preventDefault();
+				}
+				break;
+			default:
+				break;
 		}
 	}
 
@@ -1064,7 +1075,7 @@ class NavWindow {
 		var num_dirs = 0;
 		var num_files = 0;
 		var bytes_sum = 0;
-		var show_hidden = document.getElementById("nav-show-hidden").checked;
+		this.show_hidden = document.getElementById("nav-show-hidden").checked;
 		this.start_load();
 		var files = await this.pwd().get_children(this);
 		while (this.entries.length) {
@@ -1086,7 +1097,7 @@ class NavWindow {
 				num_files++;
 				bytes_sum += file.stat["size"];
 			}
-			if(!file.is_hidden_file || show_hidden)
+			if(!file.is_hidden_file || this.show_hidden)
 				file.show();
 			this.entries.push(file);
 			file.context_menu_ref = this.context_menu;
@@ -1572,6 +1583,14 @@ class NavWindow {
 			button.disabled = false;
 		}
 		document.getElementById("pwd").disabled = false;
+	}
+
+	select_all() {
+		for (let entry of this.entries) {
+			if (!entry.is_hidden_file || this.show_hidden) {
+				this.set_selected(entry, false, true);
+			}
+		}
 	}
 }
 
