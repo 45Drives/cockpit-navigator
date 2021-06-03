@@ -207,6 +207,7 @@ input[type="text"] {
 	align-items: flex-start;
 	align-content: flex-start;
 	overflow: auto;
+	position: relative;
 }
 
 .nav-item {
@@ -485,4 +486,31 @@ input:checked + .slider:before {
 
 .nav-context-menu-item:hover {
 	background-color: var(--border);
+}
+
+.drag-enter {
+	border: 1px dashed var(--border);
+}
+
+.nav-notifications {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	padding: 5px;
+	display: flex;
+	flex-flow: column-reverse nowrap;
+}
+
+.nav-notification {
+	z-index: 10;
+	flex-grow: 0;
+	padding: 5px;
+	background-color: var(--container);
+	border: 1px solid var(--border);
+	color: var(--font);
+}
+
+.nav-notification-header {
+	font-size: 120%;
+	font-weight: bold;
 }
