@@ -17,6 +17,15 @@
     along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
 """
 
+"""
+Synopsis: `write-chunks.py <newline delimited JSON objects>`
+JSON objects are of form:
+obj = {
+    seek: <byte offset>
+    chunk: <base64 encoded data chunk>
+}
+"""
+
 import base64
 import os
 import sys
