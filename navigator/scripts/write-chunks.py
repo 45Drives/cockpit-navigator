@@ -34,7 +34,7 @@ def main():
         sys.exit(1)
     path = sys.argv[1]
     try:
-        file = open(path, "a+b")
+        file = open(path, "xb")
     except Exception as e:
         print(e)
         sys.exit(1)

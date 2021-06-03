@@ -854,6 +854,14 @@ class FileUpload {
 		this.chunk_index = 0;
 	}
 
+	check_if_exists() {
+		return new Promise((resolve, reject) => {
+			var proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/fail-if-exists.py", this.path], {superuser: "try"});
+			proc.done((data) => {resolve(false)});
+			proc.fail((e, data) => {resolve(true)});
+		});
+	}
+
 	make_html_element() {
 		var notification = document.createElement("div");
 		notification.classList.add("nav-notification");
@@ -892,14 +900,20 @@ class FileUpload {
 		return chunks;
 	}
 
-	upload() {
+	async upload() {
+		if (await this.check_if_exists()) {
+			window.alert(this.filename + ": File exists.");
+			return;
+		}
 		this.make_html_element();
 		this.proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/write-chunks.py", this.path], {err: "out", superuser: "try"});
 		this.proc.fail((e, data) => {
+			this.reader.onload = () => {}
+			this.done();
 			window.alert(data);
 		})
 		this.proc.done((data) => {
-			this.nav_window_ref.stop_load();
+			
 		})
 		this.reader.onload = (function(uploader_ref) {
 			return async function(evt) {
