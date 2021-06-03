@@ -1062,6 +1062,12 @@ class NavWindow {
 				} else if (e.keyCode === 65 && e.ctrlKey) {
 					this.select_all();
 					e.preventDefault();
+				} else if (e.keyCode === 67 && e.ctrlKey) {
+					this.context_menu.copy();
+				} else if (e.keyCode === 86 && e.ctrlKey) {
+					this.context_menu.paste();
+				} else if (e.keyCode === 88 && e.ctrlKey) {
+					this.context_menu.cut();
 				}
 				break;
 			default:
