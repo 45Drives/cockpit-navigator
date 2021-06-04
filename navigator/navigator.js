@@ -138,6 +138,44 @@ function switch_theme(e) {
 	localStorage.setItem("houston-theme-state", state);
 }
 
+class NavDownloader {
+	/**
+	 * 
+	 * @param {NavFile} file 
+	 */
+	constructor(file) {
+		this.path = file.path_str();
+		this.filename = file.filename();
+		this.read_size = file.stat["size"];
+	}
+
+	async download() {
+		let query = window.btoa(JSON.stringify({
+			payload: 'fsread1',
+			binary: 'raw',
+			path: this.path,
+			superuser: true,
+			max_read_size: this.read_size,
+			external: {
+				'content-disposition': 'attachment; filename="' + this.filename + '"',
+				'content-type': 'application/x-xz, application/octet-stream'
+			},
+		}));
+		let prefix = (new URL(cockpit.transport.uri('channel/' + cockpit.transport.csrf_token))).pathname;
+		var a = document.createElement("a");
+		a.href = prefix + "?" + query;
+		a.style.display = "none";
+		a.download = this.filename;
+		document.body.appendChild(a);
+		var event = new MouseEvent('click', {
+			'view': window,
+			'bubbles': false,
+			'cancelable': true
+		});
+		a.dispatchEvent(event);
+	}
+}
+
 class NavEntry {
 	/**
 	 * 
@@ -363,7 +401,7 @@ class NavFile extends NavEntry {
 		switch(e.type){
 			case "click":
 				if (this.double_click)
-					this.show_edit_file_contents();
+					this.open();
 				else { // single click
 					this.double_click = true;
 					if(this.timeout)
@@ -395,17 +433,23 @@ class NavFile extends NavEntry {
 		await proc;
 	}
 	
-	async show_edit_file_contents() {
-		this.nav_window_ref.disable_buttons_for_editing();
+	async open() {
 		var proc_output = await cockpit.spawn(["file", "--mime-type", this.path_str()], {superuser: "try"});
 		var fields = proc_output.split(':');
 		var type = fields[1].trim();
-		if (!(type.match(/^text/) || type.match(/^inode\/x-empty$/) || this.stat["size"] === 0)) {
-			if (!window.confirm("File is of type `" + type + "`. Are you sure you want to edit it?")) {
-				this.nav_window_ref.enable_buttons();
-				return;
+		
+		if ((type.match(/^text/) || type.match(/^inode\/x-empty$/) || this.stat["size"] === 0)) {
+			this.show_edit_file_contents();
+		} else {
+			if (window.confirm("Can't open " + this.filename() + " for editing. Download?")) {
+				var download = new NavDownloader(this);
+				download.download();
 			}
 		}
+	}
+
+	async show_edit_file_contents() {
+		this.nav_window_ref.disable_buttons_for_editing();
 		var contents = "";
 		try {
 			contents = await cockpit.file(this.path_str(), {superuser: "try"}).read();
@@ -740,6 +784,7 @@ class NavContextMenu {
 			["paste", '<div><i class="fas fa-paste"></i></div>'],
 			["rename", '<div><i class="fas fa-i-cursor"></i></div>'],
 			["delete", '<div><i class="fas fa-trash-alt"></i></div>'],
+			["download", '<div><i class="fas fa-download"></i></div>'],
 			["properties", '<div><i class="fas fa-sliders-h"></i></div>']
 		];
 		for (let func of functions) {
@@ -796,6 +841,11 @@ class NavContextMenu {
 		this.nav_window_ref.refresh();
 	}
 
+	download() {
+		var download = new NavDownloader(this.target);
+		download.download();
+	}
+
 	delete() {
 		this.nav_window_ref.delete_selected();
 	}
@@ -827,8 +877,13 @@ class NavContextMenu {
 		}
 		if (this.nav_window_ref.selected_entries.size > 1) {
 			this.menu_options["rename"].style.display = "none";
+			this.menu_options["download"].style.display = "none";
 		} else {
 			this.menu_options["rename"].style.display = "flex";
+			if (target instanceof NavFile)
+				this.menu_options["download"].style.display = "flex";
+			else
+				this.menu_options["download"].style.display = "none";
 		}
 		this.target = target;
 		this.dom_element.style.display = "inline";
