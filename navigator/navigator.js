@@ -919,7 +919,13 @@ class NavContextMenu {
 		this.target = target;
 		this.dom_element.style.display = "inline";
 		this.dom_element.style.left = event.clientX + "px";
-		this.dom_element.style.top = event.clientY + "px";
+		var height = this.dom_element.getBoundingClientRect().height;
+		var max_height = window.innerHeight;
+		if (event.clientY > max_height - height) {
+			this.dom_element.style.top = event.clientY - height + "px";
+		} else {
+			this.dom_element.style.top = event.clientY + "px";
+		}
 	}
 
 	hide() {
