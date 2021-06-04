@@ -51,7 +51,7 @@ def make_zip(path):
             "message": e
         }))
         sys.exit(1)
-    cmd = ["zip", "-r", "--symlinks", path, *files]
+    cmd = ["zip", "-ryq", path, *files]
     try:
         child = subprocess.Popen(
             cmd,
@@ -95,6 +95,7 @@ def main():
         sys.exit(1)
     archive_path = tmp_dir + "/navigator-download_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f") + ".zip"
     make_zip(archive_path)
+    sys.exit(0)
 
 
 if __name__ == "__main__":
