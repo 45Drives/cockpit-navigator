@@ -7,7 +7,10 @@ With no command line use needed, you can:
 * Create, delete, and rename files,
 * Edit file contents,
 * Edit file ownership and permissions,
-* Create symbolic links to files and directories.
+* Create symbolic links to files and directories,
+* Reorganize files through cut, copy, and paste,
+* **Upload files by dragging and dropping**,
+* **Download files and directories**.
 
 ### Browsing Filesystem
 ![User Interface](doc/ui_root.png)
@@ -26,7 +29,7 @@ With no command line use needed, you can:
 ### EL8
 1. `# dnf install https://github.com/45Drives/cockpit-navigator/releases/download/v0.4.0/cockpit-navigator-0.4.0-1.el8.noarch.rpm`
 ## From Source
-1. Ensure dependencies are installed: `cockpit`, `python3`, `rsync`.
+1. Ensure dependencies are installed: `cockpit`, `python3`, `rsync`, `zip`.
 1. `$ git clone https://github.com/45Drives/cockpit-navigator.git`
 1. `$ cd cockpit-navigator`
 1. `$ git checkout <version>` (v0.4.0 is latest)
