@@ -438,7 +438,7 @@ class NavFile extends NavEntry {
 		var fields = proc_output.split(':');
 		var type = fields[1].trim();
 		
-		if ((type.match(/^text/) || type.match(/^inode\/x-empty$/) || this.stat["size"] === 0)) {
+		if ((/^text/.test(type) || /^inode\/x-empty$/.test(type) || this.stat["size"] === 0)) {
 			this.show_edit_file_contents();
 		} else {
 			if (window.confirm("Can't open " + this.filename() + " for editing. Download?")) {
@@ -532,7 +532,7 @@ class NavFileLink extends NavFile{
 		var proc_output = await cockpit.spawn(["file", "--mime-type", target_path], {superuser: "try"});
 		var fields = proc_output.split(':');
 		var type = fields[1].trim();
-		if (!(type.match(/^text/) || type.match(/^inode\/x-empty$/) || this.stat["size"] === 0)) {
+		if (!(/^text/.test(type) || /^inode\/x-empty$/.test(type) || this.stat["size"] === 0)) {
 			if (!window.confirm("File is of type `" + type + "`. Are you sure you want to edit it?")) {
 				this.nav_window_ref.enable_buttons();
 				return;
@@ -656,10 +656,26 @@ class NavDir extends NavEntry {
 			["rmdir", this.path_str()],
 			{superuser: "try", err: "out"}
 		);
+		proc.fail((e, data) => {cannot
+			console.log(data);
+			if (/^rmdir: failed to remove .*: Directory not empty\n?$/.test(data)) {
+				if (window.confirm("WARNING: '" + this.path_str() + "' is not empty. Delete recursively? This can NOT be undone.")) {
+					this.rm_recursive();
+				}
+			} else {
+				window.alert(data);
+			}
+		});
+	}
+
+	async rm_recursive() {
+		var proc = cockpit.spawn(
+			["rm", "-rf", this.path_str()],
+			{superuser: "try", err: "out"}
+		);
 		proc.fail((e, data) => {
 			window.alert(data);
 		});
-		await proc;
 	}
 	
 	/**
