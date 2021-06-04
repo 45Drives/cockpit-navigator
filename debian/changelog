@@ -1,8 +1,9 @@
 cockpit-navigator (0.3.1-1focal) focal; urgency=low
 
   * Add icons to right click menu.
+  * Add ability to download files and directories.
 
- -- Josh Boudreau <jboudreau@45drives.com>  Thu, 03 Jun 2021 17:22:00 -0300
+ -- Josh Boudreau <jboudreau@45drives.com>  Fri, 04 Jun 2021 14:42:00 -0300
 
 cockpit-navigator (0.3.0-1focal) focal; urgency=medium
 
