@@ -841,8 +841,41 @@ class NavContextMenu {
 		this.nav_window_ref.refresh();
 	}
 
-	download() {
-		var download = new NavDownloader(this.target);
+	zip_for_download() {
+		return new Promise((resolve, reject) => {
+			var cmd = [
+				"/usr/share/cockpit/navigator/scripts/zip-for-download.py",
+				this.nav_window_ref.pwd().path_str()
+			];
+			for (let entry of this.nav_window_ref.selected_entries) {
+				cmd.push(entry.path_str());
+			}
+			var proc = cockpit.spawn(cmd, {superuser: "try", err: "out"});
+			proc.fail((e, data) => {
+				reject(JSON.parse(data));
+			});
+			proc.done((data) => {
+				resolve(JSON.parse(data));
+			});
+		});
+	}
+
+	async download() {
+		var download_target = "";
+		if (this.nav_window_ref.selected_entries.size === 1 && !this.target instanceof NavDir) {
+			download_target = this.target;
+		} else {
+			this.nav_window_ref.start_load();
+			var result;
+			try {
+				result = await this.zip_for_download();
+			} catch(e) {
+				window.alert(e.message);
+			}
+			this.nav_window_ref.stop_load();
+			download_target = new NavFile(result["archive-path"], result["stat"], this.nav_window_ref);
+		}
+		var download = new NavDownloader(download_target);
 		download.download();
 	}
 
@@ -866,6 +899,7 @@ class NavContextMenu {
 		} else {
 			this.nav_window_ref.set_selected(target, false, false);
 		}
+		this.menu_options["download"].style.display = "flex";
 		if (target === this.nav_window_ref.pwd()) {
 			this.menu_options["copy"].style.display = "none";
 			this.menu_options["cut"].style.display = "none";
@@ -877,12 +911,9 @@ class NavContextMenu {
 		}
 		if (this.nav_window_ref.selected_entries.size > 1) {
 			this.menu_options["rename"].style.display = "none";
-			this.menu_options["download"].style.display = "none";
 		} else {
 			this.menu_options["rename"].style.display = "flex";
-			if (target instanceof NavFile)
-				this.menu_options["download"].style.display = "flex";
-			else
+			if (target instanceof NavFileLink)
 				this.menu_options["download"].style.display = "none";
 		}
 		this.target = target;
