@@ -1003,8 +1003,8 @@ class FileUpload {
 
 	async upload() {
 		if (await this.check_if_exists()) {
-			window.alert(this.filename + ": File exists.");
-			return;
+			if (!window.confirm(this.filename + ": File exists. Replace?"))
+				return;
 		}
 		this.make_html_element();
 		this.proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/write-chunks.py", this.path], {err: "out", superuser: "try"});
