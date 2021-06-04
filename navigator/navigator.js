@@ -862,7 +862,7 @@ class NavContextMenu {
 
 	async download() {
 		var download_target = "";
-		if (this.nav_window_ref.selected_entries.size === 1 && !this.target instanceof NavDir) {
+		if (this.nav_window_ref.selected_entries.size === 1 && !(this.target instanceof NavDir)) {
 			download_target = this.target;
 		} else {
 			this.nav_window_ref.start_load();
