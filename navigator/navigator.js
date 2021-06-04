@@ -1272,6 +1272,9 @@ class NavWindow {
 		var to_be_selected = [];
 		if (append && this.selected_entries.has(entry)) {
 			this.selected_entries.delete(entry);
+			if (this.selected_entries.size === 0) {
+				this.clear_selected();
+			}
 		} else if (select_range && this.last_selected_index !== -1) {
 			var start = this.last_selected_index;
 			var end = this.entries.indexOf(entry);
