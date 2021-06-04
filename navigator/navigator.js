@@ -566,42 +566,45 @@ class NavDir extends NavEntry {
 	 * 
 	 * @param {NavWindow} nav_window_ref 
 	 * @param {boolean} no_alert 
-	 * @returns {object[]}
+	 * @returns {Promise<NavEntry[]>}
 	 */
-	async get_children(nav_window_ref, no_alert = false) {
-		var children = [];
-		var proc = cockpit.spawn(
-			["/usr/share/cockpit/navigator/scripts/ls.py", this.path_str()],
-			{err:"out", superuser: "try"}
-		);
-		proc.fail((e, data) => {
-			if(!no_alert)
-				window.alert(data);
+	get_children(nav_window_ref, no_alert = false) {
+		return new Promise(async (resolve, reject) => {
+			var children = [];
+			var proc = cockpit.spawn(
+				["/usr/share/cockpit/navigator/scripts/ls.py", this.path_str()],
+				{err:"out", superuser: "try"}
+			);
+			proc.fail((e, data) => {
+				if(!no_alert)
+					window.alert(data);
+				reject(e);
+			});
+			var data = await proc;
+			var response = JSON.parse(data);
+			this.stat = response["."]["stat"];
+			var entries = response["children"];
+			entries.forEach((entry) => {
+				var filename = entry["filename"];
+				var path = (this.path.length >= 1 && this.path[0]) ? [...this.path, filename] : [filename];
+				var stat = entry["stat"];
+				switch(stat["mode-str"].charAt(0)) {
+					case 'd':
+						children.push(new NavDir(path, stat, nav_window_ref));
+						break;
+					case 'l':
+						if(entry["isdir"])
+							children.push(new NavDirLink(path, stat, nav_window_ref, entry["link-target"]));
+						else
+							children.push(new NavFileLink(path, stat, nav_window_ref, entry["link-target"]));
+						break;
+					default:
+						children.push(new NavFile(path, stat, nav_window_ref));
+						break;
+				}
+			});
+			resolve(children);
 		});
-		var data = await proc;
-		var response = JSON.parse(data);
-		this.stat = response["."]["stat"];
-		var entries = response["children"];
-		entries.forEach((entry) => {
-			var filename = entry["filename"];
-			var path = (this.path.length >= 1 && this.path[0]) ? [...this.path, filename] : [filename];
-			var stat = entry["stat"];
-			switch(stat["mode-str"].charAt(0)) {
-				case 'd':
-					children.push(new NavDir(path, stat, nav_window_ref));
-					break;
-				case 'l':
-					if(entry["isdir"])
-						children.push(new NavDirLink(path, stat, nav_window_ref, entry["link-target"]));
-					else
-						children.push(new NavFileLink(path, stat, nav_window_ref, entry["link-target"]));
-					break;
-				default:
-					children.push(new NavFile(path, stat, nav_window_ref));
-					break;
-			}
-		});
-		return children;
 	}
 
 	async rm() {
@@ -884,7 +887,8 @@ class FileUpload {
 
 	remove_html_element() {
 		for (let elem of this.html_elements) {
-			elem.parentElement.removeChild(elem);
+			if (elem.parentElement)
+				elem.parentElement.removeChild(elem);
 		}
 	}
 
@@ -1086,7 +1090,11 @@ class NavWindow {
 		var bytes_sum = 0;
 		this.show_hidden = document.getElementById("nav-show-hidden").checked;
 		this.start_load();
-		var files = await this.pwd().get_children(this);
+		try {
+			var files = await this.pwd().get_children(this);
+		} catch(e) {
+			this.up();
+		}
 		while (this.entries.length) {
 			var entry = this.entries.pop();
 			entry.destroy();
@@ -1136,9 +1144,7 @@ class NavWindow {
 		this.path_stack.length = this.path_stack_index + 1;
 		this.path_stack.push(new_dir);
 		this.path_stack_index = this.path_stack.length - 1;
-		this.refresh().catch(() => {
-			this.back();
-		});
+		this.refresh();
 	}
 
 	back() {
