@@ -1979,16 +1979,18 @@ class NavWindow {
 		}
 	}
 
-	switch_item_display() {
+	async switch_item_display() {
 		var button = document.getElementById("nav-item-display-icon");
 		if (this.item_display === "grid") {
 			this.item_display = "list";
+			await this.refresh();
 			this.window.classList.remove("contents-view-grid");
 			this.window.classList.add("contents-view-list");
 			button.classList.remove("fa-list");
 			button.classList.add("fa-th");
 		} else {
 			this.item_display = "grid";
+			await this.refresh();
 			this.window.classList.remove("contents-view-list");
 			this.window.classList.add("contents-view-grid");
 			button.classList.remove("fa-th");
@@ -1996,8 +1998,6 @@ class NavWindow {
 		}
 		
 		localStorage.setItem("item-display", this.item_display);
-
-		this.refresh();
 	}
 }
 
