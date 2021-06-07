@@ -610,10 +610,7 @@ class NavFileLink extends NavFile{
 			this.show_edit_file_contents();
 		} else {
 			console.log("Unknown mimetype: " + type);
-			if (window.confirm("Can't open " + this.filename() + " for editing. Download?")) {
-				var download = new NavDownloader(this);
-				download.download();
-			}
+			window.alert("Can't open " + this.filename() + " for editing.");
 		}
 	}
 
