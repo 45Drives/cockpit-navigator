@@ -1039,11 +1039,15 @@ class FileUpload {
 	/**
 	 * 
 	 * @param {File|Blob} file 
-	 * @param {Number} chunk_size 
 	 * @param {NavWindow} nav_window_ref
 	 */
-	constructor(file, chunk_size, nav_window_ref) {
-		this.chunk_size = chunk_size;
+	constructor(file, nav_window_ref) {
+		try {
+			this.chunk_size = (parseInt(cockpit.info.version) > 238)? 1048576 : 65536;
+		} catch(e) {
+			console.log(e);
+			this.chunk_size = 65536;
+		}
 		this.filename = file.name;
 		this.nav_window_ref = nav_window_ref;
 		this.path = nav_window_ref.pwd().path_str() + "/" + file.name;
@@ -1231,7 +1235,7 @@ class NavDragDrop {
 								window.alert(file.name + ": Cannot upload folders.");
 								continue;
 							}
-							var uploader = new FileUpload(file, 1048576, this.nav_window_ref);
+							var uploader = new FileUpload(file, this.nav_window_ref);
 							uploader.upload();
 						}
 					}
@@ -1239,7 +1243,7 @@ class NavDragDrop {
 					for (let file of ev.dataTransfer.files) {
 						if (file.type === "")
 							continue;
-						var uploader = new FileUpload(file, 1048576, this.nav_window_ref);
+						var uploader = new FileUpload(file, this.nav_window_ref);
 						uploader.upload();
 					}
 				}
