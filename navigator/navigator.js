@@ -58,6 +58,27 @@ function format_time(timestamp) {
 
 /**
  * 
+ * @param {number} seconds 
+ * @returns {string}
+ */
+function format_time_remaining(seconds_) {
+	var hours = Math.floor(seconds_ / 3600);
+	var seconds = seconds_ % 3600;
+	var minutes = Math.floor(seconds / 60);
+	seconds = Math.floor(seconds % 60);
+	var out = "";
+	if (hours) {
+		out = String(hours).padStart(2, '0') + ":";
+	}
+	if (minutes) {
+		out += String(minutes).padStart(2, '0') + ":";
+	}
+	out += String(seconds).padStart(2, '0');
+	return out;
+}
+
+/**
+ * 
  * @param {number} mode 
  * @returns {string}
  */
@@ -136,6 +157,44 @@ function switch_theme(e) {
 	}
 	document.documentElement.setAttribute("data-theme", state);
 	localStorage.setItem("houston-theme-state", state);
+}
+
+class NavDownloader {
+	/**
+	 * 
+	 * @param {NavFile} file 
+	 */
+	constructor(file) {
+		this.path = file.path_str();
+		this.filename = file.filename();
+		this.read_size = file.stat["size"];
+	}
+
+	async download() {
+		let query = window.btoa(JSON.stringify({
+			payload: 'fsread1',
+			binary: 'raw',
+			path: this.path,
+			superuser: true,
+			max_read_size: this.read_size,
+			external: {
+				'content-disposition': 'attachment; filename="' + this.filename + '"',
+				'content-type': 'application/x-xz, application/octet-stream'
+			},
+		}));
+		let prefix = (new URL(cockpit.transport.uri('channel/' + cockpit.transport.csrf_token))).pathname;
+		var a = document.createElement("a");
+		a.href = prefix + "?" + query;
+		a.style.display = "none";
+		a.download = this.filename;
+		document.body.appendChild(a);
+		var event = new MouseEvent('click', {
+			'view': window,
+			'bubbles': false,
+			'cancelable': true
+		});
+		a.dispatchEvent(event);
+	}
 }
 
 class NavEntry {
@@ -246,60 +305,77 @@ class NavEntry {
 	/**
 	 * 
 	 * @param {number} new_perms 
+	 * @returns {Promise<void>} 
 	 */
-	async chmod(new_perms) {
-		var proc = cockpit.spawn(
-			["chmod", (new_perms & 0o777).toString(8), this.path_str()],
-			{superuser: "try", err: "out"}
-		);
-		proc.fail((e, data) => {
-			window.alert(data);
+	chmod(new_perms) {
+		return new Promise((resolve, reject) => {
+			var proc = cockpit.spawn(
+				["chmod", (new_perms & 0o777).toString(8), this.path_str()],
+				{superuser: "try", err: "out"}
+			);
+			proc.done((data) => {
+				resolve();
+			});
+			proc.fail((e, data) => {
+				reject(data);
+			});
 		});
-		await proc;
 	}
 
 	/**
 	 * 
 	 * @param {string} new_owner 
 	 * @param {string} new_group 
+	 * @returns {Promise<void>} 
 	 */
-	async chown(new_owner, new_group) {
-		if (!new_owner && !new_group)
-			return;
-		var cmd = "";
-		var arg = "";
-		if (new_group && !new_owner) {
-			cmd = "chgrp";
-			arg = new_group;
-		} else {
-			cmd = "chown";
-			arg = new_owner;
-			if (new_group)
-				arg += ":" + new_group;
-		}
-		var proc = cockpit.spawn(
-			[cmd, arg, this.path_str()],
-			{superuser: "try", err: "out"}
-		);
-		proc.fail((e, data) => {
-			window.alert(data);
+	chown(new_owner, new_group) {
+		return new Promise((resolve, reject) => {
+			if (!new_owner && !new_group) {
+				resolve();
+				return;
+			}
+			var cmd = "";
+			var arg = "";
+			if (new_group && !new_owner) {
+				cmd = "chgrp";
+				arg = new_group;
+			} else {
+				cmd = "chown";
+				arg = new_owner;
+				if (new_group)
+					arg += ":" + new_group;
+			}
+			var proc = cockpit.spawn(
+				[cmd, arg, this.path_str()],
+				{superuser: "try", err: "out"}
+			);
+			proc.done((data) => {
+				resolve();
+			});
+			proc.fail((e, data) => {
+				reject(data);
+			});
 		});
-		await proc;
 	}
 
 	/**
 	 * 
 	 * @param {string} new_path 
+	 * @returns {Promise<void>} 
 	 */
-	async mv(new_path) {
-		var proc = cockpit.spawn(
-			["mv", "-n", this.path_str(), [this.nav_window_ref.pwd().path_str(), new_path].join("/")],
-			{superuser: "try", err: "out"}
-		);
-		proc.fail((e, data) => {
-			window.alert(data);
+	mv(new_path) {
+		return new Promise((resolve, reject) => {
+			var proc = cockpit.spawn(
+				["mv", "-n", this.path_str(), [this.nav_window_ref.pwd().path_str(), new_path].join("/")],
+				{superuser: "try", err: "out"}
+			);
+			proc.done((data) => {
+				resolve();
+			});
+			proc.fail((e, data) => {
+				reject(data);
+			});
 		});
-		await proc;
 	}
 
 	/**
@@ -363,7 +439,7 @@ class NavFile extends NavEntry {
 		switch(e.type){
 			case "click":
 				if (this.double_click)
-					this.show_edit_file_contents();
+					this.open();
 				else { // single click
 					this.double_click = true;
 					if(this.timeout)
@@ -384,28 +460,43 @@ class NavFile extends NavEntry {
 		super.handleEvent(e);
 	}
 
-	async rm() {
-		var proc = cockpit.spawn(
-			["rm", "-f", this.path_str()],
-			{superuser: "try", err: "out"}
-		);
-		proc.fail((e, data) => {
-			window.alert(data);
+	/**
+	 * 
+	 * @returns {Promise<void>} 
+	 */
+	rm() {
+		return new Promise((resolve, reject) => {
+			var proc = cockpit.spawn(
+				["rm", "-f", this.path_str()],
+				{superuser: "try", err: "out"}
+			);
+			proc.done((data) => {
+				resolve();
+			});
+			proc.fail((e, data) => {
+				reject(data);
+			});
 		});
-		await proc;
 	}
 	
-	async show_edit_file_contents() {
-		this.nav_window_ref.disable_buttons_for_editing();
+	async open() {
 		var proc_output = await cockpit.spawn(["file", "--mime-type", this.path_str()], {superuser: "try"});
-		var fields = proc_output.split(':');
+		var fields = proc_output.split(/:(?=[^:]+$)/); // ensure it's the last : with lookahead
 		var type = fields[1].trim();
-		if (!(type.match(/^text/) || type.match(/^inode\/x-empty$/) || this.stat["size"] === 0)) {
-			if (!window.confirm("File is of type `" + type + "`. Are you sure you want to edit it?")) {
-				this.nav_window_ref.enable_buttons();
-				return;
+		
+		if ((/^text/.test(type) || /^inode\/x-empty$/.test(type) || this.stat["size"] === 0)) {
+			this.show_edit_file_contents();
+		} else {
+			console.log("Unknown mimetype: " + type);
+			if (window.confirm("Can't open " + this.filename() + " for editing. Download?")) {
+				var download = new NavDownloader(this);
+				download.download();
 			}
 		}
+	}
+
+	async show_edit_file_contents() {
+		this.nav_window_ref.disable_buttons_for_editing();
 		var contents = "";
 		try {
 			contents = await cockpit.file(this.path_str(), {superuser: "try"}).read();
@@ -488,7 +579,7 @@ class NavFileLink extends NavFile{
 		var proc_output = await cockpit.spawn(["file", "--mime-type", target_path], {superuser: "try"});
 		var fields = proc_output.split(':');
 		var type = fields[1].trim();
-		if (!(type.match(/^text/) || type.match(/^inode\/x-empty$/) || this.stat["size"] === 0)) {
+		if (!(/^text/.test(type) || /^inode\/x-empty$/.test(type) || this.stat["size"] === 0)) {
 			if (!window.confirm("File is of type `" + type + "`. Are you sure you want to edit it?")) {
 				this.nav_window_ref.enable_buttons();
 				return;
@@ -565,54 +656,93 @@ class NavDir extends NavEntry {
 	/**
 	 * 
 	 * @param {NavWindow} nav_window_ref 
-	 * @param {boolean} no_alert 
-	 * @returns {object[]}
+	 * @returns {Promise<NavEntry[]>}
 	 */
-	async get_children(nav_window_ref, no_alert = false) {
-		var children = [];
-		var proc = cockpit.spawn(
-			["/usr/share/cockpit/navigator/scripts/ls.py", this.path_str()],
-			{err:"out", superuser: "try"}
-		);
-		proc.fail((e, data) => {
-			if(!no_alert)
-				window.alert(data);
-		});
-		var data = await proc;
-		var response = JSON.parse(data);
-		this.stat = response["."]["stat"];
-		var entries = response["children"];
-		entries.forEach((entry) => {
-			var filename = entry["filename"];
-			var path = (this.path.length >= 1 && this.path[0]) ? [...this.path, filename] : [filename];
-			var stat = entry["stat"];
-			switch(stat["mode-str"].charAt(0)) {
-				case 'd':
-					children.push(new NavDir(path, stat, nav_window_ref));
-					break;
-				case 'l':
-					if(entry["isdir"])
-						children.push(new NavDirLink(path, stat, nav_window_ref, entry["link-target"]));
-					else
-						children.push(new NavFileLink(path, stat, nav_window_ref, entry["link-target"]));
-					break;
-				default:
-					children.push(new NavFile(path, stat, nav_window_ref));
-					break;
+	get_children(nav_window_ref) {
+		return new Promise(async (resolve, reject) => {
+			var children = [];
+			var proc = cockpit.spawn(
+				["/usr/share/cockpit/navigator/scripts/ls.py", this.path_str()],
+				{err:"out", superuser: "try"}
+			);
+			proc.fail((e, data) => {
+				reject(data);
+			});
+			var data;
+			try {
+				data = await proc;
+			} catch(e) {
+				reject(e);
+				return;
 			}
+			var response = JSON.parse(data);
+			this.stat = response["."]["stat"];
+			var entries = response["children"];
+			var filename, path, stat;
+			entries.forEach((entry) => {
+				filename = entry["filename"];
+				path = (this.path.length >= 1 && this.path[0]) ? [...this.path, filename] : [filename];
+				stat = entry["stat"];
+				switch(stat["mode-str"].charAt(0)) {
+					case 'd':
+						children.push(new NavDir(path, stat, nav_window_ref));
+						break;
+					case 'l':
+						if(entry["isdir"])
+							children.push(new NavDirLink(path, stat, nav_window_ref, entry["link-target"]));
+						else
+							children.push(new NavFileLink(path, stat, nav_window_ref, entry["link-target"]));
+						break;
+					default:
+						children.push(new NavFile(path, stat, nav_window_ref));
+						break;
+				}
+			});
+			resolve(children);
 		});
-		return children;
 	}
 
-	async rm() {
+	/**
+	 * 
+	 * @returns {Promise<void>}
+	 */
+	rm() {
+		return new Promise(async (resolve, reject) => {
+			var proc = cockpit.spawn(
+				["rmdir", this.path_str()],
+				{superuser: "try", err: "out"}
+			);
+			proc.done((data) => {
+				resolve();
+			});
+			proc.fail((e, data) => {
+				if (/^rmdir: failed to remove .*: Directory not empty\n?$/.test(data)) {
+					if (window.confirm("WARNING: '" + this.path_str() + "' is not empty. Delete recursively? This can NOT be undone.")) {
+						this.rm_recursive(resolve, reject);
+					}
+				} else {
+					reject(data);
+				}
+			});
+		});
+	}
+
+	/**
+	 * 
+	 * @param {Function} resolve 
+	 * @param {Function} reject 
+	 */
+	rm_recursive(resolve, reject) {
 		var proc = cockpit.spawn(
-			["rmdir", this.path_str()],
+			["rm", "-rf", this.path_str()],
 			{superuser: "try", err: "out"}
 		);
-		proc.fail((e, data) => {
-			window.alert(data);
+		proc.done((data) => {
+			resolve();
 		});
-		await proc;
+		proc.fail((e, data) => {
+			reject(data);
+		});
 	}
 	
 	/**
@@ -697,15 +827,23 @@ class NavDirLink extends NavDir{
 		this.dom_element.nav_item_title.style.fontStyle = "italic";
 	}
 
-	async rm() {
-		var proc = cockpit.spawn(
-			["rm", "-f", this.path_str()],
-			{superuser: "try", err: "out"}
-		);
-		proc.fail((e, data) => {
-			window.alert(data);
+	/**
+	 * 
+	 * @returns {Promise<void>} 
+	 */
+	rm() {
+		return new Promise((resolve, reject) => {
+			var proc = cockpit.spawn(
+				["rm", "-f", this.path_str()],
+				{superuser: "try", err: "out"}
+			);
+			proc.done((data) => {
+				resolve();
+			})
+			proc.fail((e, data) => {
+				reject(data);
+			});
 		});
-		await proc;
 	}
 
 	show_properties() {
@@ -728,17 +866,28 @@ class NavContextMenu {
 				this.hide();
 		});
 		
-		var functions = ["new_dir", "new_file", "new_link", "cut", "copy", "paste", "rename", "delete", "properties"];
+		var functions = [
+			["new_dir", '<div><i class="fas fa-folder-plus"></i></div>'],
+			["new_file", '<div><i class="fas fa-file-medical"></i></div>'],
+			["new_link", '<div><i class="fas fa-link nav-icon-decorated"><i class="fas fa-plus nav-icon-decoration"></i></i></div>'],
+			["cut", '<div><i class="fas fa-cut"></i></div>'],
+			["copy", '<div><i class="fas fa-copy"></i></div>'],
+			["paste", '<div><i class="fas fa-paste"></i></div>'],
+			["rename", '<div><i class="fas fa-i-cursor"></i></div>'],
+			["delete", '<div><i class="fas fa-trash-alt"></i></div>'],
+			["download", '<div><i class="fas fa-download"></i></div>'],
+			["properties", '<div><i class="fas fa-sliders-h"></i></div>']
+		];
 		for (let func of functions) {
 			var elem = document.createElement("div");
-			var name_list = func.split("_");
+			var name_list = func[0].split("_");
 			name_list.forEach((word, index) => {name_list[index] = word.charAt(0).toUpperCase() + word.slice(1)});
-			elem.innerText = name_list.join(" ");
-			elem.addEventListener("click", (e) => {this[func].bind(this).apply()});
+			elem.innerHTML = func[1] + name_list.join(" ");
+			elem.addEventListener("click", (e) => {this[func[0]].bind(this).apply()});
 			elem.classList.add("nav-context-menu-item")
-			elem.id = "nav-context-menu-" + func;
+			elem.id = "nav-context-menu-" + func[0];
 			this.dom_element.appendChild(elem);
-			this.menu_options[func] = elem;
+			this.menu_options[func[0]] = elem;
 		}
 		this.menu_options["paste"].style.display = "none";
 	}
@@ -770,7 +919,7 @@ class NavContextMenu {
 		this.nav_window_ref.paste();
 	}
 
-	rename() {
+	async rename() {
 		this.hide();
 		var new_name = window.prompt("New Name: ", this.target.filename());
 		if (new_name === null)
@@ -779,8 +928,53 @@ class NavContextMenu {
 			window.alert("File name can't contain `/`.");
 			return;
 		}
-		this.target.mv(new_name);
+		try {
+			await this.target.mv(new_name);
+		} catch(e) {
+			window.alert(e);
+			return;
+		}
 		this.nav_window_ref.refresh();
+	}
+
+	zip_for_download() {
+		return new Promise((resolve, reject) => {
+			var cmd = [
+				"/usr/share/cockpit/navigator/scripts/zip-for-download.py",
+				this.nav_window_ref.pwd().path_str()
+			];
+			for (let entry of this.nav_window_ref.selected_entries) {
+				cmd.push(entry.path_str());
+			}
+			var proc = cockpit.spawn(cmd, {superuser: "try", err: "out"});
+			proc.fail((e, data) => {
+				reject(JSON.parse(data));
+			});
+			proc.done((data) => {
+				resolve(JSON.parse(data));
+			});
+		});
+	}
+
+	async download() {
+		var download_target = "";
+		if (this.nav_window_ref.selected_entries.size === 1 && !(this.target instanceof NavDir)) {
+			download_target = this.target;
+		} else {
+			this.nav_window_ref.start_load();
+			var result;
+			try {
+				result = await this.zip_for_download();
+			} catch(e) {
+				this.nav_window_ref.stop_load();
+				window.alert(e.message);
+				return;
+			}
+			this.nav_window_ref.stop_load();
+			download_target = new NavFile(result["archive-path"], result["stat"], this.nav_window_ref);
+		}
+		var download = new NavDownloader(download_target);
+		download.download();
 	}
 
 	delete() {
@@ -803,24 +997,33 @@ class NavContextMenu {
 		} else {
 			this.nav_window_ref.set_selected(target, false, false);
 		}
+		this.menu_options["download"].style.display = "flex";
 		if (target === this.nav_window_ref.pwd()) {
 			this.menu_options["copy"].style.display = "none";
 			this.menu_options["cut"].style.display = "none";
 			this.menu_options["delete"].style.display = "none";
 		} else {
-			this.menu_options["copy"].style.display = "block";
-			this.menu_options["cut"].style.display = "block";
-			this.menu_options["delete"].style.display = "block";
+			this.menu_options["copy"].style.display = "flex";
+			this.menu_options["cut"].style.display = "flex";
+			this.menu_options["delete"].style.display = "flex";
 		}
 		if (this.nav_window_ref.selected_entries.size > 1) {
 			this.menu_options["rename"].style.display = "none";
 		} else {
-			this.menu_options["rename"].style.display = "block";
+			this.menu_options["rename"].style.display = "flex";
+			if (target instanceof NavFileLink)
+				this.menu_options["download"].style.display = "none";
 		}
 		this.target = target;
 		this.dom_element.style.display = "inline";
 		this.dom_element.style.left = event.clientX + "px";
-		this.dom_element.style.top = event.clientY + "px";
+		var height = this.dom_element.getBoundingClientRect().height;
+		var max_height = window.innerHeight;
+		if (event.clientY > max_height - height) {
+			this.dom_element.style.top = event.clientY - height + "px";
+		} else {
+			this.dom_element.style.top = event.clientY + "px";
+		}
 	}
 
 	hide() {
@@ -847,6 +1050,7 @@ class FileUpload {
 		this.reader = new FileReader();
 		this.chunks = this.slice_file(file);
 		this.chunk_index = 0;
+		this.timestamp = Date.now();
 	}
 
 	check_if_exists() {
@@ -860,21 +1064,41 @@ class FileUpload {
 	make_html_element() {
 		var notification = document.createElement("div");
 		notification.classList.add("nav-notification");
+
 		var header = document.createElement("div");
 		header.classList.add("nav-notification-header");
 		notification.appendChild(header);
 		header.innerText = "Uploading " + this.filename;
+
+		var info = document.createElement("div");
+		info.classList.add("flex-row", "space-between");
+		notification.appendChild(info);
+
+		var rate = document.createElement("div");
+		rate.classList.add("monospace-sm");
+		info.appendChild(rate);
+		rate.innerText = "-";
+		this.rate = rate;
+
+		var eta = document.createElement("div");
+		eta.classList.add("monospace-sm");
+		info.appendChild(eta);
+		eta.innerText = "-";
+		this.eta = eta;
+
 		var progress = document.createElement("progress");
 		progress.max = this.num_chunks;
 		notification.appendChild(progress);
 		this.progress = progress;
-		this.html_elements = [progress, header, notification];
+
+		this.html_elements = [progress, eta, rate, info, header, notification];
 		document.getElementById("nav-notifications").appendChild(notification);
 	}
 
 	remove_html_element() {
 		for (let elem of this.html_elements) {
-			elem.parentElement.removeChild(elem);
+			if (elem.parentElement)
+				elem.parentElement.removeChild(elem);
 		}
 	}
 
@@ -885,10 +1109,11 @@ class FileUpload {
 	 */
 	slice_file(file) {
 		var offset = 0;
+		var next_offset;
 		var chunks = [];
 		this.num_chunks = Math.ceil(file.size / this.chunk_size);
 		for (let i = 0; i < this.num_chunks; i++) {
-			var next_offset = Math.min(this.chunk_size * (i + 1), file.size);
+			next_offset = Math.min(this.chunk_size * (i + 1), file.size);
 			chunks.push(file.slice(offset, next_offset));
 			offset = next_offset;
 		}
@@ -897,8 +1122,8 @@ class FileUpload {
 
 	async upload() {
 		if (await this.check_if_exists()) {
-			window.alert(this.filename + ": File exists.");
-			return;
+			if (!window.confirm(this.filename + ": File exists. Replace?"))
+				return;
 		}
 		this.make_html_element();
 		this.proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/write-chunks.py", this.path], {err: "out", superuser: "try"});
@@ -938,9 +1163,8 @@ class FileUpload {
 	/**
 	 * 
 	 * @param {Event} evt 
-	 * @param {Number} offset 
 	 */
-	write_to_file(evt, offset) {
+	write_to_file(evt) {
 		var chunk_b64 = this.arrayBufferToBase64(evt.target.result);
 		const seek = this.chunk_index * this.chunk_size;
 		var obj = {
@@ -948,12 +1172,27 @@ class FileUpload {
 			chunk: chunk_b64
 		};
 		this.proc.input(JSON.stringify(obj) + "\n", true);
+		this.update_xfr_rate();
 	}
 
 	done() {
 		this.proc.input(); // close stdin
 		this.nav_window_ref.refresh();
 		this.remove_html_element();
+	}
+
+	update_xfr_rate() {
+		var now = Date.now();
+		var elapsed = (now - this.timestamp) / 1000;
+		this.timestamp = now;
+		var rate = this.chunk_size / elapsed;
+		this.rate.innerText = cockpit.format_bytes_per_sec(rate);
+		// keep exponential moving average of chunk time for eta
+		this.chunk_time = (this.chunk_time)
+			? (0.125 * elapsed + (0.875 * this.chunk_time))
+			: elapsed;
+		var eta = (this.num_chunks - this.chunk_index) * this.chunk_time;
+		this.eta.innerText = format_time_remaining(eta);
 	}
 }
 
@@ -992,7 +1231,7 @@ class NavDragDrop {
 								window.alert(file.name + ": Cannot upload folders.");
 								continue;
 							}
-							var uploader = new FileUpload(file, 4096, this.nav_window_ref);
+							var uploader = new FileUpload(file, 1048576, this.nav_window_ref);
 							uploader.upload();
 						}
 					}
@@ -1000,7 +1239,7 @@ class NavDragDrop {
 					for (let file of ev.dataTransfer.files) {
 						if (file.type === "")
 							continue;
-						var uploader = new FileUpload(file, 4096, this.nav_window_ref);
+						var uploader = new FileUpload(file, 1048576, this.nav_window_ref);
 						uploader.upload();
 					}
 				}
@@ -1076,7 +1315,13 @@ class NavWindow {
 		var bytes_sum = 0;
 		this.show_hidden = document.getElementById("nav-show-hidden").checked;
 		this.start_load();
-		var files = await this.pwd().get_children(this);
+		try {
+			var files = await this.pwd().get_children(this);
+		} catch(e) {
+			this.up();
+			window.alert(e);
+			return;
+		}
 		while (this.entries.length) {
 			var entry = this.entries.pop();
 			entry.destroy();
@@ -1126,9 +1371,7 @@ class NavWindow {
 		this.path_stack.length = this.path_stack_index + 1;
 		this.path_stack.push(new_dir);
 		this.path_stack_index = this.path_stack.length - 1;
-		this.refresh().catch(() => {
-			this.back();
-		});
+		this.refresh();
 	}
 
 	back() {
@@ -1164,6 +1407,9 @@ class NavWindow {
 		var to_be_selected = [];
 		if (append && this.selected_entries.has(entry)) {
 			this.selected_entries.delete(entry);
+			if (this.selected_entries.size === 0) {
+				this.clear_selected();
+			}
 		} else if (select_range && this.last_selected_index !== -1) {
 			var start = this.last_selected_index;
 			var end = this.entries.indexOf(entry);
@@ -1333,10 +1579,18 @@ class NavWindow {
 				new_owner !== entry.stat["owner"] ||
 				new_group !== entry.stat["group"]
 			) {
-				await entry.chown(new_owner, new_group).catch(/*ignore, caught in chown*/);
+				try {
+					await entry.chown(new_owner, new_group);
+				} catch(e) {
+					window.alert(e);
+				}
 			}
 			if (this.changed_mode && (new_perms & 0o777) !== (entry.stat["mode"] & 0o777)) {
-				await entry.chmod(new_perms).catch(/*ignore, caught in chmod*/);
+				try {
+					await entry.chmod(new_perms);
+				} catch(e) {
+					window.alert(e);
+				}
 			}
 		}
 		this.refresh();
@@ -1354,7 +1608,11 @@ class NavWindow {
 			return;
 		}
 		for (let target of this.selected_entries) {
-			await target.rm().catch(/*ignore, caught in rm*/);
+			try {
+				await target.rm();
+			} catch(e) {
+				window.alert(e);
+			}
 		}
 		this.refresh();
 	}
@@ -1367,14 +1625,23 @@ class NavWindow {
 			window.alert("Directory name can't contain `/`.");
 			return;
 		}
-		var proc = cockpit.spawn(
-			["mkdir", this.pwd().path_str() + "/" + new_dir_name],
-			{superuser: "try", err: "out"}
-		);
-		proc.fail((e, data) => {
-			window.alert(data);
+		var promise = new Promise((resolve, reject) => {
+			var proc = cockpit.spawn(
+				["mkdir", this.pwd().path_str() + "/" + new_dir_name],
+				{superuser: "try", err: "out"}
+			);
+			proc.done((data) => {
+				resolve();
+			});
+			proc.fail((e, data) => {
+				reject(data);
+			});
 		});
-		await proc;
+		try {
+			await promise;
+		} catch(e) {
+			window.alert(e);
+		}
 		this.refresh();
 	}
 
@@ -1386,14 +1653,23 @@ class NavWindow {
 			window.alert("File name can't contain `/`.");
 			return;
 		}
-		var proc = cockpit.spawn(
-			["/usr/share/cockpit/navigator/scripts/touch.py", this.pwd().path_str() + "/" + new_file_name],
-			{superuser: "try", err: "out"}
-		);
-		proc.fail((e, data) => {
-			window.alert(data);
+		var promise = new Promise((resolve, reject) => {
+			var proc = cockpit.spawn(
+				["/usr/share/cockpit/navigator/scripts/touch.py", this.pwd().path_str() + "/" + new_file_name],
+				{superuser: "try", err: "out"}
+			);
+			proc.done((data) => {
+				resolve();
+			});
+			proc.fail((e, data) => {
+				reject(data);
+			});
 		});
-		await proc;
+		try {
+			await promise;
+		} catch(e) {
+			window.alert(e);
+		}
 		this.refresh();
 	}
 
@@ -1409,14 +1685,23 @@ class NavWindow {
 			return;
 		}
 		var link_path = this.pwd().path_str() + "/" + link_name;
-		var proc = cockpit.spawn(
-			["ln", "-sn", link_target, link_path],
-			{superuser: "try", err: "out"}
-		);
-		proc.fail((e, data) => {
-			window.alert(data);
+		var promise = new Promise((resolve, reject) => {
+			var proc = cockpit.spawn(
+				["ln", "-sn", link_target, link_path],
+				{superuser: "try", err: "out"}
+			);
+			proc.done((data) => {
+				resolve();
+			});
+			proc.fail((e, data) => {
+				reject(data);
+			});
 		});
-		await proc;
+		try {
+			await promise;
+		} catch(e) {
+			window.alert(e);
+		}
 		this.refresh();
 	}
 
@@ -1424,14 +1709,14 @@ class NavWindow {
 		this.clip_board = [...this.selected_entries];
 		this.copy_or_move = "move";
 		this.paste_cwd = this.pwd().path_str();
-		this.context_menu.menu_options["paste"].style.display = "block";
+		this.context_menu.menu_options["paste"].style.display = "flex";
 	}
 
 	copy() {
 		this.clip_board = [...this.selected_entries];
 		this.copy_or_move = "copy";
 		this.paste_cwd = this.pwd().path_str();
-		this.context_menu.menu_options["paste"].style.display = "block";
+		this.context_menu.menu_options["paste"].style.display = "flex";
 	}
 
 	paste() {
@@ -1452,26 +1737,34 @@ class NavWindow {
 			cmd.push(item.path_str());
 		}
 		cmd.push(dest);
-		var proc = cockpit.spawn(
-			cmd,
-			{superuser: "try", err: "ignore"}
-		);
-		proc.stream((data) => {
-			var payload = JSON.parse(data);
-			if (payload["wants-response"]) {
-				var user_response = window.confirm(payload["message"]);
-				proc.input(JSON.stringify(user_response) + "\n", true);
-			} else {
-				window.alert(payload["message"]);
-			}
+		var promise = new Promise((resolve, reject) => {
+			var proc = cockpit.spawn(
+				cmd,
+				{superuser: "try", err: "ignore"}
+			);
+			proc.stream((data) => {
+				var payload = JSON.parse(data);
+				if (payload["wants-response"]) {
+					var user_response = window.confirm(payload["message"]);
+					proc.input(JSON.stringify(user_response) + "\n", true);
+				} else {
+					window.alert(payload["message"]);
+				}
+			});
+			proc.done((data) => {
+				resolve();
+			});
+			proc.fail((e, data) => {
+				reject("Paste failed.");
+			});
 		});
-		proc.fail((e, data) => {
-			window.alert("Paste failed.");
-		});
-		proc.always(() => {
-			this.stop_load();
-			this.refresh();
-		});
+		try {
+			await promise;
+		} catch(e) {
+			window.alert(e);
+		}
+		this.stop_load();
+		this.refresh();
 	}
 
 	/**
@@ -1506,10 +1799,12 @@ class NavWindow {
 			return;
 		this.nav_bar_last_parent_path_str = parent_path_str;
 		var parent_dir = new NavDir(parent_path_str);
-		var error = false;
-		var objs = await parent_dir.get_children(this, true).catch(() => {error = true});
-		if(error)
+		var objs;
+		try {
+			objs = await parent_dir.get_children(this);
+		} catch(e) {
 			return;
+		}
 		objs = objs.filter((child) => {return child.nav_type === "dir"});
 		while(list.firstChild)
 			list.removeChild(list.firstChild);
@@ -1554,38 +1849,70 @@ class NavWindow {
 		this.refresh();
 	}
 
-	async get_system_users() {
-		var proc = cockpit.spawn(["getent", "passwd"], {err: "ignore", superuser: "try"});
-		var list = document.getElementById("possible-owners");
-		while(list.firstChild) {
-			list.removeChild(list.firstChild);
-		}
-		var passwd = await proc;
-		var passwd_entries = passwd.split("\n");
-		for (let entry of passwd_entries) {
-			var cols = entry.split(":");
-			var username = cols[0];
-			var option = document.createElement("option");
-			option.value = username;
-			list.appendChild(option);
-		}
+	/**
+	 * 
+	 * @returns {Promise<void>} 
+	 */
+	get_system_users() {
+		return new Promise(async (resolve, reject) => {
+			var proc = cockpit.spawn(["getent", "passwd"], {err: "ignore", superuser: "try"});
+			proc.fail((e, data) => {
+				reject(data);
+			});
+			var list = document.getElementById("possible-owners");
+			while(list.firstChild) {
+				list.removeChild(list.firstChild);
+			}
+			var passwd;
+			try {
+				passwd = await proc;
+			} catch(e) {
+				reject(e);
+				return;
+			}
+			var passwd_entries = passwd.split("\n");
+			for (let entry of passwd_entries) {
+				var cols = entry.split(":");
+				var username = cols[0];
+				var option = document.createElement("option");
+				option.value = username;
+				list.appendChild(option);
+			}
+			resolve();
+		});
 	}
 
-	async get_system_groups() {
-		var proc = cockpit.spawn(["getent", "group"], {err: "ignore", superuser: "try"});
-		var list = document.getElementById("possible-groups");
-		while(list.firstChild) {
-			list.removeChild(list.firstChild);
-		}
-		var group = await proc;
-		var group_entries = group.split("\n");
-		for (let entry of group_entries) {
-			var cols = entry.split(":");
-			var groupname = cols[0];
-			var option = document.createElement("option");
-			option.value = groupname;
-			list.appendChild(option);
-		}
+	/**
+	 * 
+	 * @returns {Promise<void>} 
+	 */
+	get_system_groups() {
+		return new Promise(async (resolve, reject) => {
+			var proc = cockpit.spawn(["getent", "group"], {err: "ignore", superuser: "try"});
+			proc.fail((e, data) => {
+				reject(data);
+			});
+			var list = document.getElementById("possible-groups");
+			while(list.firstChild) {
+				list.removeChild(list.firstChild);
+			}
+			var group
+			try {
+				group = await proc;
+			} catch(e) {
+				reject(e);
+				return;
+			}
+			var group_entries = group.split("\n");
+			for (let entry of group_entries) {
+				var cols = entry.split(":");
+				var groupname = cols[0];
+				var option = document.createElement("option");
+				option.value = groupname;
+				list.appendChild(option);
+			}
+			resolve();
+		});
 	}
 
 	disable_buttons_for_editing() {
@@ -1604,6 +1931,7 @@ class NavWindow {
 	}
 
 	select_all() {
+		this.selected_entries.clear();
 		for (let entry of this.entries) {
 			if (!entry.is_hidden_file || this.show_hidden) {
 				this.set_selected(entry, false, true);

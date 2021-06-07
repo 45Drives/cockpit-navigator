@@ -1,12 +1,12 @@
 Name:           cockpit-navigator
-Version:        0.3.0
+Version:        0.4.0
 Release:        1%{?dist}
 Summary:        A File System Browser for Cockpit.
 License:        GPL-3.0+
 URL:            github.com/45drives/cockpit-navigator/blob/main/README.md
 Source0:        %{name}-%{version}.tar.gz
 BuildArch:      noarch
-Requires:       cockpit python3 rsync
+Requires:       cockpit python3 rsync zip
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
@@ -32,6 +32,10 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Mon Jun 07 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.0-1
+- Add icons to right click menu.
+- Add ability to download files and directories.
+- Show transfer rate and ETA while uploading files.
 * Thu Jun 03 2021 Josh Boudreau <jboudreau@45drives.com> 0.3.0-1
 - Add drag and drop uploading of files.
 - Add event listeners for ctrl+a to select all, ctrl+x to cut,
