@@ -284,60 +284,77 @@ class NavEntry {
 	/**
 	 * 
 	 * @param {number} new_perms 
+	 * @returns {Promise<void>} 
 	 */
-	async chmod(new_perms) {
-		var proc = cockpit.spawn(
-			["chmod", (new_perms & 0o777).toString(8), this.path_str()],
-			{superuser: "try", err: "out"}
-		);
-		proc.fail((e, data) => {
-			window.alert(data);
+	chmod(new_perms) {
+		return new Promise((resolve, reject) => {
+			var proc = cockpit.spawn(
+				["chmod", (new_perms & 0o777).toString(8), this.path_str()],
+				{superuser: "try", err: "out"}
+			);
+			proc.done((data) => {
+				resolve();
+			});
+			proc.fail((e, data) => {
+				reject(data);
+			});
 		});
-		await proc;
 	}
 
 	/**
 	 * 
 	 * @param {string} new_owner 
 	 * @param {string} new_group 
+	 * @returns {Promise<void>} 
 	 */
-	async chown(new_owner, new_group) {
-		if (!new_owner && !new_group)
-			return;
-		var cmd = "";
-		var arg = "";
-		if (new_group && !new_owner) {
-			cmd = "chgrp";
-			arg = new_group;
-		} else {
-			cmd = "chown";
-			arg = new_owner;
-			if (new_group)
-				arg += ":" + new_group;
-		}
-		var proc = cockpit.spawn(
-			[cmd, arg, this.path_str()],
-			{superuser: "try", err: "out"}
-		);
-		proc.fail((e, data) => {
-			window.alert(data);
+	chown(new_owner, new_group) {
+		return new Promise((resolve, reject) => {
+			if (!new_owner && !new_group) {
+				resolve();
+				return;
+			}
+			var cmd = "";
+			var arg = "";
+			if (new_group && !new_owner) {
+				cmd = "chgrp";
+				arg = new_group;
+			} else {
+				cmd = "chown";
+				arg = new_owner;
+				if (new_group)
+					arg += ":" + new_group;
+			}
+			var proc = cockpit.spawn(
+				[cmd, arg, this.path_str()],
+				{superuser: "try", err: "out"}
+			);
+			proc.done((data) => {
+				resolve();
+			});
+			proc.fail((e, data) => {
+				reject(data);
+			});
 		});
-		await proc;
 	}
 
 	/**
 	 * 
 	 * @param {string} new_path 
+	 * @returns {Promise<void>} 
 	 */
-	async mv(new_path) {
-		var proc = cockpit.spawn(
-			["mv", "-n", this.path_str(), [this.nav_window_ref.pwd().path_str(), new_path].join("/")],
-			{superuser: "try", err: "out"}
-		);
-		proc.fail((e, data) => {
-			window.alert(data);
+	mv(new_path) {
+		return new Promise((resolve, reject) => {
+			var proc = cockpit.spawn(
+				["mv", "-n", this.path_str(), [this.nav_window_ref.pwd().path_str(), new_path].join("/")],
+				{superuser: "try", err: "out"}
+			);
+			proc.done((data) => {
+				resolve();
+			});
+			proc.fail((e, data) => {
+				reject(data);
+			});
 		});
-		await proc;
 	}
 
 	/**
@@ -422,25 +439,34 @@ class NavFile extends NavEntry {
 		super.handleEvent(e);
 	}
 
-	async rm() {
-		var proc = cockpit.spawn(
-			["rm", "-f", this.path_str()],
-			{superuser: "try", err: "out"}
-		);
-		proc.fail((e, data) => {
-			window.alert(data);
+	/**
+	 * 
+	 * @returns {Promise<void>} 
+	 */
+	rm() {
+		return new Promise((resolve, reject) => {
+			var proc = cockpit.spawn(
+				["rm", "-f", this.path_str()],
+				{superuser: "try", err: "out"}
+			);
+			proc.done((data) => {
+				resolve();
+			});
+			proc.fail((e, data) => {
+				reject(data);
+			});
 		});
-		await proc;
 	}
 	
 	async open() {
 		var proc_output = await cockpit.spawn(["file", "--mime-type", this.path_str()], {superuser: "try"});
-		var fields = proc_output.split(':');
+		var fields = proc_output.split(/:(?=[^:]+$)/); // ensure it's the last : with lookahead
 		var type = fields[1].trim();
 		
 		if ((/^text/.test(type) || /^inode\/x-empty$/.test(type) || this.stat["size"] === 0)) {
 			this.show_edit_file_contents();
 		} else {
+			console.log("Unknown mimetype: " + type);
 			if (window.confirm("Can't open " + this.filename() + " for editing. Download?")) {
 				var download = new NavDownloader(this);
 				download.download();
@@ -609,10 +635,9 @@ class NavDir extends NavEntry {
 	/**
 	 * 
 	 * @param {NavWindow} nav_window_ref 
-	 * @param {boolean} no_alert 
 	 * @returns {Promise<NavEntry[]>}
 	 */
-	get_children(nav_window_ref, no_alert = false) {
+	get_children(nav_window_ref) {
 		return new Promise(async (resolve, reject) => {
 			var children = [];
 			var proc = cockpit.spawn(
@@ -620,11 +645,15 @@ class NavDir extends NavEntry {
 				{err:"out", superuser: "try"}
 			);
 			proc.fail((e, data) => {
-				if(!no_alert)
-					window.alert(data);
-				reject(e);
+				reject(data);
 			});
-			var data = await proc;
+			var data;
+			try {
+				data = await proc;
+			} catch(e) {
+				reject(e);
+				return;
+			}
 			var response = JSON.parse(data);
 			this.stat = response["."]["stat"];
 			var entries = response["children"];
@@ -651,30 +680,46 @@ class NavDir extends NavEntry {
 		});
 	}
 
-	async rm() {
-		var proc = cockpit.spawn(
-			["rmdir", this.path_str()],
-			{superuser: "try", err: "out"}
-		);
-		proc.fail((e, data) => {cannot
-			console.log(data);
-			if (/^rmdir: failed to remove .*: Directory not empty\n?$/.test(data)) {
-				if (window.confirm("WARNING: '" + this.path_str() + "' is not empty. Delete recursively? This can NOT be undone.")) {
-					this.rm_recursive();
+	/**
+	 * 
+	 * @returns {Promise<void>}
+	 */
+	rm() {
+		return new Promise(async (resolve, reject) => {
+			var proc = cockpit.spawn(
+				["rmdir", this.path_str()],
+				{superuser: "try", err: "out"}
+			);
+			proc.done((data) => {
+				resolve();
+			});
+			proc.fail((e, data) => {
+				if (/^rmdir: failed to remove .*: Directory not empty\n?$/.test(data)) {
+					if (window.confirm("WARNING: '" + this.path_str() + "' is not empty. Delete recursively? This can NOT be undone.")) {
+						this.rm_recursive(resolve, reject);
+					}
+				} else {
+					reject(data);
 				}
-			} else {
-				window.alert(data);
-			}
+			});
 		});
 	}
 
-	async rm_recursive() {
+	/**
+	 * 
+	 * @param {Function} resolve 
+	 * @param {Function} reject 
+	 */
+	rm_recursive(resolve, reject) {
 		var proc = cockpit.spawn(
 			["rm", "-rf", this.path_str()],
 			{superuser: "try", err: "out"}
 		);
+		proc.done((data) => {
+			resolve();
+		});
 		proc.fail((e, data) => {
-			window.alert(data);
+			reject(data);
 		});
 	}
 	
@@ -760,15 +805,23 @@ class NavDirLink extends NavDir{
 		this.dom_element.nav_item_title.style.fontStyle = "italic";
 	}
 
-	async rm() {
-		var proc = cockpit.spawn(
-			["rm", "-f", this.path_str()],
-			{superuser: "try", err: "out"}
-		);
-		proc.fail((e, data) => {
-			window.alert(data);
+	/**
+	 * 
+	 * @returns {Promise<void>} 
+	 */
+	rm() {
+		return new Promise((resolve, reject) => {
+			var proc = cockpit.spawn(
+				["rm", "-f", this.path_str()],
+				{superuser: "try", err: "out"}
+			);
+			proc.done((data) => {
+				resolve();
+			})
+			proc.fail((e, data) => {
+				reject(data);
+			});
 		});
-		await proc;
 	}
 
 	show_properties() {
@@ -844,7 +897,7 @@ class NavContextMenu {
 		this.nav_window_ref.paste();
 	}
 
-	rename() {
+	async rename() {
 		this.hide();
 		var new_name = window.prompt("New Name: ", this.target.filename());
 		if (new_name === null)
@@ -853,7 +906,12 @@ class NavContextMenu {
 			window.alert("File name can't contain `/`.");
 			return;
 		}
-		this.target.mv(new_name);
+		try {
+			await this.target.mv(new_name);
+		} catch(e) {
+			window.alert(e);
+			return;
+		}
 		this.nav_window_ref.refresh();
 	}
 
@@ -886,7 +944,9 @@ class NavContextMenu {
 			try {
 				result = await this.zip_for_download();
 			} catch(e) {
+				this.nav_window_ref.stop_load();
 				window.alert(e.message);
+				return;
 			}
 			this.nav_window_ref.stop_load();
 			download_target = new NavFile(result["archive-path"], result["stat"], this.nav_window_ref);
@@ -1202,6 +1262,8 @@ class NavWindow {
 			var files = await this.pwd().get_children(this);
 		} catch(e) {
 			this.up();
+			window.alert(e);
+			return;
 		}
 		while (this.entries.length) {
 			var entry = this.entries.pop();
@@ -1460,10 +1522,18 @@ class NavWindow {
 				new_owner !== entry.stat["owner"] ||
 				new_group !== entry.stat["group"]
 			) {
-				await entry.chown(new_owner, new_group).catch(/*ignore, caught in chown*/);
+				try {
+					await entry.chown(new_owner, new_group);
+				} catch(e) {
+					window.alert(e);
+				}
 			}
 			if (this.changed_mode && (new_perms & 0o777) !== (entry.stat["mode"] & 0o777)) {
-				await entry.chmod(new_perms).catch(/*ignore, caught in chmod*/);
+				try {
+					await entry.chmod(new_perms);
+				} catch(e) {
+					window.alert(e);
+				}
 			}
 		}
 		this.refresh();
@@ -1481,7 +1551,11 @@ class NavWindow {
 			return;
 		}
 		for (let target of this.selected_entries) {
-			await target.rm().catch(/*ignore, caught in rm*/);
+			try {
+				await target.rm();
+			} catch(e) {
+				window.alert(e);
+			}
 		}
 		this.refresh();
 	}
@@ -1494,14 +1568,23 @@ class NavWindow {
 			window.alert("Directory name can't contain `/`.");
 			return;
 		}
-		var proc = cockpit.spawn(
-			["mkdir", this.pwd().path_str() + "/" + new_dir_name],
-			{superuser: "try", err: "out"}
-		);
-		proc.fail((e, data) => {
-			window.alert(data);
+		var promise = new Promise((resolve, reject) => {
+			var proc = cockpit.spawn(
+				["mkdir", this.pwd().path_str() + "/" + new_dir_name],
+				{superuser: "try", err: "out"}
+			);
+			proc.done((data) => {
+				resolve();
+			});
+			proc.fail((e, data) => {
+				reject(data);
+			});
 		});
-		await proc;
+		try {
+			await promise;
+		} catch(e) {
+			window.alert(e);
+		}
 		this.refresh();
 	}
 
@@ -1513,14 +1596,23 @@ class NavWindow {
 			window.alert("File name can't contain `/`.");
 			return;
 		}
-		var proc = cockpit.spawn(
-			["/usr/share/cockpit/navigator/scripts/touch.py", this.pwd().path_str() + "/" + new_file_name],
-			{superuser: "try", err: "out"}
-		);
-		proc.fail((e, data) => {
-			window.alert(data);
+		var promise = new Promise((resolve, reject) => {
+			var proc = cockpit.spawn(
+				["/usr/share/cockpit/navigator/scripts/touch.py", this.pwd().path_str() + "/" + new_file_name],
+				{superuser: "try", err: "out"}
+			);
+			proc.done((data) => {
+				resolve();
+			});
+			proc.fail((e, data) => {
+				reject(data);
+			});
 		});
-		await proc;
+		try {
+			await promise;
+		} catch(e) {
+			window.alert(e);
+		}
 		this.refresh();
 	}
 
@@ -1536,14 +1628,23 @@ class NavWindow {
 			return;
 		}
 		var link_path = this.pwd().path_str() + "/" + link_name;
-		var proc = cockpit.spawn(
-			["ln", "-sn", link_target, link_path],
-			{superuser: "try", err: "out"}
-		);
-		proc.fail((e, data) => {
-			window.alert(data);
+		var promise = new Promise((resolve, reject) => {
+			var proc = cockpit.spawn(
+				["ln", "-sn", link_target, link_path],
+				{superuser: "try", err: "out"}
+			);
+			proc.done((data) => {
+				resolve();
+			});
+			proc.fail((e, data) => {
+				reject(data);
+			});
 		});
-		await proc;
+		try {
+			await promise;
+		} catch(e) {
+			window.alert(e);
+		}
 		this.refresh();
 	}
 
@@ -1579,26 +1680,34 @@ class NavWindow {
 			cmd.push(item.path_str());
 		}
 		cmd.push(dest);
-		var proc = cockpit.spawn(
-			cmd,
-			{superuser: "try", err: "ignore"}
-		);
-		proc.stream((data) => {
-			var payload = JSON.parse(data);
-			if (payload["wants-response"]) {
-				var user_response = window.confirm(payload["message"]);
-				proc.input(JSON.stringify(user_response) + "\n", true);
-			} else {
-				window.alert(payload["message"]);
-			}
+		var promise = new Promise((resolve, reject) => {
+			var proc = cockpit.spawn(
+				cmd,
+				{superuser: "try", err: "ignore"}
+			);
+			proc.stream((data) => {
+				var payload = JSON.parse(data);
+				if (payload["wants-response"]) {
+					var user_response = window.confirm(payload["message"]);
+					proc.input(JSON.stringify(user_response) + "\n", true);
+				} else {
+					window.alert(payload["message"]);
+				}
+			});
+			proc.done((data) => {
+				resolve();
+			});
+			proc.fail((e, data) => {
+				reject("Paste failed.");
+			});
 		});
-		proc.fail((e, data) => {
-			window.alert("Paste failed.");
-		});
-		proc.always(() => {
-			this.stop_load();
-			this.refresh();
-		});
+		try {
+			await promise;
+		} catch(e) {
+			window.alert(e);
+		}
+		this.stop_load();
+		this.refresh();
 	}
 
 	/**
@@ -1633,10 +1742,12 @@ class NavWindow {
 			return;
 		this.nav_bar_last_parent_path_str = parent_path_str;
 		var parent_dir = new NavDir(parent_path_str);
-		var error = false;
-		var objs = await parent_dir.get_children(this, true).catch(() => {error = true});
-		if(error)
+		var objs;
+		try {
+			objs = await parent_dir.get_children(this);
+		} catch(e) {
 			return;
+		}
 		objs = objs.filter((child) => {return child.nav_type === "dir"});
 		while(list.firstChild)
 			list.removeChild(list.firstChild);
@@ -1681,38 +1792,70 @@ class NavWindow {
 		this.refresh();
 	}
 
-	async get_system_users() {
-		var proc = cockpit.spawn(["getent", "passwd"], {err: "ignore", superuser: "try"});
-		var list = document.getElementById("possible-owners");
-		while(list.firstChild) {
-			list.removeChild(list.firstChild);
-		}
-		var passwd = await proc;
-		var passwd_entries = passwd.split("\n");
-		for (let entry of passwd_entries) {
-			var cols = entry.split(":");
-			var username = cols[0];
-			var option = document.createElement("option");
-			option.value = username;
-			list.appendChild(option);
-		}
+	/**
+	 * 
+	 * @returns {Promise<void>} 
+	 */
+	get_system_users() {
+		return new Promise(async (resolve, reject) => {
+			var proc = cockpit.spawn(["getent", "passwd"], {err: "ignore", superuser: "try"});
+			proc.fail((e, data) => {
+				reject(data);
+			});
+			var list = document.getElementById("possible-owners");
+			while(list.firstChild) {
+				list.removeChild(list.firstChild);
+			}
+			var passwd;
+			try {
+				passwd = await proc;
+			} catch(e) {
+				reject(e);
+				return;
+			}
+			var passwd_entries = passwd.split("\n");
+			for (let entry of passwd_entries) {
+				var cols = entry.split(":");
+				var username = cols[0];
+				var option = document.createElement("option");
+				option.value = username;
+				list.appendChild(option);
+			}
+			resolve();
+		});
 	}
 
-	async get_system_groups() {
-		var proc = cockpit.spawn(["getent", "group"], {err: "ignore", superuser: "try"});
-		var list = document.getElementById("possible-groups");
-		while(list.firstChild) {
-			list.removeChild(list.firstChild);
-		}
-		var group = await proc;
-		var group_entries = group.split("\n");
-		for (let entry of group_entries) {
-			var cols = entry.split(":");
-			var groupname = cols[0];
-			var option = document.createElement("option");
-			option.value = groupname;
-			list.appendChild(option);
-		}
+	/**
+	 * 
+	 * @returns {Promise<void>} 
+	 */
+	get_system_groups() {
+		return new Promise(async (resolve, reject) => {
+			var proc = cockpit.spawn(["getent", "group"], {err: "ignore", superuser: "try"});
+			proc.fail((e, data) => {
+				reject(data);
+			});
+			var list = document.getElementById("possible-groups");
+			while(list.firstChild) {
+				list.removeChild(list.firstChild);
+			}
+			var group
+			try {
+				group = await proc;
+			} catch(e) {
+				reject(e);
+				return;
+			}
+			var group_entries = group.split("\n");
+			for (let entry of group_entries) {
+				var cols = entry.split(":");
+				var groupname = cols[0];
+				var option = document.createElement("option");
+				option.value = groupname;
+				list.appendChild(option);
+			}
+			resolve();
+		});
 	}
 
 	disable_buttons_for_editing() {
