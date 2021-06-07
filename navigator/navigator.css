@@ -22,7 +22,7 @@
 	--border: #bebebe;
 	--navigation: #fff;
 	--font: #1c1c1c;
-	--selected: #f8f8f8;
+	--selected: #eeeeee;
 	--toggle-light: #151515;
 	--toggle-dark: #ccc;
 	--scrollbar-thumb: var(--border);
@@ -34,6 +34,7 @@
 	--nav-entry-color: #555F6E;
 	--nav-border-radius: 4px;
 	--symlink-symbol-color: var(--navigation);
+	--list-view-header: var(--selected);
 }
 
 [data-theme="dark"] {
@@ -51,6 +52,7 @@
 	--logo-45: #fff;
 	--nav-entry-color: #555F6E;
 	--symlink-symbol-color: var(--navigation);
+	--list-view-header: var(--container);
 }
 
 html {
@@ -200,17 +202,25 @@ input[type="text"] {
 	background-color: var(--navigation);
 	border: 1px solid var(--border);
 	border-radius: var(--nav-border-radius);
-	padding: 0.5em;
 	display: flex;
-	flex-flow: row wrap;
 	justify-content: flex-start;
-	align-items: flex-start;
 	align-content: flex-start;
 	overflow: auto;
 	position: relative;
 }
 
-.nav-item {
+.contents-view-grid {
+	flex-flow: row wrap;
+	align-items: flex-start;
+	padding: 0.5em;
+}
+
+.contents-view-list {
+	flex-flow: column nowrap;
+	align-items: stretch;
+}
+
+.contents-view-grid > .nav-item {
 	margin: 2px;
 	padding: 3px;
 	flex: 0;
@@ -221,20 +231,12 @@ input[type="text"] {
 	box-sizing: border-box;
 }
 
-.nav-item-selected {
-	background-color: var(--selected);
-	border: 1px solid var(--border);
-	border-radius: var(--nav-border-radius);
-	box-sizing: border-box;
-	padding: 2px;
-}
-
-.nav-item .nav-item-title {
+.contents-view-grid > .nav-item > .nav-item-title {
 	text-align: center;
 	overflow-wrap: anywhere;
 }
 
-.nav-item .nav-item-icon {
+.contents-view-grid > .nav-item > .nav-item-icon {
 	position: relative;
 	text-align: center;
 	width: 100px;
@@ -242,20 +244,101 @@ input[type="text"] {
 	color: var(--nav-entry-color);
 }
 
-.nav-item-symlink-symbol-dir {
+.contents-view-grid > .nav-item-selected {
+	background-color: var(--selected);
+	border: 1px solid var(--border);
+	border-radius: var(--nav-border-radius);
+	box-sizing: border-box;
+	padding: 2px;
+}
+
+.contents-view-grid > .nav-item > .nav-item-icon > .nav-item-symlink-symbol-dir {
 	position: absolute;
 	color: var(--symlink-symbol-color);
-	font-size: 12pt;
+	font-size: 20%;
 	bottom: 19%;
 	right: 15%;
 }
 
-.nav-item-symlink-symbol-file {
+.contents-view-grid > .nav-item > .nav-item-icon > .nav-item-symlink-symbol-file {
 	position: absolute;
 	color: var(--symlink-symbol-color);
-	font-size: 12pt;
+	font-size: 20%;
 	bottom: 6%;
 	right: 25%;
+}
+
+.contents-view-grid > .contents-view-list-header {
+	display: none;
+}
+
+.contents-view-list-header {
+	background-color: var(--list-view-header);
+	cursor: default !important;
+}
+
+.contents-view-list > .nav-item {
+	padding: 3px;
+	flex: 0;
+	display: flex;
+	flex: row nowrap;
+	align-items: baseline;
+	justify-content: flex-start;
+	cursor: pointer;
+	box-sizing: border-box;
+}
+
+.contents-view-list > .nav-item:nth-child(even) {
+	background-color: var(--selected);
+}
+
+.contents-view-list > .nav-item > .nav-item-title {
+	margin-left: 5px;
+	padding-right: 5px;
+}
+
+.contents-view-list > .nav-item > .nav-item-icon {
+	position: relative;
+	text-align: center;
+	width: 20px;
+	color: var(--nav-entry-color);
+}
+
+.contents-view-list > .nav-item-selected {
+	background-color: var(--selected);
+	border: 1px solid var(--border);
+	border-radius: var(--nav-border-radius);
+	box-sizing: border-box;
+	padding: 2px;
+}
+
+.contents-view-list > .nav-item > .nav-item-icon > .nav-item-symlink-symbol-dir {
+	position: absolute;
+	color: var(--symlink-symbol-color);
+	font-size: 40%;
+	bottom: 19%;
+	right: 15%;
+}
+
+.contents-view-list > .nav-item > .nav-item-icon > .nav-item-symlink-symbol-file {
+	position: absolute;
+	color: var(--symlink-symbol-color);
+	font-size: 40%;
+	bottom: 6%;
+	right: 25%;
+}
+
+.contents-view-list > .nav-item > div {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	flex-basis: 0;
+	flex-grow: 1;
+}
+
+.contents-view-list > .nav-item > div:first-of-type {
+	flex-basis: 0;
+	flex-grow: 2;
 }
 
 .nav-info-column {
@@ -469,6 +552,10 @@ input:checked + .slider:before {
 	font-size: 60%;
 	top: -10%;
 	left: -30%;
+}
+
+.clickable {
+	cursor: pointer;
 }
 
 .nav-context-menu {

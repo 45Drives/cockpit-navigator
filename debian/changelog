@@ -1,3 +1,10 @@
+cockpit-navigator (0.4.2-1focal) focal; urgency=low
+
+  * Implement list view.
+  * Fix opening symlinks to files for editing.
+
+ -- Josh Boudreau <jboudreau@45drives.com>  Mon, 07 Jun 2021 17:27:00 -0300
+
 cockpit-navigator (0.4.1-1focal) focal; urgency=low
 
   * Use smaller chunk size while uploading for older versions of Cockpit.

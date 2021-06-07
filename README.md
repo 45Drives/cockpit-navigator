@@ -22,12 +22,12 @@ With no command line use needed, you can:
 # Installation
 ## From Github Release
 ### Ubuntu
-1. `$ wget https://github.com/45Drives/cockpit-navigator/releases/download/v0.4/cockpit-navigator_0.4.1-1focal_all.deb`
-1. `# apt install ./cockpit-navigator_0.4.1-1focal_all.deb`
+1. `$ wget https://github.com/45Drives/cockpit-navigator/releases/download/v0.4/cockpit-navigator_0.4.2-1focal_all.deb`
+1. `# apt install ./cockpit-navigator_0.4.2-1focal_all.deb`
 ### EL7
-1. `# yum install https://github.com/45Drives/cockpit-navigator/releases/download/v0.4/cockpit-navigator-0.4.1-1.el7.noarch.rpm`
+1. `# yum install https://github.com/45Drives/cockpit-navigator/releases/download/v0.4/cockpit-navigator-0.4.2-1.el7.noarch.rpm`
 ### EL8
-1. `# dnf install https://github.com/45Drives/cockpit-navigator/releases/download/v0.4/cockpit-navigator-0.4.1-1.el8.noarch.rpm`
+1. `# dnf install https://github.com/45Drives/cockpit-navigator/releases/download/v0.4/cockpit-navigator-0.4.2-1.el8.noarch.rpm`
 ## From Source
 1. Ensure dependencies are installed: `cockpit`, `python3`, `rsync`, `zip`.
 1. `$ git clone https://github.com/45Drives/cockpit-navigator.git`
