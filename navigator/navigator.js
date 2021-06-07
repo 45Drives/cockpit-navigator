@@ -678,10 +678,11 @@ class NavDir extends NavEntry {
 			var response = JSON.parse(data);
 			this.stat = response["."]["stat"];
 			var entries = response["children"];
+			var filename, path, stat;
 			entries.forEach((entry) => {
-				var filename = entry["filename"];
-				var path = (this.path.length >= 1 && this.path[0]) ? [...this.path, filename] : [filename];
-				var stat = entry["stat"];
+				filename = entry["filename"];
+				path = (this.path.length >= 1 && this.path[0]) ? [...this.path, filename] : [filename];
+				stat = entry["stat"];
 				switch(stat["mode-str"].charAt(0)) {
 					case 'd':
 						children.push(new NavDir(path, stat, nav_window_ref));
@@ -1108,10 +1109,11 @@ class FileUpload {
 	 */
 	slice_file(file) {
 		var offset = 0;
+		var next_offset;
 		var chunks = [];
 		this.num_chunks = Math.ceil(file.size / this.chunk_size);
 		for (let i = 0; i < this.num_chunks; i++) {
-			var next_offset = Math.min(this.chunk_size * (i + 1), file.size);
+			next_offset = Math.min(this.chunk_size * (i + 1), file.size);
 			chunks.push(file.slice(offset, next_offset));
 			offset = next_offset;
 		}
