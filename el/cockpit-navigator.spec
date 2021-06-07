@@ -1,5 +1,5 @@
 Name:           cockpit-navigator
-Version:        0.4.0
+Version:        0.4.1
 Release:        1%{?dist}
 Summary:        A File System Browser for Cockpit.
 License:        GPL-3.0+
@@ -32,6 +32,8 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Mon Jun 07 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.1-1
+- Use smaller chunk size while uploading for older versions of Cockpit.
 * Mon Jun 07 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.0-1
 - Add icons to right click menu.
 - Add ability to download files and directories.
