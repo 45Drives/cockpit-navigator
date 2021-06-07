@@ -32,9 +32,10 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
-* Thu Jun 03 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.0-1
+* Mon Jun 07 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.0-1
 - Add icons to right click menu.
 - Add ability to download files and directories.
+- Show transfer rate and ETA while uploading files.
 * Thu Jun 03 2021 Josh Boudreau <jboudreau@45drives.com> 0.3.0-1
 - Add drag and drop uploading of files.
 - Add event listeners for ctrl+a to select all, ctrl+x to cut,
