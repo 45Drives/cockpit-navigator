@@ -111,6 +111,18 @@ function load_hidden_file_state(nav_window) {
 	}
 }
 
+/**
+ * 
+ * @param {NavWindow} nav_window 
+ */
+ function load_item_display_state(nav_window) {
+	const state = localStorage.getItem('item-display');
+
+	if (state === 'list') {
+		nav_window.switch_item_display();
+	}
+}
+
 function set_last_theme_state() {
 	var toggle_switch = document.getElementById("toggle-theme");
 	var state = localStorage.getItem("houston-theme-state");
@@ -226,6 +238,20 @@ class NavEntry {
 		if (this.is_hidden_file)
 			icon.style.opacity = 0.5;
 		this.dom_element.title = this.filename();
+		if (nav_window_ref && nav_window_ref.item_display === "list") {
+			let mode = document.createElement("div");
+			let owner = document.createElement("div");
+			let group = document.createElement("div");
+			let size = document.createElement("div");
+			mode.title = mode.innerText = this.stat["mode-str"];
+			owner.title = owner.innerText = this.stat["owner"];
+			group.title = group.innerText = this.stat["group"];
+			size.title = size.innerText = format_bytes(this.stat["size"]);
+			this.dom_element.appendChild(mode);
+			this.dom_element.appendChild(owner);
+			this.dom_element.appendChild(group);
+			this.dom_element.appendChild(size);
+		}
 	}
 
 	/**
@@ -550,6 +576,8 @@ class NavFileLink extends NavFile{
 		this.double_click = false;
 		this.link_target = link_target;
 		this.dom_element.nav_item_title.style.fontStyle = "italic";
+		if (nav_window_ref.item_display === "list")
+			this.dom_element.nav_item_title.innerHTML += " &#8594; " + this.link_target;
 	}
 
 	show_properties() {
@@ -825,6 +853,8 @@ class NavDirLink extends NavDir{
 		this.double_click = false;
 		this.link_target = link_target;
 		this.dom_element.nav_item_title.style.fontStyle = "italic";
+		if (nav_window_ref.item_display === "list")
+			this.dom_element.nav_item_title.innerHTML += " &#8594; " + this.link_target;
 	}
 
 	/**
@@ -1259,6 +1289,7 @@ class NavDragDrop {
 
 class NavWindow {
 	constructor() {
+		this.item_display = "grid";
 		this.path_stack = (localStorage.getItem('navigator-path') ?? '/').split('/');
 		this.path_stack = this.path_stack.map((_, index) => new NavDir([...this.path_stack.slice(0, index + 1)].filter(part => part != ''), this));
 
@@ -1942,6 +1973,27 @@ class NavWindow {
 			}
 		}
 	}
+
+	switch_item_display() {
+		var button = document.getElementById("nav-item-display-icon");
+		if (this.item_display === "grid") {
+			this.item_display = "list";
+			this.window.classList.remove("contents-view-grid");
+			this.window.classList.add("contents-view-list");
+			button.classList.remove("fa-list");
+			button.classList.add("fa-th");
+		} else {
+			this.item_display = "grid";
+			this.window.classList.remove("contents-view-list");
+			this.window.classList.add("contents-view-grid");
+			button.classList.remove("fa-th");
+			button.classList.add("fa-list");
+		}
+		
+		localStorage.setItem("item-display", this.item_display);
+
+		this.refresh();
+	}
 }
 
 let nav_window = new NavWindow();
@@ -1967,11 +2019,13 @@ function set_up_buttons() {
 	document.getElementById("pwd").addEventListener("keydown", nav_window.nav_bar_event_handler.bind(nav_window));
 	document.getElementById("toggle-theme").addEventListener("change", switch_theme, false);
 	document.getElementById("nav-show-hidden").addEventListener("change", nav_window.toggle_show_hidden.bind(nav_window));
+	document.getElementById("nav-item-display-btn").addEventListener("click", nav_window.switch_item_display.bind(nav_window));
 }
 
 async function main() {
 	set_last_theme_state();
 	load_hidden_file_state(nav_window);
+	load_item_display_state(nav_window);
 	var get_users = nav_window.get_system_users();
 	var get_groups = nav_window.get_system_groups();
 	var refresh = nav_window.refresh();
