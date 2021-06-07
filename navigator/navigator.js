@@ -58,6 +58,27 @@ function format_time(timestamp) {
 
 /**
  * 
+ * @param {number} seconds 
+ * @returns {string}
+ */
+function format_time_remaining(seconds_) {
+	var hours = Math.floor(seconds_ / 3600);
+	var seconds = seconds_ % 3600;
+	var minutes = Math.floor(seconds / 60);
+	seconds = Math.floor(seconds % 60);
+	var out = "";
+	if (hours) {
+		out = String(hours).padStart(2, '0') + ":";
+	}
+	if (minutes) {
+		out += String(minutes).padStart(2, '0') + ":";
+	}
+	out += String(seconds).padStart(2, '0');
+	return out;
+}
+
+/**
+ * 
  * @param {number} mode 
  * @returns {string}
  */
@@ -1028,6 +1049,7 @@ class FileUpload {
 		this.reader = new FileReader();
 		this.chunks = this.slice_file(file);
 		this.chunk_index = 0;
+		this.timestamp = Date.now();
 	}
 
 	check_if_exists() {
@@ -1041,15 +1063,34 @@ class FileUpload {
 	make_html_element() {
 		var notification = document.createElement("div");
 		notification.classList.add("nav-notification");
+
 		var header = document.createElement("div");
 		header.classList.add("nav-notification-header");
 		notification.appendChild(header);
 		header.innerText = "Uploading " + this.filename;
+
+		var info = document.createElement("div");
+		info.classList.add("flex-row", "space-between");
+		notification.appendChild(info);
+
+		var rate = document.createElement("div");
+		rate.classList.add("monospace-sm");
+		info.appendChild(rate);
+		rate.innerText = "-";
+		this.rate = rate;
+
+		var eta = document.createElement("div");
+		eta.classList.add("monospace-sm");
+		info.appendChild(eta);
+		eta.innerText = "-";
+		this.eta = eta;
+
 		var progress = document.createElement("progress");
 		progress.max = this.num_chunks;
 		notification.appendChild(progress);
 		this.progress = progress;
-		this.html_elements = [progress, header, notification];
+
+		this.html_elements = [progress, eta, rate, info, header, notification];
 		document.getElementById("nav-notifications").appendChild(notification);
 	}
 
@@ -1120,9 +1161,8 @@ class FileUpload {
 	/**
 	 * 
 	 * @param {Event} evt 
-	 * @param {Number} offset 
 	 */
-	write_to_file(evt, offset) {
+	write_to_file(evt) {
 		var chunk_b64 = this.arrayBufferToBase64(evt.target.result);
 		const seek = this.chunk_index * this.chunk_size;
 		var obj = {
@@ -1130,12 +1170,27 @@ class FileUpload {
 			chunk: chunk_b64
 		};
 		this.proc.input(JSON.stringify(obj) + "\n", true);
+		this.update_xfr_rate();
 	}
 
 	done() {
 		this.proc.input(); // close stdin
 		this.nav_window_ref.refresh();
 		this.remove_html_element();
+	}
+
+	update_xfr_rate() {
+		var now = Date.now();
+		var elapsed = (now - this.timestamp) / 1000;
+		this.timestamp = now;
+		var rate = this.chunk_size / elapsed;
+		this.rate.innerText = cockpit.format_bytes_per_sec(rate);
+		// keep exponential moving average of chunk time for eta
+		this.chunk_time = (this.chunk_time)
+			? (0.125 * elapsed + (0.875 * this.chunk_time))
+			: elapsed;
+		var eta = (this.num_chunks - this.chunk_index) * this.chunk_time;
+		this.eta.innerText = format_time_remaining(eta);
 	}
 }
 
@@ -1174,7 +1229,7 @@ class NavDragDrop {
 								window.alert(file.name + ": Cannot upload folders.");
 								continue;
 							}
-							var uploader = new FileUpload(file, 4096, this.nav_window_ref);
+							var uploader = new FileUpload(file, 1048576, this.nav_window_ref);
 							uploader.upload();
 						}
 					}
@@ -1182,7 +1237,7 @@ class NavDragDrop {
 					for (let file of ev.dataTransfer.files) {
 						if (file.type === "")
 							continue;
-						var uploader = new FileUpload(file, 4096, this.nav_window_ref);
+						var uploader = new FileUpload(file, 1048576, this.nav_window_ref);
 						uploader.upload();
 					}
 				}
