@@ -600,22 +600,30 @@ class NavFileLink extends NavFile{
 		return target;
 	}
 
+	async open() {
+		var target_path = this.get_link_target_path();
+		var proc_output = await cockpit.spawn(["file", "--mime-type", target_path], {superuser: "try"});
+		var fields = proc_output.split(/:(?=[^:]+$)/); // ensure it's the last : with lookahead
+		var type = fields[1].trim();
+		
+		if ((/^text/.test(type) || /^inode\/x-empty$/.test(type) || this.stat["size"] === 0)) {
+			this.show_edit_file_contents();
+		} else {
+			console.log("Unknown mimetype: " + type);
+			if (window.confirm("Can't open " + this.filename() + " for editing. Download?")) {
+				var download = new NavDownloader(this);
+				download.download();
+			}
+		}
+	}
+
 	async show_edit_file_contents() {
 		this.nav_window_ref.disable_buttons_for_editing();
 		document.getElementById("pwd").disabled = true;
 		var target_path = this.get_link_target_path();
-		var proc_output = await cockpit.spawn(["file", "--mime-type", target_path], {superuser: "try"});
-		var fields = proc_output.split(':');
-		var type = fields[1].trim();
-		if (!(/^text/.test(type) || /^inode\/x-empty$/.test(type) || this.stat["size"] === 0)) {
-			if (!window.confirm("File is of type `" + type + "`. Are you sure you want to edit it?")) {
-				this.nav_window_ref.enable_buttons();
-				return;
-			}
-		}
 		var contents = "";
 		try {
-			contents = await cockpit.file(this.path_str(), {superuser: "try"}).read();
+			contents = await cockpit.file(target_path, {superuser: "try"}).read();
 		} catch(e) {
 			this.nav_window_ref.enable_buttons();
 			window.alert(e.message);
