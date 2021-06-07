@@ -1929,6 +1929,7 @@ class NavWindow {
 	}
 
 	select_all() {
+		this.selected_entries.clear();
 		for (let entry of this.entries) {
 			if (!entry.is_hidden_file || this.show_hidden) {
 				this.set_selected(entry, false, true);
