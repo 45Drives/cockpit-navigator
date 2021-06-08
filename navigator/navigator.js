@@ -1382,7 +1382,7 @@ class NavWindow {
 		this.window = document.getElementById("nav-contents-view");
 		this.window.addEventListener("click", this);
 		this.window.addEventListener("contextmenu", this);
-		window.addEventListener("keydown", this);
+		this.window.addEventListener("keydown", this);
 		this.last_selected_index = -1;
 
 		this.context_menu = new NavContextMenu("nav-context-menu", this);
