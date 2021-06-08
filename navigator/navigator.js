@@ -548,7 +548,10 @@ class NavFile extends NavEntry {
 	async write_to_file() {
 		var new_contents = document.getElementById("nav-edit-contents-textarea").value;
 		try {
-			await cockpit.file(this.path_str(), {superuser: "try"}).replace(new_contents); // cockpit.script("echo -n \"$1\" > $2", [new_contents, this.path_str()], {superuser: "try"});
+			if (new_contents.length)
+				await cockpit.file(this.path_str(), {superuser: "try"}).replace(new_contents);
+			else
+				await cockpit.script("echo -n > $1", [this.path_str()], {superuser: "try"});
 		} catch (e) {
 			window.alert(e.message);
 		}
@@ -2129,6 +2132,16 @@ function set_up_buttons() {
 	document.getElementById("search-bar").addEventListener("keydown", (e) => {
 		if (e.keyCode === 13)
 			nav_window.search_filter(e);
+	});
+	// fix tab in editor input
+	document.getElementById('nav-edit-contents-textarea').addEventListener('keydown', (e) => {
+		if (e.key == 'Tab') {
+			e.preventDefault();
+			var start = e.target.selectionStart;
+			var end = e.target.selectionEnd;
+			e.target.value = `${e.target.value.substring(0, start)}\t${e.target.value.substring(end)}`;
+			e.target.selectionStart = e.target.selectionEnd = start + 1;
+		}
 	});
 }
 
