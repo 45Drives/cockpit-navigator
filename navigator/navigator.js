@@ -309,7 +309,11 @@ class NavEntry {
 	}
 
 	show() {
-		document.getElementById("nav-contents-view").appendChild(this.dom_element);
+		this.dom_element.style.display = "flex";
+	}
+
+	hide() {
+		this.dom_element.style.display = "none";
 	}
 
 	/**
@@ -522,6 +526,7 @@ class NavFile extends NavEntry {
 	}
 
 	async show_edit_file_contents() {
+		window.removeEventListener("keydown", this.nav_window_ref);
 		this.nav_window_ref.disable_buttons_for_editing();
 		var contents = "";
 		try {
@@ -544,7 +549,10 @@ class NavFile extends NavEntry {
 	async write_to_file() {
 		var new_contents = document.getElementById("nav-edit-contents-textarea").value;
 		try {
-			await cockpit.file(this.path_str(), {superuser: "try"}).replace(new_contents); // cockpit.script("echo -n \"$1\" > $2", [new_contents, this.path_str()], {superuser: "try"});
+			if (new_contents.length)
+				await cockpit.file(this.path_str(), {superuser: "try"}).replace(new_contents);
+			else
+				await cockpit.script("echo -n > $1", [this.path_str()], {superuser: "try"});
 		} catch (e) {
 			window.alert(e.message);
 		}
@@ -553,6 +561,7 @@ class NavFile extends NavEntry {
 	}
 	
 	hide_edit_file_contents() {
+		window.addEventListener("keydown", this.nav_window_ref);
 		document.getElementById("nav-edit-contents-textarea").removeEventListener("keydown", this);
 		document.getElementById("nav-edit-contents-view").style.display = "none";
 		document.getElementById("nav-contents-view").style.display = "flex";
@@ -615,6 +624,7 @@ class NavFileLink extends NavFile{
 	}
 
 	async show_edit_file_contents() {
+		window.removeEventListener("keydown", this.nav_window_ref);
 		this.nav_window_ref.disable_buttons_for_editing();
 		document.getElementById("pwd").disabled = true;
 		var target_path = this.get_link_target_path();
@@ -1172,7 +1182,7 @@ class FileUpload {
 			window.alert(data);
 		})
 		this.proc.done((data) => {
-			
+			this.nav_window_ref.refresh();
 		})
 		this.reader.onload = (function(uploader_ref) {
 			return async function(evt) {
@@ -1216,7 +1226,6 @@ class FileUpload {
 
 	done() {
 		this.proc.input(); // close stdin
-		this.nav_window_ref.refresh();
 		this.remove_html_element();
 	}
 
@@ -1292,6 +1301,81 @@ class NavDragDrop {
 	}
 }
 
+class SortFunctions {
+	constructor() {
+		this.orders = {
+			name: "asc",
+			owner: "asc",
+			group: "asc",
+			size: "asc",
+		}
+		this.icons = {};
+		for (let option of ["name", "owner", "group", "size"]) {
+			this.icons[option] = document.getElementById(`sort-${option}-icon`);
+		}
+		this.current_choice = "name";
+	}
+
+	get_func() {
+		return this[`${this.current_choice}_${this.orders[this.current_choice]}`];
+	}
+
+	set_func(option) {
+		if (this.current_choice === option) {
+			if (this.orders[this.current_choice] === "asc") {
+				this.orders[this.current_choice] = "desc";
+				this.icons[this.current_choice].classList.remove("fa-chevron-up");
+				this.icons[this.current_choice].classList.add("fa-chevron-down");
+			} else {
+				this.orders[this.current_choice] = "asc";
+				this.icons[this.current_choice].classList.remove("fa-chevron-down");
+				this.icons[this.current_choice].classList.add("fa-chevron-up");
+			}
+		} else {
+			this.icons[this.current_choice].classList.remove("fa-chevron-up", "fa-chevron-down");
+			this.current_choice = option;
+			if (this.orders[this.current_choice] === "asc") {
+				this.icons[this.current_choice].classList.add("fa-chevron-up");
+			} else {
+				this.icons[this.current_choice].classList.add("fa-chevron-down");
+			}
+		}
+		
+	}
+
+	name_asc(first, second) {
+		return first.filename().localeCompare(second.filename());
+	}
+
+	name_desc(first, second) {
+		return second.filename().localeCompare(first.filename());
+	}
+
+	owner_asc(first, second) {
+		return first.stat["owner"].localeCompare(second.stat["owner"]);
+	}
+
+	owner_desc(first, second) {
+		return second.stat["owner"].localeCompare(first.stat["owner"]);
+	}
+
+	group_asc(first, second) {
+		return first.stat["group"].localeCompare(second.stat["group"]);
+	}
+
+	group_desc(first, second) {
+		return second.stat["group"].localeCompare(first.stat["group"]);
+	}
+
+	size_asc(first, second) {
+		return first.stat["size"] - second.stat["size"];
+	}
+
+	size_desc(first, second) {
+		return second.stat["size"] - first.stat["size"];
+	}
+}
+
 class NavWindow {
 	constructor() {
 		this.item_display = "grid";
@@ -1312,6 +1396,8 @@ class NavWindow {
 		this.clip_board = [];
 
 		this.uploader = new NavDragDrop(this.window, this);
+
+		this.sort_function = new SortFunctions();
 	}
 
 	/**
@@ -1368,7 +1454,9 @@ class NavWindow {
 		}
 		files.sort((first, second) => {
 			if (first.nav_type === second.nav_type) {
-				return first.filename().localeCompare(second.filename());
+				return this.item_display === "list" 
+					? this.sort_function.get_func()(first, second)
+					: this.sort_function.name_asc(first, second); // default to sort by name in grid view
 			}
 			if (first.nav_type === "dir")
 				return -1;
@@ -1381,9 +1469,10 @@ class NavWindow {
 				num_files++;
 				bytes_sum += file.stat["size"];
 			}
-			if(!file.is_hidden_file || this.show_hidden)
-				file.show();
-			this.entries.push(file);
+			if(!file.is_hidden_file || this.show_hidden) {
+				this.window.appendChild(file.dom_element);
+				this.entries.push(file);
+			}
 			file.context_menu_ref = this.context_menu;
 		});
 		document.getElementById("pwd").value = this.pwd().path_str();
@@ -1999,6 +2088,16 @@ class NavWindow {
 		
 		localStorage.setItem("item-display", this.item_display);
 	}
+
+	search_filter(event) {
+		var search_name = event.target.value;
+		this.entries.forEach((entry) => {
+			if (entry.filename().toLowerCase().startsWith(search_name.toLowerCase()))
+				entry.show();
+			else
+				entry.hide();
+		});
+	}
 }
 
 let nav_window = new NavWindow();
@@ -2025,6 +2124,28 @@ function set_up_buttons() {
 	document.getElementById("toggle-theme").addEventListener("change", switch_theme, false);
 	document.getElementById("nav-show-hidden").addEventListener("change", nav_window.toggle_show_hidden.bind(nav_window));
 	document.getElementById("nav-item-display-btn").addEventListener("click", nav_window.switch_item_display.bind(nav_window));
+	for (let option of ["name", "owner", "group", "size"]) {
+		var elem = document.getElementById("sort-" + option + "-btn");
+		elem.addEventListener("click", (event) => {
+			nav_window.sort_function.set_func(option);
+			nav_window.refresh();
+		});
+	}
+	document.getElementById("search-bar").addEventListener("input", nav_window.search_filter.bind(nav_window));
+	document.getElementById("search-bar").addEventListener("keydown", (e) => {
+		if (e.keyCode === 13)
+			nav_window.search_filter(e);
+	});
+	// fix tab in editor input
+	document.getElementById('nav-edit-contents-textarea').addEventListener('keydown', (e) => {
+		if (e.key == 'Tab') {
+			e.preventDefault();
+			var start = e.target.selectionStart;
+			var end = e.target.selectionEnd;
+			e.target.value = `${e.target.value.substring(0, start)}\t${e.target.value.substring(end)}`;
+			e.target.selectionStart = e.target.selectionEnd = start + 1;
+		}
+	});
 }
 
 async function main() {

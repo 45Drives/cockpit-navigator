@@ -180,13 +180,33 @@ body::-webkit-scrollbar-thumb {
 	padding-bottom: 0;
 }
 
+.nav-header {
+	align-items: baseline;
+}
+
 input[type="text"] {
 	background-color: var(--container);
 	color: inherit;
-	flex-grow: 1;
 	padding: 0.25em 1em 0.25em 1em;
 	border: 1px solid var(--border);
 	border-radius: 4px;
+	min-width: 30px;
+}
+
+.navigation-bar {
+	flex-basis: 0;
+	flex-grow: 5;
+}
+
+.search-bar {
+	flex-basis: 0;
+	flex-grow: 2;
+}
+
+.search-bar + i {
+	position: relative;
+	right: 30px;
+	width: 0;
 }
 
 .inner-container {
@@ -275,6 +295,20 @@ input[type="text"] {
 .contents-view-list-header {
 	background-color: var(--list-view-header);
 	cursor: default !important;
+	position: sticky;
+	top: 0;
+	z-index: 10;
+}
+
+.contents-view-list-header > div {
+	cursor: pointer;
+	position: relative;
+}
+
+.contents-view-list-header > div > i {
+	position: absolute;
+	right: 10px;
+	top: 0.25em;
 }
 
 .contents-view-list > .nav-item {

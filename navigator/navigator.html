@@ -37,7 +37,7 @@
 		</div>
 	</div>
 	<div class="flex-col outer-container">
-		<div class="flex-row">
+		<div class="flex-row nav-header">
 			<div class="nav-btn-group">
 				<button class="pf-c-button pf-m-secondary" id="nav-back-btn" title="Back"><i class="fas fa-arrow-left"></i></button>
 				<div class="horizontal-spacer"></div>
@@ -54,6 +54,9 @@
 				</select>
 			</datalist>
 			<div class="horizontal-spacer"></div>
+			<input type="text" autocomplete="off" class="search-bar" id="search-bar" title="Search in Directory" placeholder="Search in Directory"></input>
+			<i class="fas fa-search"></i>
+			<div class="horizontal-spacer"></div>
 			<div class="nav-btn-group">
 				<button class="pf-c-button pf-m-primary" id="nav-mkdir-btn" title="New Directory"><i class="fas fa-folder-plus"></i></button>
 				<div class="horizontal-spacer"></div>
@@ -67,11 +70,11 @@
 			<div class="contents-view contents-view-grid" id="nav-contents-view">
 				<div class="contents-view-list-header nav-item">
 					<i class="nav-item-icon"></i>
-					<div class="nav-item-title">Name</div>
-					<div>Mode</div>
-					<div>Owner</div>
-					<div>Group</div>
-					<div>Size</div>
+					<div class="nav-item-title" id="sort-name-btn">Name<i class="sort-arrow fas fa-chevron-up" id="sort-name-icon"></i></div>
+					<div id="sort-mode-btn">Mode</div>
+					<div id="sort-owner-btn">Owner<i class="sort-arrow fas" id="sort-owner-icon"></i></div>
+					<div id="sort-group-btn">Group<i class="sort-arrow fas" id="sort-group-icon"></i></div>
+					<div id="sort-size-btn">Size<i class="sort-arrow fas" id="sort-size-icon"></i></div>
 				</div>
 				<div class="nav-notifications" id="nav-notifications">
 				</div>
