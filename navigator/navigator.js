@@ -526,6 +526,7 @@ class NavFile extends NavEntry {
 	}
 
 	async show_edit_file_contents() {
+		window.removeEventListener("keydown", this.nav_window_ref);
 		this.nav_window_ref.disable_buttons_for_editing();
 		var contents = "";
 		try {
@@ -560,6 +561,7 @@ class NavFile extends NavEntry {
 	}
 	
 	hide_edit_file_contents() {
+		window.addEventListener("keydown", this.nav_window_ref);
 		document.getElementById("nav-edit-contents-textarea").removeEventListener("keydown", this);
 		document.getElementById("nav-edit-contents-view").style.display = "none";
 		document.getElementById("nav-contents-view").style.display = "flex";
@@ -622,6 +624,7 @@ class NavFileLink extends NavFile{
 	}
 
 	async show_edit_file_contents() {
+		window.removeEventListener("keydown", this.nav_window_ref);
 		this.nav_window_ref.disable_buttons_for_editing();
 		document.getElementById("pwd").disabled = true;
 		var target_path = this.get_link_target_path();
@@ -1385,7 +1388,7 @@ class NavWindow {
 		this.window = document.getElementById("nav-contents-view");
 		this.window.addEventListener("click", this);
 		this.window.addEventListener("contextmenu", this);
-		this.window.addEventListener("keydown", this);
+		window.addEventListener("keydown", this);
 		this.last_selected_index = -1;
 
 		this.context_menu = new NavContextMenu("nav-context-menu", this);
