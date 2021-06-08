@@ -1,5 +1,5 @@
 Name:           cockpit-navigator
-Version:        0.4.2
+Version:        0.4.3
 Release:        1%{?dist}
 Summary:        A File System Browser for Cockpit.
 License:        GPL-3.0+
@@ -32,6 +32,11 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Tue Jun 08 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.3-1
+- Add sort options for list view.
+- Add search bar to filter items.
+- Fix file size error after upload by refreshing after write process exits.
+- Fix input of tab characters and copy and pasting in file editor.
 * Mon Jun 07 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.2-1
 - Implement list view.
 - Fix opening symlinks to files for editing.
