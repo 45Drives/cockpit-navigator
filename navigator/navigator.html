@@ -37,7 +37,7 @@
 		</div>
 	</div>
 	<div class="flex-col outer-container">
-		<div class="flex-row">
+		<div class="flex-row nav-header">
 			<div class="nav-btn-group">
 				<button class="pf-c-button pf-m-secondary" id="nav-back-btn" title="Back"><i class="fas fa-arrow-left"></i></button>
 				<div class="horizontal-spacer"></div>
@@ -53,6 +53,9 @@
 				<select id="possible-paths">
 				</select>
 			</datalist>
+			<div class="horizontal-spacer"></div>
+			<input type="text" autocomplete="off" class="search-bar" id="search-bar" title="Search in Directory" placeholder="Search in Directory"></input>
+			<i class="fas fa-search"></i>
 			<div class="horizontal-spacer"></div>
 			<div class="nav-btn-group">
 				<button class="pf-c-button pf-m-primary" id="nav-mkdir-btn" title="New Directory"><i class="fas fa-folder-plus"></i></button>
@@ -73,7 +76,6 @@
 					<div id="sort-group-btn">Group<i class="sort-arrow fas" id="sort-group-icon"></i></div>
 					<div id="sort-size-btn">Size<i class="sort-arrow fas" id="sort-size-icon"></i></div>
 				</div>
-				<div class="nav-item list-view-top-spacer"></div>
 				<div class="nav-notifications" id="nav-notifications">
 				</div>
 			</div>

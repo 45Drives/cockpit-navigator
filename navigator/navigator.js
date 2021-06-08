@@ -309,7 +309,11 @@ class NavEntry {
 	}
 
 	show() {
-		document.getElementById("nav-contents-view").appendChild(this.dom_element);
+		this.dom_element.style.display = "flex";
+	}
+
+	hide() {
+		this.dom_element.style.display = "none";
 	}
 
 	/**
@@ -1460,9 +1464,10 @@ class NavWindow {
 				num_files++;
 				bytes_sum += file.stat["size"];
 			}
-			if(!file.is_hidden_file || this.show_hidden)
-				file.show();
-			this.entries.push(file);
+			if(!file.is_hidden_file || this.show_hidden) {
+				this.window.appendChild(file.dom_element);
+				this.entries.push(file);
+			}
 			file.context_menu_ref = this.context_menu;
 		});
 		document.getElementById("pwd").value = this.pwd().path_str();
@@ -2078,6 +2083,16 @@ class NavWindow {
 		
 		localStorage.setItem("item-display", this.item_display);
 	}
+
+	search_filter(event) {
+		var search_name = event.target.value;
+		this.entries.forEach((entry) => {
+			if (entry.filename().toLowerCase().startsWith(search_name.toLowerCase()))
+				entry.show();
+			else
+				entry.hide();
+		});
+	}
 }
 
 let nav_window = new NavWindow();
@@ -2111,6 +2126,11 @@ function set_up_buttons() {
 			nav_window.refresh();
 		});
 	}
+	document.getElementById("search-bar").addEventListener("input", nav_window.search_filter.bind(nav_window));
+	document.getElementById("search-bar").addEventListener("keydown", (e) => {
+		if (e.keyCode === 13)
+			nav_window.search_filter(e);
+	});
 }
 
 async function main() {
