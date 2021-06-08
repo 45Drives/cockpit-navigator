@@ -1176,7 +1176,7 @@ class FileUpload {
 			window.alert(data);
 		})
 		this.proc.done((data) => {
-			
+			this.nav_window_ref.refresh();
 		})
 		this.reader.onload = (function(uploader_ref) {
 			return async function(evt) {
@@ -1220,7 +1220,6 @@ class FileUpload {
 
 	done() {
 		this.proc.input(); // close stdin
-		this.nav_window_ref.refresh();
 		this.remove_html_element();
 	}
 
