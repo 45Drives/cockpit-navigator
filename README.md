@@ -12,12 +12,13 @@ With no command line use needed, you can:
 * **Upload files by dragging and dropping**,
 * **Download files and directories**.
 
-### Browsing Filesystem
-![User Interface](doc/ui_root.png)
-### Editing Properties
-![Edit Preferences](doc/ui_prefs.png)
-### Editing Content
-![Edit Contents](doc/ui_editor.png)
+| Browsing Filesystem |
+|---------------------|
+| ![User Interface](doc/ui_root.png) |
+
+| Editing Content | Editing Properties | 
+|-----------------|--------------------|
+| ![Edit Contents](doc/ui_editor.png) | ![Edit Preferences](doc/ui_prefs.png) |
 
 # Installation
 ## From Github Release
