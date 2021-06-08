@@ -275,6 +275,28 @@ input[type="text"] {
 .contents-view-list-header {
 	background-color: var(--list-view-header);
 	cursor: default !important;
+	position: sticky;
+	top: 0;
+	z-index: 10;
+}
+
+.contents-view-list > .list-view-top-spacer {
+	height: 30px;
+}
+
+.contents-view-grid > .list-view-top-spacer {
+	display: none;
+}
+
+.contents-view-list-header > div {
+	cursor: pointer;
+	position: relative;
+}
+
+.contents-view-list-header > div > i {
+	position: absolute;
+	right: 10px;
+	top: 0.25em;
 }
 
 .contents-view-list > .nav-item {
