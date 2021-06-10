@@ -247,6 +247,10 @@ class NavEntry {
 			owner.title = owner.innerText = this.stat["owner"];
 			group.title = group.innerText = this.stat["group"];
 			size.title = size.innerText = format_bytes(this.stat["size"]);
+			mode.classList.add("nav-item-title", "no-select");
+			owner.classList.add("nav-item-title", "no-select");
+			group.classList.add("nav-item-title", "no-select");
+			size.classList.add("nav-item-title", "no-select");
 			this.dom_element.appendChild(mode);
 			this.dom_element.appendChild(owner);
 			this.dom_element.appendChild(group);
@@ -934,7 +938,6 @@ class NavContextMenu {
 			this.dom_element.appendChild(elem);
 			this.menu_options[func[0]] = elem;
 		}
-		this.menu_options["paste"].style.display = "none";
 	}
 
 	new_dir() {
@@ -1036,29 +1039,30 @@ class NavContextMenu {
 	 * @param {NavEntry} target 
 	 */
 	show(event, target) {
-		if (this.nav_window_ref.selected_entries.size > 1) {
+		if (!this.nav_window_ref.none_selected()) {
 			if (event.shiftKey || event.ctrlKey)
 				this.nav_window_ref.set_selected(target, event.shiftKey, event.ctrlKey);
 		} else {
 			this.nav_window_ref.set_selected(target, false, false);
 		}
-		this.menu_options["download"].style.display = "flex";
-		if (target === this.nav_window_ref.pwd()) {
+		for (let option of Object.keys(this.menu_options)) {
+			this.menu_options[option].style.display = "flex"; // show all
+		}
+		// selectively hide options based on context
+		if (this.nav_window_ref.none_selected()) {
 			this.menu_options["copy"].style.display = "none";
 			this.menu_options["cut"].style.display = "none";
 			this.menu_options["delete"].style.display = "none";
-		} else {
-			this.menu_options["copy"].style.display = "flex";
-			this.menu_options["cut"].style.display = "flex";
-			this.menu_options["delete"].style.display = "flex";
+			this.menu_options["download"].style.display = "none";
 		}
 		if (this.nav_window_ref.selected_entries.size > 1) {
 			this.menu_options["rename"].style.display = "none";
 		} else {
-			this.menu_options["rename"].style.display = "flex";
-			if (target instanceof NavFileLink)
+			if (target instanceof NavDirLink || target instanceof NavFileLink)
 				this.menu_options["download"].style.display = "none";
 		}
+		if (!this.nav_window_ref.clip_board.length)
+			this.menu_options["paste"].style.display = "none";
 		this.target = target;
 		this.dom_element.style.display = "inline";
 		this.dom_element.style.left = event.clientX + "px";
@@ -1582,6 +1586,10 @@ class NavWindow {
 	selected_entry() {
 		return [...this.selected_entries][this.selected_entries.size - 1];
 	}
+
+	none_selected() {
+		return this.selected_entries.length === 1 && this.selected_entry() === this.pwd();
+	}
 	
 	show_selected_properties() {
 		this.selected_entry().show_properties();
@@ -1855,7 +1863,6 @@ class NavWindow {
 
 	async paste_clipboard() {
 		this.start_load();
-		this.context_menu.hide_paste();
 		var cmd = ["/usr/share/cockpit/navigator/scripts/paste.py"];
 		var dest = this.pwd().path_str();
 		if (this.copy_or_move === "move") {
@@ -1866,6 +1873,7 @@ class NavWindow {
 			cmd.push(item.path_str());
 		}
 		cmd.push(dest);
+		this.clip_board.length = 0; // clear clipboard
 		var promise = new Promise((resolve, reject) => {
 			var proc = cockpit.spawn(
 				cmd,
