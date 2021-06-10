@@ -1588,7 +1588,7 @@ class NavWindow {
 	}
 
 	none_selected() {
-		return this.selected_entries.length === 1 && this.selected_entry() === this.pwd();
+		return this.selected_entries.size === 1 && this.selected_entry() === this.pwd();
 	}
 	
 	show_selected_properties() {
