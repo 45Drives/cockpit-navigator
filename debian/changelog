@@ -1,3 +1,10 @@
+cockpit-navigator (0.4.4-1focal) focal; urgency=medium
+
+  * Hide download option in right click context menu when no items
+    are explicitly selected.
+
+ -- Josh Boudreau <jboudreau@45drives.com>  Thu, 10 Jun 2021 12:09:00 -0300
+
 cockpit-navigator (0.4.3-1focal) focal; urgency=medium
 
   * Add sort options for list view.
