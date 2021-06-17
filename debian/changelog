@@ -1,3 +1,10 @@
+cockpit-navigator (0.4.5-1focal) focal; urgency=medium
+
+  * Fix downloading a single file when the contextmenu
+    event target is not the file.
+
+ -- Josh Boudreau <jboudreau@45drives.com>  Thu, 17 Jun 2021 10:23:00 -0300
+
 cockpit-navigator (0.4.4-1focal) focal; urgency=medium
 
   * Hide download option in right click context menu when no items
