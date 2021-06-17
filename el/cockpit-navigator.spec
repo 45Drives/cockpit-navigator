@@ -1,5 +1,5 @@
 Name:           cockpit-navigator
-Version:        0.4.4
+Version:        0.4.5
 Release:        1%{?dist}
 Summary:        A File System Browser for Cockpit.
 License:        GPL-3.0+
@@ -32,6 +32,9 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Thu Jun 17 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.5-1
+- Fix downloading a single file when the contextmenu
+  event target is not the file.
 * Thu Jun 10 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.4-1
 - Hide download option in right click context menu when no items
   are explicitly selected.
