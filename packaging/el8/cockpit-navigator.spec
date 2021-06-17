@@ -21,9 +21,7 @@ A File System Browser for Cockpit.
 # empty
 
 %install
-rm -rf %{buildroot}
-mkdir -p  %{buildroot}
-cp -a * %{buildroot}
+make DESTDIR=%{buildroot} DIST=%{dist} install
 
 %clean
 rm -rf %{buildroot}
