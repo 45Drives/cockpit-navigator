@@ -1006,8 +1006,8 @@ class NavContextMenu {
 
 	async download() {
 		var download_target = "";
-		if (this.nav_window_ref.selected_entries.size === 1 && !(this.target instanceof NavDir)) {
-			download_target = this.target;
+		if (this.nav_window_ref.selected_entries.size === 1 && !(this.nav_window_ref.selected_entry() instanceof NavDir)) {
+			download_target = this.nav_window_ref.selected_entry();
 		} else {
 			this.nav_window_ref.start_load();
 			var result;
