@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: cockpit-navigator
-Upstream-Contact: Josh Boudreau <jboudreau@45drives.com>
-Source: https://github.com/45Drives/cockpit-navigator
+Upstream-Name: ::package_name::
+Upstream-Contact: ::package_author::
+Source: ::package_url::
 
 Files: *
 Copyright: 2021 Josh Boudreau <jboudreau@45drives.com>
