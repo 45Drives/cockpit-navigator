@@ -1484,8 +1484,15 @@ class NavWindow {
 		this.show_selected_properties();
 		document.getElementById("nav-num-dirs").innerText = num_dirs.toString();
 		document.getElementById("nav-num-files").innerText = num_files.toString();
-		document.getElementById("nav-num-bytes"). innerText = format_bytes(bytes_sum);
+		document.getElementById("nav-num-bytes").innerText = format_bytes(bytes_sum);
 		this.stop_load();
+		this.set_nav_button_state();
+	}
+
+	set_nav_button_state() {
+		document.getElementById("nav-back-btn").disabled = (this.path_stack_index === 1);
+		document.getElementById("nav-forward-btn").disabled = (this.path_stack_index === this.path_stack.length - 1);
+		document.getElementById("nav-up-dir-btn").disabled = (this.pwd().path_str() === "/");
 	}
 
 	/**
@@ -2065,6 +2072,7 @@ class NavWindow {
 			button.disabled = false;
 		}
 		document.getElementById("pwd").disabled = false;
+		this.set_nav_button_state();
 	}
 
 	select_all() {
