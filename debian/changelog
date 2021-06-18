@@ -1,3 +1,9 @@
+cockpit-navigator (0.4.6-1focal) focal; urgency=low
+
+  * Disable navigation buttons when invalid.
+
+ -- Josh Boudreau <jboudreau@45drives.com>  Fri, 18 Jun 2021 14:38:00 -0300
+
 cockpit-navigator (0.4.5-1focal) focal; urgency=medium
 
   * Fix downloading a single file when the contextmenu

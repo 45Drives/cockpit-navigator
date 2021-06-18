@@ -1,5 +1,5 @@
 Name:           cockpit-navigator
-Version:        0.4.5
+Version:        0.4.6
 Release:        1%{?dist}
 Summary:        A File System Browser for Cockpit.
 License:        GPL-3.0+
@@ -32,6 +32,8 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Fri Jun 18 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.6-1
+- Disable navigation buttons when invalid.
 * Thu Jun 17 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.5-1
 - Fix downloading a single file when the contextmenu
   event target is not the file.

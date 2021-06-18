@@ -63,8 +63,9 @@ body {
 	height: 100%;
 }
 
-.pf-c-button:disabled[data-theme="dark"] {
-	background-color: var(--border);
+[data-theme="dark"] .pf-c-button:disabled {
+	background-color: var(--container) !important;
+	border: 1px solid var(--border) !important;
 }
 
 .nav-loader-container {
