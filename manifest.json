@@ -1,0 +1,63 @@
+{
+    "__version": "45D-R1",
+    "name": "cockpit-navigator",
+    "title": "Cockpit Navigator",
+    "prerelease": true,
+    "version": "0.4.5",
+    "buildVersion": "2",
+    "author": "Josh Boudreau <jboudreau@45drives.com>",
+    "url": "https://github.com/45Drives/cockpit-navigator",
+    "category": "utils",
+    "priority": "optional",
+    "licence": "GPL-3.0+",
+    "architecture": {
+        "deb": "all",
+        "rpm": "noarch"
+    },
+    "description": {
+        "long": "A File System Browser for Cockpit.",
+        "short": "A File System Browser for Cockpit."
+    },
+    "defaults": {
+        "urgency": "medium"
+    },
+    "dependencies": {
+        "deb": [
+            "cockpit",
+            "python3",
+            "rsync",
+            "zip"
+        ],
+        "rpm": [
+            "cockpit",
+            "python3",
+            "rsync",
+            "zip"
+        ]
+    },
+    "releases": [
+        {
+            "image": "ubuntu-focal-builder",
+            "codeName": "focal",
+            "type": "deb"
+        },
+        {
+            "image": "rocky-el8-builder",
+            "codeName": "el8",
+            "type": "el"
+        }
+    ],
+    "changelog": {
+        "urgency": "medium",
+        "version": "1.1.1",
+        "buildVersion": "3",
+        "ignore": [],
+        "date": "2021-06-18T09:40:44.594817",
+        "packager": "Your Name <email@45drives.com>",
+        "changes": [
+            "test5",
+            "test5",
+            "test5"
+        ]
+    }
+}
