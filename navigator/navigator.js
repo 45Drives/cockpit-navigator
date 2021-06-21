@@ -232,8 +232,12 @@ class NavEntry {
 		this.dom_element.appendChild(icon);
 		this.dom_element.appendChild(title);
 		this.stat = stat;
-		this.dom_element.addEventListener("click", this);
-		this.dom_element.addEventListener("contextmenu", this);
+		if (stat && stat["inaccessible"]) {
+			this.dom_element.style.cursor = "not-allowed";
+		} else {
+			this.dom_element.addEventListener("click", this);
+			this.dom_element.addEventListener("contextmenu", this);
+		}
 		this.is_hidden_file = this.filename().startsWith('.');
 		if (this.is_hidden_file)
 			icon.style.opacity = 0.5;
@@ -1484,8 +1488,15 @@ class NavWindow {
 		this.show_selected_properties();
 		document.getElementById("nav-num-dirs").innerText = num_dirs.toString();
 		document.getElementById("nav-num-files").innerText = num_files.toString();
-		document.getElementById("nav-num-bytes"). innerText = format_bytes(bytes_sum);
+		document.getElementById("nav-num-bytes").innerText = format_bytes(bytes_sum);
 		this.stop_load();
+		this.set_nav_button_state();
+	}
+
+	set_nav_button_state() {
+		document.getElementById("nav-back-btn").disabled = (this.path_stack_index === 1);
+		document.getElementById("nav-forward-btn").disabled = (this.path_stack_index === this.path_stack.length - 1);
+		document.getElementById("nav-up-dir-btn").disabled = (this.pwd().path_str() === "/");
 	}
 
 	/**
@@ -1550,7 +1561,7 @@ class NavWindow {
 				[start, end] = [end, start];
 			if (end === -1)
 				return;
-			to_be_selected = this.entries.slice(start, end + 1);
+			to_be_selected = this.entries.slice(start, end + 1).filter(entry => !entry.stat["inaccessible"]);
 		} else {
 			if (!append)
 				this.selected_entries.clear();
@@ -2065,6 +2076,7 @@ class NavWindow {
 			button.disabled = false;
 		}
 		document.getElementById("pwd").disabled = false;
+		this.set_nav_button_state();
 	}
 
 	select_all() {
