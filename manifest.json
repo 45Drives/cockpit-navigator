@@ -12,7 +12,7 @@
     "licence": "GPL-3.0+",
     "architecture": {
         "deb": "all",
-        "rpm": "noarch"
+        "el": "noarch"
     },
     "description": {
         "long": "A File System Browser for Cockpit.",
@@ -28,7 +28,7 @@
             "rsync",
             "zip"
         ],
-        "rpm": [
+        "el": [
             "cockpit",
             "python3",
             "rsync",
@@ -49,15 +49,11 @@
     ],
     "changelog": {
         "urgency": "medium",
-        "version": "1.1.1",
-        "buildVersion": "3",
+        "version": "0.4.5",
+        "buildVersion": "2",
         "ignore": [],
-        "date": "2021-06-18T09:40:44.594817",
-        "packager": "Your Name <email@45drives.com>",
-        "changes": [
-            "test5",
-            "test5",
-            "test5"
-        ]
+        "date": null,
+        "packager": "Josh Boudreau <jboudreau@45drives.com>",
+        "changes": []
     }
 }
