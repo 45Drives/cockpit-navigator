@@ -20,7 +20,7 @@ jobs:
           echo "TITLE=$(cat ${{github.workspace}}/manifest.json | jq --raw-output '.title')" >> $GITHUB_ENV
           echo "VERSION=$(cat ${{github.workspace}}/manifest.json | jq --raw-output '.version')" >> $GITHUB_ENV
           echo "REVISION=$(cat ${{github.workspace}}/manifest.json | jq --raw-output '.buildVersion')" >> $GITHUB_ENV
-      - name: Release
+      - name: GitHub Release
         id: release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
@@ -29,11 +29,11 @@ jobs:
           prerelease: ${{env.PRERELEASE}}
           body_path: ${{github.workspace}}/CHANGELOG.md
           files: |
-            ${{github.workspace}}/dist/deb/*.deb
-            ${{github.workspace}}/dist/rpm/*/*.rpm
+            ${{github.workspace}}/dist/packages/*/*.deb
+            ${{github.workspace}}/dist/packages/*/*.rpm
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-      - name: Post-Release
+      - name: Repository Database
         if: startsWith(github.ref, 'refs/tags/')
-        run: echo ${{steps.release.outputs}}
+        run: update-repositories ${{github.workspace}}
 
