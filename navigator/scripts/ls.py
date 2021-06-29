@@ -25,27 +25,7 @@ from pwd import getpwuid
 from grp import getgrgid
 
 def get_stat(full_path, filename = '/'):
-    try:
-        stats = os.lstat(full_path)
-    except OSError:
-        return {
-            "filename": filename,
-            "isdir": False,
-            "link-target": "",
-            "stat": {
-                "inaccessible": True,
-                "mode": 0,
-                "mode-str": "?",
-                "uid": 0,
-                "owner": "?",
-                "gid": 0,
-                "group": "?",
-                "size": 0,
-                "atime": 0,
-                "mtime": 0,
-                "ctime": 0
-            }
-        }
+    stats = os.lstat(full_path)
     isdir = False
     try:
         isdir = S_ISDIR(os.stat(full_path).st_mode)
@@ -65,7 +45,6 @@ def get_stat(full_path, filename = '/'):
     except:
         pass
     response = {
-        "inaccessible": False,
         "filename": filename,
         "isdir": isdir,
         "link-target": link_target,

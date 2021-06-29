@@ -232,12 +232,8 @@ class NavEntry {
 		this.dom_element.appendChild(icon);
 		this.dom_element.appendChild(title);
 		this.stat = stat;
-		if (stat && stat["inaccessible"]) {
-			this.dom_element.style.cursor = "not-allowed";
-		} else {
-			this.dom_element.addEventListener("click", this);
-			this.dom_element.addEventListener("contextmenu", this);
-		}
+		this.dom_element.addEventListener("click", this);
+		this.dom_element.addEventListener("contextmenu", this);
 		this.is_hidden_file = this.filename().startsWith('.');
 		if (this.is_hidden_file)
 			icon.style.opacity = 0.5;
@@ -1561,7 +1557,7 @@ class NavWindow {
 				[start, end] = [end, start];
 			if (end === -1)
 				return;
-			to_be_selected = this.entries.slice(start, end + 1).filter(entry => !entry.stat["inaccessible"]);
+			to_be_selected = this.entries.slice(start, end + 1);
 		} else {
 			if (!append)
 				this.selected_entries.clear();
