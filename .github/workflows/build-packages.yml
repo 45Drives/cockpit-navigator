@@ -33,7 +33,11 @@ jobs:
             ${{github.workspace}}/dist/packages/*/*.rpm
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-      - name: Repository Database
+      - name: Update Repository
         if: startsWith(github.ref, 'refs/tags/')
         run: update-repositories ${{github.workspace}}
+      - name: Publish Repository
+        if: startsWith(github.ref, 'refs/tags/')
+        run: publish-repo
+
 
