@@ -1,18 +1,18 @@
-Name:           cockpit-navigator
-Version:        0.4.6
-Release:        1%{?dist}
-Summary:        A File System Browser for Cockpit.
-License:        GPL-3.0+
-URL:            github.com/45drives/cockpit-navigator/blob/main/README.md
-Source0:        %{name}-%{version}.tar.gz
-BuildArch:      noarch
-Requires:       cockpit python3 rsync zip
+Name: ::package_name::
+Version: ::package_version::
+Release: ::package_build_version::%{?dist}
+Summary: ::package_description_short::
+License: ::package_licence::
+URL: ::package_url::
+Source0: %{name}-%{version}.tar.gz
+BuildArch: ::package_architecture_el::
+Requires: ::package_dependencies_el::
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %description
-Cockpit Navigator
-A File System Browser for Cockpit.
+::package_title::
+::package_description_long::
 
 %prep
 %setup -q
@@ -21,9 +21,7 @@ A File System Browser for Cockpit.
 # empty
 
 %install
-rm -rf %{buildroot}
-mkdir -p  %{buildroot}
-cp -a * %{buildroot}
+make DESTDIR=%{buildroot} DIST=%{dist} install
 
 %clean
 rm -rf %{buildroot}
@@ -32,6 +30,8 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Wed Jun 30 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.6-2
+- First build with auto packaging
 * Fri Jun 18 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.6-1
 - Disable navigation buttons when invalid.
 * Thu Jun 17 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.5-1
