@@ -1,3 +1,3 @@
-# Cockpit Navigator 0.4.6-3
+## Cockpit Navigator 0.4.6-2
 
-* Test second build with same tag
+* First build with auto packaging
