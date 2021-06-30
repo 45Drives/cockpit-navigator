@@ -2,12 +2,12 @@
 .vscode
 
 # deb packaging
-debian/cockpit-navigator
-debian/cockpit-navigator.substvars
-debian/cockpit-navigator.postrm.debhelper
-debian/debhelper-build-stamp
-debian/files
-debian/.debhelper
+packaging/focal/cockpit-navigator
+packaging/focal/cockpit-navigator.substvars
+packaging/focal/cockpit-navigator.postrm.debhelper
+packaging/focal/debhelper-build-stamp
+packaging/focal/files
+packaging/focal/.debhelper
 
 # build output
 dist
