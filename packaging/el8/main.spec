@@ -30,6 +30,8 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Wed Jun 30 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.6-3
+- Test second build with same tag
 * Wed Jun 30 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.6-2
 - First build with auto packaging
 * Fri Jun 18 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.6-1

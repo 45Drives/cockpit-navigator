@@ -1,3 +1,9 @@
+cockpit-navigator (0.4.6-3focal) focal; urgency=medium
+
+  * Test second build with same tag
+
+ -- Josh Boudreau <jboudreau@45drives.com>  Wed, 30 Jun 2021 08:24:51 -0300
+
 cockpit-navigator (0.4.6-2focal) focal; urgency=medium
 
   * First build with auto packaging
