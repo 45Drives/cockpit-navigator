@@ -30,6 +30,8 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Wed Jun 30 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.6-2
+- First build with auto packaging
 * Fri Jun 18 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.6-1
 - Disable navigation buttons when invalid.
 * Thu Jun 17 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.5-1

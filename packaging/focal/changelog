@@ -1,3 +1,9 @@
+cockpit-navigator (0.4.6-2focal) focal; urgency=medium
+
+  * First build with auto packaging
+
+ -- Josh Boudreau <jboudreau@45drives.com>  Wed, 30 Jun 2021 08:09:17 -0300
+
 cockpit-navigator (0.4.6-1focal) focal; urgency=low
 
   * Disable navigation buttons when invalid.
