@@ -4,7 +4,7 @@
     "title": "Cockpit Navigator",
     "prerelease": false,
     "version": "0.4.6",
-    "buildVersion": "2",
+    "buildVersion": "3",
     "author": "Josh Boudreau <jboudreau@45drives.com>",
     "url": "https://github.com/45Drives/cockpit-navigator",
     "category": "utils",
@@ -45,12 +45,17 @@
             "image": "rocky-el8-builder",
             "codeName": "el8",
             "type": "el"
+        },
+        {
+            "image": "centos-el7-builder",
+            "codeName": "el7",
+            "type": "el"
         }
     ],
     "changelog": {
         "urgency": "medium",
         "version": "0.4.6",
-        "buildVersion": "2",
+        "buildVersion": "3",
         "ignore": [],
         "date": null,
         "packager": "Josh Boudreau <jboudreau@45drives.com>",

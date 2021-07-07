@@ -30,6 +30,10 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Wed Jul 07 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.6-3
+- Add relase for el7
+* Wed Jul 07 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.6-3
+- Add relase for el7
 * Wed Jun 30 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.6-2
 - First build with auto packaging
 * Fri Jun 18 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.6-1
