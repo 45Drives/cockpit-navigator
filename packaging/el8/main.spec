@@ -1,3 +1,5 @@
+%global debug_package %{nil}
+
 Name: ::package_name::
 Version: ::package_version::
 Release: ::package_build_version::%{?dist}
