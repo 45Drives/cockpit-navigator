@@ -1,3 +1,3 @@
-## Cockpit Navigator 0.4.6-2
+## Cockpit Navigator 0.4.6-3
 
-* First build with auto packaging
+* Add relase for el7
