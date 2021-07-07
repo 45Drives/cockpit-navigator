@@ -1,5 +1,5 @@
 # Cockpit Navigator
-A File System Browser for Cockpit.  
+A Featureful File System Browser for Cockpit - remotely browse, manage, edit, upload, and download files on your server through your web browser.  
 
 ## Features
 With no command line use needed, you can:
