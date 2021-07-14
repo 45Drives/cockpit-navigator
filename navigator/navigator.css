@@ -63,6 +63,19 @@ body {
 	height: 100%;
 }
 
+.modal-content {
+	background-color: var(--container) !important;
+	color: var(--font) !important;
+}
+
+.modal-header {
+	background-color: var(--container) !important;
+}
+
+.modal-body {
+	background-color: var(--container) !important;
+}
+
 [data-theme="dark"] .pf-c-button:disabled {
 	background-color: var(--container) !important;
 	border: 1px solid var(--border) !important;
