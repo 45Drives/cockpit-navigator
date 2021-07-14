@@ -31,7 +31,7 @@ uninstall:
 install-local:
 	mkdir -p $(HOME)/.local/share/cockpit
 	cp -rpf navigator $(HOME)/.local/share/cockpit
-	sed -i "s#\"/usr/share/\(cockpit/navigator/scripts/.*\)\"#\"$(HOME)/.local/share/\1\"#g" $(HOME)/.local/share/cockpit/navigator/navigator.js
+	find $(HOME)/.local/share/cockpit/navigator -name '*.js' -exec sed -i "s#\"/usr/share/\(cockpit/navigator/scripts/.*\)\"#\"$(HOME)/.local/share/\1\"#g" {} \;
 
 uninstall-local:
 	rm -rf $(HOME)/.local/share/cockpit/navigator
