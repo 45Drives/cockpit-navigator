@@ -74,7 +74,7 @@ export class NavFile extends NavEntry {
 			this.show_edit_file_contents();
 		} else {
 			console.log("Unknown mimetype: " + type);
-			if (window.confirm("Can't open " + this.filename() + " for editing. Download?")) {
+			if (await this.nav_window_ref.modal_prompt.confirm("Can't open " + this.filename() + " for editing.", "Download it instead?")) {
 				var download = new NavDownloader(this);
 				download.download();
 			}
@@ -89,7 +89,7 @@ export class NavFile extends NavEntry {
 			contents = await cockpit.file(this.path_str(), {superuser: "try"}).read();
 		} catch (e) {
 			this.nav_window_ref.enable_buttons();
-			window.alert(e.message);
+			this.nav_window_ref.modal_prompt.alert(e.message);
 			return;
 		}
 		var text_area = document.getElementById("nav-edit-contents-textarea");
@@ -110,7 +110,7 @@ export class NavFile extends NavEntry {
 			else
 				await cockpit.script("echo -n > $1", [this.path_str()], {superuser: "try"});
 		} catch (e) {
-			window.alert(e.message);
+			this.nav_window_ref.modal_prompt.alert(e.message);
 		}
 		this.nav_window_ref.refresh();
 		this.hide_edit_file_contents();
@@ -175,7 +175,7 @@ export class NavFileLink extends NavFile{
 			this.show_edit_file_contents();
 		} else {
 			console.log("Unknown mimetype: " + type);
-			window.alert("Can't open " + this.filename() + " for editing.");
+			this.nav_window_ref.modal_prompt.alert("Can't open " + this.filename() + " for editing.");
 		}
 	}
 
@@ -189,7 +189,7 @@ export class NavFileLink extends NavFile{
 			contents = await cockpit.file(target_path, {superuser: "try"}).read();
 		} catch(e) {
 			this.nav_window_ref.enable_buttons();
-			window.alert(e.message);
+			this.nav_window_ref.modal_prompt.alert(e.message);
 			return;
 		}
 		var text_area = document.getElementById("nav-edit-contents-textarea");
@@ -208,7 +208,7 @@ export class NavFileLink extends NavFile{
 		try {
 			await cockpit.file(target_path, {superuser: "try"}).replace(new_contents);
 		} catch (e) {
-			window.alert(e.message);
+			this.nav_window_ref.modal_prompt.alert(e.message);
 		}
 		this.nav_window_ref.refresh();
 		this.hide_edit_file_contents();

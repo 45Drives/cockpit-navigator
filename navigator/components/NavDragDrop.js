@@ -32,12 +32,25 @@ export class NavDragDrop {
 					for (let item of e.dataTransfer.items) {
 						if (item.kind === 'file') {
 							var file = item.getAsFile();
-							if (file.type === "") {
-								window.alert(file.name + ": Cannot upload folders.");
+							if (file.type === "" && file.size !== 0) {
+								this.nav_window_ref.modal_prompt.alert(file.name + ": Cannot upload folders.");
 								continue;
 							}
-							var uploader = new FileUpload(file, this.nav_window_ref);
-							uploader.upload();
+							if (file.size === 0) {
+								var proc = cockpit.spawn(
+									["/usr/share/cockpit/navigator/scripts/touch.py", this.nav_window_ref.pwd().path_str() + "/" + file.name],
+									{superuser: "try", err: "out"}
+								);
+								proc.done(() => {
+									this.nav_window_ref.refresh();
+								});
+								proc.fail((e, data) => {
+									this.nav_window_ref.modal_prompt.alert(data);
+								});
+							} else {
+								var uploader = new FileUpload(file, this.nav_window_ref);
+								uploader.upload();
+							}
 						}
 					}
 				} else {

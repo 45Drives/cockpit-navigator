@@ -92,7 +92,7 @@ export class FileUpload {
 
 	async upload() {
 		if (await this.check_if_exists()) {
-			if (!window.confirm(this.filename + ": File exists. Replace?"))
+			if (!await this.nav_window_ref.modal_prompt.confirm(this.filename + ": File exists. Replace?"))
 				return;
 		}
 		this.make_html_element();
@@ -100,7 +100,7 @@ export class FileUpload {
 		this.proc.fail((e, data) => {
 			this.reader.onload = () => {}
 			this.done();
-			window.alert(data);
+			this.nav_window_ref.modal_prompt.alert(data);
 		})
 		this.proc.done((data) => {
 			this.nav_window_ref.refresh();

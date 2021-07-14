@@ -75,13 +75,13 @@ export class NavContextMenu {
 		if (new_name === null)
 			return;
 		if (new_name.includes("/")) {
-			window.alert("File name can't contain `/`.");
+			this.nav_window_ref.modal_prompt.alert("File name can't contain `/`.");
 			return;
 		}
 		try {
 			await this.target.mv(new_name);
 		} catch(e) {
-			window.alert(e);
+			this.nav_window_ref.modal_prompt.alert(e);
 			return;
 		}
 		this.nav_window_ref.refresh();
@@ -117,7 +117,7 @@ export class NavContextMenu {
 				result = await this.zip_for_download();
 			} catch(e) {
 				this.nav_window_ref.stop_load();
-				window.alert(e.message);
+				this.nav_window_ref.modal_prompt.alert(e.message);
 				return;
 			}
 			this.nav_window_ref.stop_load();

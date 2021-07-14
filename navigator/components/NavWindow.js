@@ -3,6 +3,7 @@ import {NavDir} from "./NavDir.js";
 import {NavContextMenu} from "./NavContextMenu.js";
 import {NavDragDrop} from "./NavDragDrop.js";
 import {SortFunctions} from "./SortFunctions.js";
+import {ModalPrompt} from "./ModalPrompt.js";
 import {format_bytes} from "../functions.js";
 
 export class NavWindow {
@@ -27,6 +28,8 @@ export class NavWindow {
 		this.uploader = new NavDragDrop(this.window, this);
 
 		this.sort_function = new SortFunctions();
+
+		this.modal_prompt = new ModalPrompt();
 	}
 
 	/**
@@ -74,7 +77,7 @@ export class NavWindow {
 			var files = await this.pwd().get_children(this);
 		} catch(e) {
 			this.up();
-			window.alert(e);
+			this.modal_prompt.alert(e);
 			return;
 		}
 		while (this.entries.length) {
@@ -227,7 +230,7 @@ export class NavWindow {
 		this.selected_entry().show_properties();
 	}
 
-	show_edit_selected() {
+	async show_edit_selected() {
 		var dangerous_dirs = [
 			"/",
 			"/usr",
@@ -261,18 +264,20 @@ export class NavWindow {
 			} else {
 				dangerous_selected_str = dangerous_selected[0];
 			}
-			if (!window.confirm(
+			if (!await this.modal_prompt.confirm(
 				"Warning: editing " +
 				dangerous_selected_str +
-				" can be dangerous. Are you sure?"
+				" can be dangerous.",
+				"Are you sure?"
 			)) {
 				return;
 			}
 		} else if (this.selected_entries.size > 1) {
-			if (!window.confirm(
-				"Warning: are you sure you want to edit permissions for " +
+			if (!await this.modal_prompt.confirm(
+				"Warning: editing permissions for " +
 				this.selected_entries.size +
-				" files?"
+				" files.",
+				"Are you sure?"
 			)) {
 				return;
 			}
@@ -351,14 +356,14 @@ export class NavWindow {
 				try {
 					await entry.chown(new_owner, new_group);
 				} catch(e) {
-					window.alert(e);
+					this.modal_prompt.alert(e);
 				}
 			}
 			if (this.changed_mode && (new_perms & 0o777) !== (entry.stat["mode"] & 0o777)) {
 				try {
 					await entry.chmod(new_perms);
 				} catch(e) {
-					window.alert(e);
+					this.modal_prompt.alert(e);
 				}
 			}
 		}
@@ -369,18 +374,18 @@ export class NavWindow {
 	async delete_selected() {
 		var prompt = "";
 		if (this.selected_entries.size > 1) {
-			prompt = "Deleting " + this.selected_entries.size + " files. This cannot be undone. Are you sure?";
+			prompt = "Deleting " + this.selected_entries.size + " files.";
 		} else {
-			prompt = "Deleting `" + this.selected_entry().path_str() + "` cannot be undone. Are you sure?";
+			prompt = "Deleting `" + this.selected_entry().path_str() + "`.";
 		}
-		if (!window.confirm(prompt)) {
+		if (!await this.modal_prompt.confirm(prompt, "This cannot be undone. Are you sure?")) {
 			return;
 		}
 		for (let target of this.selected_entries) {
 			try {
 				await target.rm();
 			} catch(e) {
-				window.alert(e);
+				this.modal_prompt.alert(e);
 			}
 		}
 		this.refresh();
@@ -391,7 +396,7 @@ export class NavWindow {
 		if (new_dir_name === null)
 			return;
 		if (new_dir_name.includes("/")) {
-			window.alert("Directory name can't contain `/`.");
+			this.modal_prompt.alert("Directory name can't contain `/`.");
 			return;
 		}
 		var promise = new Promise((resolve, reject) => {
@@ -409,7 +414,7 @@ export class NavWindow {
 		try {
 			await promise;
 		} catch(e) {
-			window.alert(e);
+			this.modal_prompt.alert(e);
 		}
 		this.refresh();
 	}
@@ -419,7 +424,7 @@ export class NavWindow {
 		if (new_file_name === null)
 			return;
 		if (new_file_name.includes("/")) {
-			window.alert("File name can't contain `/`.");
+			this.modal_prompt.alert("File name can't contain `/`.");
 			return;
 		}
 		var promise = new Promise((resolve, reject) => {
@@ -437,7 +442,7 @@ export class NavWindow {
 		try {
 			await promise;
 		} catch(e) {
-			window.alert(e);
+			this.modal_prompt.alert(e);
 		}
 		this.refresh();
 	}
@@ -450,7 +455,7 @@ export class NavWindow {
 		if (link_name === null)
 			return;
 		if (link_name.includes("/")) {
-			window.alert("Link name can't contain `/`.");
+			this.modal_prompt.alert("Link name can't contain `/`.");
 			return;
 		}
 		var link_path = this.pwd().path_str() + "/" + link_name;
@@ -469,7 +474,7 @@ export class NavWindow {
 		try {
 			await promise;
 		} catch(e) {
-			window.alert(e);
+			this.modal_prompt.alert(e);
 		}
 		this.refresh();
 	}
@@ -511,13 +516,13 @@ export class NavWindow {
 				cmd,
 				{superuser: "try", err: "ignore"}
 			);
-			proc.stream((data) => {
+			proc.stream(async (data) => {
 				var payload = JSON.parse(data);
 				if (payload["wants-response"]) {
-					var user_response = window.confirm(payload["message"]);
+					var user_response = await this.modal_prompt.confirm(payload["message"]);
 					proc.input(JSON.stringify(user_response) + "\n", true);
 				} else {
-					window.alert(payload["message"]);
+					await this.modal_prompt.alert(payload["message"]);
 				}
 			});
 			proc.done((data) => {
@@ -530,7 +535,7 @@ export class NavWindow {
 		try {
 			await promise;
 		} catch(e) {
-			window.alert(e);
+			this.modal_prompt.alert(e);
 		}
 		this.stop_load();
 		this.refresh();
