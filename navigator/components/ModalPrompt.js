@@ -140,8 +140,8 @@ export class ModalPrompt {
                 row.style.padding = "2px";
                 let request = requests[key];
                 let label = document.createElement("label");
-                label.for = key;
                 label.innerText = request.label;
+                label.htmlFor = key;
                 label.style.marginRight = "1em";
                 label.style.flexBasis = "0";
                 label.style.flexGrow = "1";
