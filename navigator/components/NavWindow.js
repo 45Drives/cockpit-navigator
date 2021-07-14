@@ -392,9 +392,21 @@ export class NavWindow {
 	}
 
 	async mkdir() {
-		var new_dir_name = window.prompt("Directory Name: ");
-		if (new_dir_name === null)
+		let response = await this.modal_prompt.prompt("Creating Directory",
+			{
+				new_name: {
+					label: "Name: ",
+					type: "text"
+				}
+			}
+		);
+		if (response === null)
 			return;
+		var new_dir_name = response.new_name;
+		if (new_dir_name === "") {
+			this.modal_prompt.alert("Directory name can't be empty.");
+			return;
+		}
 		if (new_dir_name.includes("/")) {
 			this.modal_prompt.alert("Directory name can't contain `/`.");
 			return;
@@ -420,9 +432,21 @@ export class NavWindow {
 	}
 
 	async touch() {
-		var new_file_name = window.prompt("File Name: ");
-		if (new_file_name === null)
+		let response = await this.modal_prompt.prompt("Creating File",
+			{
+				new_name: {
+					label: "Name: ",
+					type: "text"
+				}
+			}
+		);
+		if (response === null)
 			return;
+		var new_file_name = response.new_name;
+		if (new_file_name === "") {
+			this.modal_prompt.alert("File name can't be empty.");
+			return;
+		}
 		if (new_file_name.includes("/")) {
 			this.modal_prompt.alert("File name can't contain `/`.");
 			return;
@@ -448,12 +472,31 @@ export class NavWindow {
 	}
 
 	async ln(default_target = "") {
-		var link_target = window.prompt("Link Target: ", default_target);
-		if (link_target === null)
+		let response = await this.modal_prompt.prompt("Creating Symbolic Link",
+			{
+				target: {
+					label: "Target: ",
+					type: "text",
+					default: default_target
+				},
+				name: {
+					label: "Name: ",
+					type: "text"
+				}
+			}
+		);
+		if (response === null)
 			return;
-		var link_name = window.prompt("Link Name: ");
-		if (link_name === null)
+		var link_target = response.target;
+		if (link_target === "") {
+			this.modal_prompt.alert("Link target can't be empty.");
 			return;
+		}
+		var link_name = response.name;
+		if (link_name === "") {
+			this.modal_prompt.alert("Link name can't be empty.");
+			return;
+		}
 		if (link_name.includes("/")) {
 			this.modal_prompt.alert("Link name can't contain `/`.");
 			return;
@@ -499,7 +542,6 @@ export class NavWindow {
 	}
 
 	async paste_clipboard() {
-		this.start_load();
 		var cmd = ["/usr/share/cockpit/navigator/scripts/paste.py"];
 		var dest = this.pwd().path_str();
 		if (this.copy_or_move === "move") {
@@ -519,8 +561,30 @@ export class NavWindow {
 			proc.stream(async (data) => {
 				var payload = JSON.parse(data);
 				if (payload["wants-response"]) {
-					var user_response = await this.modal_prompt.confirm(payload["message"]);
-					proc.input(JSON.stringify(user_response) + "\n", true);
+					if (payload.hasOwnProperty("conflicts")) {
+						let requests = {};
+						for (let conflict of payload["conflicts"]) {
+							requests[conflict[0]] = {
+								label: conflict[1],
+								type: "checkbox",
+								default: false
+							}
+						}
+						let responses = await this.modal_prompt.prompt("Overwrite?", requests);
+						if (responses === null) {
+							proc.input(JSON.stringify("abort") + "\n");
+							return;
+						}
+						let keepers = [];
+						for (let response of Object.keys(responses)) {
+							if (responses[response])
+								keepers.push(response)
+						}
+						proc.input(JSON.stringify(keepers) + "\n", true);
+					} else {
+						var user_response = await this.modal_prompt.confirm(payload["message"]);
+						proc.input(JSON.stringify(user_response) + "\n", true);
+					}
 				} else {
 					await this.modal_prompt.alert(payload["message"]);
 				}

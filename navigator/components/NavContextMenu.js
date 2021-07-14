@@ -71,9 +71,18 @@ export class NavContextMenu {
 
 	async rename() {
 		this.hide();
-		var new_name = window.prompt("New Name: ", this.target.filename());
-		if (new_name === null)
+		let response = await this.nav_window_ref.modal_prompt.prompt("Renaming " + this.target.filename(),
+			{
+				new_name: {
+					label: "New Name: ",
+					type: "text",
+					default: this.target.filename()
+				}
+			}
+		);
+		if (response === null)
 			return;
+		var new_name = response.new_name;
 		if (new_name.includes("/")) {
 			this.nav_window_ref.modal_prompt.alert("File name can't contain `/`.");
 			return;

@@ -2,7 +2,10 @@ export class ModalPrompt {
     constructor() {
         this.ok = document.createElement("button");
         this.ok.innerText = "OK";
-        this.ok.classList.add("pf-c-button", "pf-m-secondary");
+        this.ok.classList.add("pf-c-button", "pf-m-primary");
+        this.cancel = document.createElement("button");
+        this.cancel.innerText = "Cancel";
+        this.cancel.classList.add("pf-c-button", "pf-m-secondary");
         this.yes = document.createElement("button");
         this.yes.innerText = "Yes";
         this.yes.classList.add("pf-c-button", "pf-m-primary");
@@ -55,11 +58,21 @@ export class ModalPrompt {
         this.header.innerText = header;
     }
 
+    /**
+     * 
+     * @param {string} message 
+     */
     set_body(message) {
         this.body.innerHTML = "";
         this.body.innerText = message;
     }
 
+    /**
+     * 
+     * @param {string} header 
+     * @param {string} message 
+     * @returns {Promise}
+     */
     alert(header, message = "") {
         this.set_header(header);
         this.set_body(message);
@@ -74,12 +87,18 @@ export class ModalPrompt {
         });
     }
 
+    /**
+     * 
+     * @param {string} header 
+     * @param {string} message 
+     * @returns {Promise<boolean>}
+     */
     confirm(header, message = "") {
         this.set_header(header);
         this.set_body(message);
         this.footer.innerHTML = "";
-        this.footer.appendChild(this.no);
-        this.footer.appendChild(this.yes);
+        this.footer.append(this.no, this.yes);
+        // this.footer.appendChild(this.yes);
         this.show();
         return new Promise((resolve, reject) => {
             let resolve_true = () => {
@@ -90,8 +109,85 @@ export class ModalPrompt {
                 resolve(false);
                 this.hide();
             }
-            this.confirm.onclick = this.yes.onclick = resolve_true;
+            this.yes.onclick = resolve_true;
             this.no.onclick = resolve_false;
+        });
+    }
+
+    /**
+     * 
+     * @param {string} header 
+     * @param {Object.<string, {label: string, type: string, default: (string|undefined)}>} request 
+     * @returns {Promise<Object|string>}
+     */
+    prompt(header, requests) {
+        this.set_header(header);
+        this.body.innerHTML = "";
+        this.footer.innerHTML = "";
+        this.footer.append(this.cancel, this.ok);
+        let inputs = [];
+
+        if (typeof requests === "object") {
+            let req_holder = document.createElement("div");
+            req_holder.style.display = "flex";
+            req_holder.style.flexFlow = "column nowrap";
+            req_holder.style.alignItems = "stretch";
+            this.body.appendChild(req_holder);
+            for(let key of Object.keys(requests)) {
+                let row = document.createElement("div");
+                row.style.display = "flex";
+                row.style.alignItems = "baseline";
+                row.style.padding = "2px";
+                let request = requests[key];
+                let label = document.createElement("label");
+                label.for = key;
+                label.innerText = request.label;
+                label.style.marginRight = "1em";
+                label.style.flexBasis = "0";
+                label.style.flexGrow = "1";
+                let req = document.createElement("input");
+                req.id = key;
+                req.type = request.type;
+                req.style.flexBasis = "0";
+                if (request.hasOwnProperty("default")) {
+                    req.value = request.default;
+                }
+                row.append(label, req);
+                req_holder.appendChild(row);
+                inputs.push(req);
+                switch (request.type) {
+                    case "text":
+                        req.style.flexGrow = "3";
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        this.show();
+        inputs[0].focus();
+        return new Promise((resolve, reject) => {
+            this.ok.onclick = () => {
+                let response = {};
+                for (let input of inputs) {
+                    switch (input.type) {
+                        case "checkbox":
+                            response[input.id] = input.checked;
+                            break;
+                        case "text":
+                        default:
+                            response[input.id] = input.value;
+                            break;
+                    }
+                }
+                resolve(response);
+                this.hide();
+            }
+            this.cancel.onclick = () => {
+                resolve(null);
+                this.hide();
+            }
         });
     }
 }

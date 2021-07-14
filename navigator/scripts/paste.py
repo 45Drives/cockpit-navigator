@@ -28,15 +28,19 @@ from optparse import OptionParser
 import json
 import subprocess
 
-def prompt_user(message, wants_response):
+def prompt_user(message, wants_response, conflicts = None):
     payload = {
         "wants-response": wants_response,
         "message": message
     }
+    if conflicts != None:
+        payload["conflicts"] = conflicts
     print(json.dumps(payload) + "\n")
     if wants_response:
-        response = input()
-        return json.loads(response)
+        response = json.loads(input())
+        if isinstance(response, str) and response == "abort":
+            sys.exit(0)
+        return response
     return
 
 def split_paths_at_cwd(paths, cwd):
@@ -70,12 +74,8 @@ def filter_existing(args, cwd):
     dest = args[-1]
     (conflicts, non_conflicts) = recursive_get_conflicts(sources, cwd, dest)
     if len(conflicts):
-        check_continue = prompt_user("Conflicts were found while pasting. `Cancel` to abort operation, `OK` to overwrite selectively.", True)
-        if not check_continue:
-            sys.exit(0)
-        for conflict in conflicts:
-            if prompt_user("Overwrite " + conflict[1] + "?", True):
-                non_conflicts.append(conflict[0])
+        conflicts = prompt_user("Overwrite?", True, conflicts)
+        non_conflicts.extend(conflicts)
     if not len(non_conflicts):
         sys.exit(0) # exit if nothing to copy
     filtered_args = [*split_paths_at_cwd(non_conflicts, cwd), dest]
