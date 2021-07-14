@@ -47,7 +47,7 @@ export class NavWindow {
 				e.preventDefault();
 				break;
 			case "keydown":
-				if (e.keyCode === 46) {
+				if (e.keyCode === 46 && e.target === document.body) {
 					this.delete_selected();
 				} else if (e.keyCode === 65 && e.ctrlKey) {
 					this.select_all();
