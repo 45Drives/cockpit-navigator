@@ -1,3 +1,10 @@
+/**
+ * @typedef {Object} Request
+ * @property {string} label
+ * @property {("text"|"checkbox")} type
+ * @property {string|undefined} default
+ */
+
 export class ModalPrompt {
     constructor() {
         this.ok = document.createElement("button");
@@ -117,7 +124,7 @@ export class ModalPrompt {
     /**
      * 
      * @param {string} header 
-     * @param {Object.<string, {label: string, type: string, default: (string|undefined)}>} request 
+     * @param {Object.<string, Request>} requests 
      * @returns {Promise<Object|string>}
      */
     prompt(header, requests) {
