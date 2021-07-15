@@ -49,7 +49,7 @@ export class NavDir extends NavEntry {
 		return new Promise(async (resolve, reject) => {
 			var children = [];
 			var proc = cockpit.spawn(
-				["/usr/share/cockpit/navigator/scripts/ls.py", this.path_str()],
+				["/usr/share/cockpit/navigator/scripts/ls.py3", this.path_str()],
 				{err:"out", superuser: "try"}
 			);
 			proc.fail((e, data) => {
@@ -139,7 +139,7 @@ export class NavDir extends NavEntry {
 	async cephfs_dir_stats() {
 		try {
 			var proc = await cockpit.spawn(
-				["/usr/share/cockpit/navigator/scripts/cephfs-dir-stats.py", "-j", this.path_str()],
+				["/usr/share/cockpit/navigator/scripts/cephfs-dir-stats.py3", "-j", this.path_str()],
 				{err: "ignore"}
 			);
 			return JSON.parse(proc)[0];

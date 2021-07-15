@@ -99,7 +99,7 @@ export class NavContextMenu {
 	zip_for_download() {
 		return new Promise((resolve, reject) => {
 			var cmd = [
-				"/usr/share/cockpit/navigator/scripts/zip-for-download.py",
+				"/usr/share/cockpit/navigator/scripts/zip-for-download.py3",
 				this.nav_window_ref.pwd().path_str()
 			];
 			for (let entry of this.nav_window_ref.selected_entries) {

@@ -455,7 +455,7 @@ export class NavWindow {
 		}
 		var promise = new Promise((resolve, reject) => {
 			var proc = cockpit.spawn(
-				["/usr/share/cockpit/navigator/scripts/touch.py", this.pwd().path_str() + "/" + new_file_name],
+				["/usr/share/cockpit/navigator/scripts/touch.py3", this.pwd().path_str() + "/" + new_file_name],
 				{superuser: "try", err: "out"}
 			);
 			proc.done((data) => {
@@ -545,7 +545,7 @@ export class NavWindow {
 
 	async paste_clipboard() {
 		this.start_load();
-		var cmd = ["/usr/share/cockpit/navigator/scripts/paste.py"];
+		var cmd = ["/usr/share/cockpit/navigator/scripts/paste.py3"];
 		var dest = this.pwd().path_str();
 		if (this.copy_or_move === "move") {
 			cmd.push("-m");

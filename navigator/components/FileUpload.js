@@ -25,7 +25,7 @@ export class FileUpload {
 
 	check_if_exists() {
 		return new Promise((resolve, reject) => {
-			var proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/fail-if-exists.py", this.path], {superuser: "try"});
+			var proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/fail-if-exists.py3", this.path], {superuser: "try"});
 			proc.done((data) => {resolve(false)});
 			proc.fail((e, data) => {resolve(true)});
 		});
@@ -96,7 +96,7 @@ export class FileUpload {
 				return;
 		}
 		this.make_html_element();
-		this.proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/write-chunks.py", this.path], {err: "out", superuser: "try"});
+		this.proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/write-chunks.py3", this.path], {err: "out", superuser: "try"});
 		this.proc.fail((e, data) => {
 			this.reader.onload = () => {}
 			this.done();

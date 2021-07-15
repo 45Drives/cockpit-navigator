@@ -18,7 +18,7 @@
 """
 
 """
-Synopsis: `paste.py [-m] <cwd of copy> <list of source files> <destination directory>`
+Synopsis: `paste.py3 [-m] <cwd of copy> <list of source files> <destination directory>`
 all full paths
 """
 

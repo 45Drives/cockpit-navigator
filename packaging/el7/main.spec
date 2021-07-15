@@ -18,7 +18,6 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %prep
 %setup -q
-alias python=python3
 
 %build
 # empty

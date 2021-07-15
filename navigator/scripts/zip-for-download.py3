@@ -18,7 +18,7 @@
 """
 
 """
-Synopsis: `zip-for-download.py </path/to/cwd> </path/to/file> [</path/to/file> ...]`
+Synopsis: `zip-for-download.py3 </path/to/cwd> </path/to/file> [</path/to/file> ...]`
 Output is JSON object with form:
 {
     message: <error message if applicable>,

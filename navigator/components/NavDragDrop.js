@@ -38,7 +38,7 @@ export class NavDragDrop {
 							}
 							if (file.size === 0) {
 								var proc = cockpit.spawn(
-									["/usr/share/cockpit/navigator/scripts/touch.py", this.nav_window_ref.pwd().path_str() + "/" + file.name],
+									["/usr/share/cockpit/navigator/scripts/touch.py3", this.nav_window_ref.pwd().path_str() + "/" + file.name],
 									{superuser: "try", err: "out"}
 								);
 								proc.done(() => {
