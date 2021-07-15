@@ -32,6 +32,9 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Thu Jul 15 2021 Josh Boudreau <jboudreau@45drives.com> 0.5.1-1
+- Allow modal popups to scroll if overflowing past page.
+- Moves focus to next input in modal popup when enter is pressed.
 * Thu Jul 15 2021 Josh Boudreau <jboudreau@45drives.com> 0.5.0-1
 - Implement custom modal style popups to replace browser dialogs.
 * Wed Jul 07 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.6-3

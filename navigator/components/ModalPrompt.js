@@ -49,6 +49,7 @@ export class ModalPrompt {
     construct_element() {
         let bg = this.modal = document.createElement("div");
         bg.classList.add("modal");
+        bg.style.overflowY = "auto";
         let fg = document.createElement("div");
         fg.classList.add("modal-dialog");
         bg.appendChild(fg);
@@ -203,6 +204,14 @@ export class ModalPrompt {
 
         this.show();
         inputs[0].focus();
+        for (let i = 0; i < inputs.length - 1; i++) {
+            inputs[i].onchange = () => {
+                inputs[i+1].focus();
+            }
+        }
+        inputs[inputs.length - 1].onchange = () => {
+            this.ok.focus();
+        }
         return new Promise((resolve, reject) => {
             this.ok.onclick = () => {
                 let response = {};

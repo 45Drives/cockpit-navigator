@@ -1,3 +1,10 @@
+cockpit-navigator (0.5.1-1focal) focal; urgency=medium
+
+  * Allow modal popups to scroll if overflowing past page.
+  * Moves focus to next input in modal popup when enter is pressed.
+
+ -- Josh Boudreau <jboudreau@45drives.com>  Thu, 15 Jul 2021 13:29:15 -0300
+
 cockpit-navigator (0.5.0-1focal) focal; urgency=medium
 
   * Implement custom modal style popups to replace browser dialogs.
