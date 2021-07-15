@@ -23,6 +23,7 @@ install:
 	cp -rpf navigator $(DESTDIR)/usr/share/cockpit
 ifeq ($(DIST),"el7")
 	sed -i "s/pf-c-button/btn/g;s/pf-m-primary/btn-primary/g;s/pf-m-secondary/btn-default/g;s/pf-m-danger/btn-danger/g" $(DESTDIR)/usr/share/cockpit/navigator/navigator.html
+	sed -i "s/pf-c-button/btn/g;s/pf-m-primary/btn-primary/g;s/pf-m-secondary/btn-default/g;s/pf-m-danger/btn-danger/g" $(DESTDIR)/usr/share/cockpit/navigator/components/ModalPrompt.js
 endif
 
 uninstall:
