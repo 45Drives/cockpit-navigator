@@ -1,3 +1,3 @@
-## Cockpit Navigator 0.4.6-3
+## Cockpit Navigator 0.5.0-1
 
-* Add relase for el7
+* Implement custom modal style popups to replace browser dialogs.

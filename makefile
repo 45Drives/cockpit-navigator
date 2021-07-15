@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
 
+EL7_DIST=.el7
+
 default:
 	
 
@@ -21,8 +23,9 @@ all: default
 install:
 	mkdir -p $(DESTDIR)/usr/share/cockpit/
 	cp -rpf navigator $(DESTDIR)/usr/share/cockpit
-ifeq ($(DIST),"el7")
+ifeq ($(DIST),$(EL7_DIST))
 	sed -i "s/pf-c-button/btn/g;s/pf-m-primary/btn-primary/g;s/pf-m-secondary/btn-default/g;s/pf-m-danger/btn-danger/g" $(DESTDIR)/usr/share/cockpit/navigator/navigator.html
+	sed -i "s/pf-c-button/btn/g;s/pf-m-primary/btn-primary/g;s/pf-m-secondary/btn-default/g;s/pf-m-danger/btn-danger/g" $(DESTDIR)/usr/share/cockpit/navigator/components/ModalPrompt.js
 endif
 
 uninstall:
@@ -31,7 +34,7 @@ uninstall:
 install-local:
 	mkdir -p $(HOME)/.local/share/cockpit
 	cp -rpf navigator $(HOME)/.local/share/cockpit
-	sed -i "s#\"/usr/share/\(cockpit/navigator/scripts/.*\)\"#\"$(HOME)/.local/share/\1\"#g" $(HOME)/.local/share/cockpit/navigator/navigator.js
+	find $(HOME)/.local/share/cockpit/navigator -name '*.js' -exec sed -i "s#\"/usr/share/\(cockpit/navigator/scripts/.*\)\"#\"$(HOME)/.local/share/\1\"#g" {} \;
 
 uninstall-local:
 	rm -rf $(HOME)/.local/share/cockpit/navigator

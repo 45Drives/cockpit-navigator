@@ -18,7 +18,6 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %prep
 %setup -q
-alias python=python3
 
 %build
 # empty
@@ -33,6 +32,8 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Thu Jul 15 2021 Josh Boudreau <jboudreau@45drives.com> 0.5.0-1
+- Implement custom modal style popups to replace browser dialogs.
 * Wed Jul 07 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.6-3
 - Add relase for el7
 * Wed Jun 30 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.6-2

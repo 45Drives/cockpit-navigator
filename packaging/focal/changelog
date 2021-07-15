@@ -1,3 +1,9 @@
+cockpit-navigator (0.5.0-1focal) focal; urgency=medium
+
+  * Implement custom modal style popups to replace browser dialogs.
+
+ -- Josh Boudreau <jboudreau@45drives.com>  Thu, 15 Jul 2021 10:42:41 -0300
+
 cockpit-navigator (0.4.6-3focal) focal; urgency=medium
 
   * Add relase for el7

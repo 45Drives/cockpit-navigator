@@ -63,6 +63,19 @@ body {
 	height: 100%;
 }
 
+.modal-content {
+	background-color: var(--container) !important;
+	color: var(--font) !important;
+}
+
+.modal-header {
+	background-color: var(--container) !important;
+}
+
+.modal-body {
+	background-color: var(--container) !important;
+}
+
 [data-theme="dark"] .pf-c-button:disabled {
 	background-color: var(--container) !important;
 	border: 1px solid var(--border) !important;
@@ -111,7 +124,7 @@ body {
     100% { transform: rotate(360deg); }
 }
 
-body::-webkit-scrollbar {
+::-webkit-scrollbar {
 	width: 11px;
 }
 
@@ -120,11 +133,12 @@ body {
 	scrollbar-color: var(--scrollbar-color);
 }
 
-body::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
 	background: var(--scrollbar-bg);
+	border-radius: var(--nav-border-radius);
 }
 
-body::-webkit-scrollbar-thumb {
+::-webkit-scrollbar-thumb {
 	background-color: var(--scrollbar-thumb) ;
 	border-radius: 6px;
 	border: 3px solid var(--scrollbar-bg);
@@ -452,6 +466,10 @@ input[type="text"] {
 
 #selected-files-list {
 	margin-left: 12px;
+}
+
+.monospace {
+	font-family: 'Courier New', Courier, monospace;
 }
 
 .monospace-sm {
