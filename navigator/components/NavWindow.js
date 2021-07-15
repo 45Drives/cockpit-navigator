@@ -542,6 +542,7 @@ export class NavWindow {
 	}
 
 	async paste_clipboard() {
+		this.start_load();
 		var cmd = ["/usr/share/cockpit/navigator/scripts/paste.py"];
 		var dest = this.pwd().path_str();
 		if (this.copy_or_move === "move") {
@@ -570,7 +571,9 @@ export class NavWindow {
 								default: false
 							}
 						}
+						this.stop_load();
 						let responses = await this.modal_prompt.prompt("Overwrite?", requests);
+						this.start_load();
 						if (responses === null) {
 							proc.input(JSON.stringify("abort") + "\n");
 							return;
