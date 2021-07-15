@@ -30,6 +30,7 @@ jobs:
           files: |
             ${{github.workspace}}/dist/packages/*/*.deb
             ${{github.workspace}}/dist/packages/*/*.rpm
+            ${{github.workspace}}/LICENSE
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       - name: Update Repository
