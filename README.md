@@ -51,7 +51,7 @@ sudo apt update
 ```sh
 sudo apt install cockpit-navigator
 ```
-### EL7
+### EL7/EL8
 1. Add Repository
 ```sh
 cd /etc/yum.repos.d
