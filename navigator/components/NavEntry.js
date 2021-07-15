@@ -43,7 +43,7 @@ export class NavEntry {
 			owner.title = owner.innerText = this.stat["owner"];
 			group.title = group.innerText = this.stat["group"];
 			size.title = size.innerText = format_bytes(this.stat["size"]);
-			mode.classList.add("nav-item-title", "no-select");
+			mode.classList.add("nav-item-title", "no-select", "monospace-sm");
 			owner.classList.add("nav-item-title", "no-select");
 			group.classList.add("nav-item-title", "no-select");
 			size.classList.add("nav-item-title", "no-select");
