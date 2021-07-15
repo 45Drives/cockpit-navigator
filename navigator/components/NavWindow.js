@@ -340,7 +340,7 @@ export class NavWindow {
 	update_permissions_preview() {
 		var new_perms = this.get_new_permissions();
 		var text = format_permissions(new_perms);
-		text += " (" + (new_perms & 0o777).toString(8) + ")";
+		text += " (" + (new_perms & 0o777).toString(8).padStart(3, '0') + ")";
 		document.getElementById("nav-mode-preview").innerText = text;
 		this.changed_mode = true;
 	}
