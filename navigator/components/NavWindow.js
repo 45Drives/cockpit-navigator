@@ -4,7 +4,7 @@ import {NavContextMenu} from "./NavContextMenu.js";
 import {NavDragDrop} from "./NavDragDrop.js";
 import {SortFunctions} from "./SortFunctions.js";
 import {ModalPrompt} from "./ModalPrompt.js";
-import {format_bytes} from "../functions.js";
+import {format_bytes, format_permissions} from "../functions.js";
 
 export class NavWindow {
 	constructor() {
@@ -268,7 +268,8 @@ export class NavWindow {
 				"Warning: editing " +
 				dangerous_selected_str +
 				" can be dangerous.",
-				"Are you sure?"
+				"Are you sure?",
+				true
 			)) {
 				return;
 			}
@@ -277,7 +278,8 @@ export class NavWindow {
 				"Warning: editing permissions for " +
 				this.selected_entries.size +
 				" files.",
-				"Are you sure?"
+				"Are you sure?",
+				true
 			)) {
 				return;
 			}
@@ -378,7 +380,7 @@ export class NavWindow {
 		} else {
 			prompt = "Deleting `" + this.selected_entry().path_str() + "`.";
 		}
-		if (!await this.modal_prompt.confirm(prompt, "This cannot be undone. Are you sure?")) {
+		if (!await this.modal_prompt.confirm(prompt, "This cannot be undone. Are you sure?", true)) {
 			return;
 		}
 		for (let target of this.selected_entries) {
@@ -712,6 +714,9 @@ export class NavWindow {
 				return;
 			}
 			var passwd_entries = passwd.split("\n");
+			passwd_entries.sort((first, second) => {
+				return first.split(":")[0].localeCompare(second.split(":")[0]);
+			});
 			for (let entry of passwd_entries) {
 				var cols = entry.split(":");
 				var username = cols[0];
@@ -745,6 +750,9 @@ export class NavWindow {
 				return;
 			}
 			var group_entries = group.split("\n");
+			group_entries.sort((first, second) => {
+				return first.split(":")[0].localeCompare(second.split(":")[0]);
+			});
 			for (let entry of group_entries) {
 				var cols = entry.split(":");
 				var groupname = cols[0];

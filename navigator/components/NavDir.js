@@ -104,7 +104,7 @@ export class NavDir extends NavEntry {
 			});
 			proc.fail(async (e, data) => {
 				if (/^rmdir: failed to remove .*: Directory not empty\n?$/.test(data)) {
-					if (await this.nav_window_ref.modal_prompt.confirm("WARNING: '" + this.path_str() + "' is not empty.", "Delete recursively? This can NOT be undone.")) {
+					if (await this.nav_window_ref.modal_prompt.confirm("WARNING: '" + this.path_str() + "' is not empty.", "Delete recursively? This can NOT be undone.", true)) {
 						this.rm_recursive(resolve, reject);
 					}
 				} else {

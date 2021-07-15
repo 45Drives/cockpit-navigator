@@ -92,7 +92,7 @@ export class FileUpload {
 
 	async upload() {
 		if (await this.check_if_exists()) {
-			if (!await this.nav_window_ref.modal_prompt.confirm(this.filename + ": File exists. Replace?"))
+			if (!await this.nav_window_ref.modal_prompt.confirm(this.filename + ": File exists. Replace?", "", true))
 				return;
 		}
 		this.make_html_element();

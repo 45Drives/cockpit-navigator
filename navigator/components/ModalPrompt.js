@@ -1,9 +1,14 @@
 /**
  * @typedef {Object} Request
  * @property {string} label
- * @property {("text"|"checkbox")} type
+ * @property {"text"|"checkbox"} type
  * @property {string|undefined} default
  */
+
+let primary_btn = "pf-m-primary";
+let secondary_btn = "pf-m-secondary";
+let danger_btn = "pf-m-danger";
+let all_btn = [primary_btn, secondary_btn, danger_btn];
 
 export class ModalPrompt {
     constructor() {
@@ -98,14 +103,19 @@ export class ModalPrompt {
      * 
      * @param {string} header 
      * @param {string} message 
+     * @param {boolean} danger 
      * @returns {Promise<boolean>}
      */
-    confirm(header, message = "") {
+    confirm(header, message = "", danger = false) {
         this.set_header(header);
         this.set_body(message);
         this.footer.innerHTML = "";
         this.footer.append(this.no, this.yes);
-        // this.footer.appendChild(this.yes);
+        this.yes.classList.remove(... all_btn);
+        if (danger)
+            this.yes.classList.add(danger_btn);
+        else
+            this.yes.classList.add(primary_btn);
         this.show();
         return new Promise((resolve, reject) => {
             let resolve_true = () => {
