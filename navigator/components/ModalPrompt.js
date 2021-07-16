@@ -184,7 +184,7 @@ export class ModalPrompt {
                 let label = document.createElement("label");
                 label.innerText = request.label;
                 label.htmlFor = key;
-                label.style.marginRight = "1em";
+                label.style.paddingRight = "1em";
                 label.style.flexBasis = "0";
                 label.style.flexGrow = "1";
                 let req = document.createElement("input");
@@ -200,6 +200,9 @@ export class ModalPrompt {
                 switch (request.type) {
                     case "text":
                         req.style.flexGrow = "3";
+                        break;
+                    case "checkbox":
+                        label.style.cursor = req.style.cursor = "pointer";
                         break;
                     default:
                         break;
