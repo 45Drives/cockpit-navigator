@@ -32,6 +32,9 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Fri Jul 16 2021 Josh Boudreau <jboudreau@45drives.com> 0.5.2-1
+- Implement uploading of entire directories.
+- Add cancel option to in-progress file uploads.
 * Thu Jul 15 2021 Josh Boudreau <jboudreau@45drives.com> 0.5.1-1
 - Allow modal popups to scroll if overflowing past page.
 - Moves focus to next input in modal popup when enter is pressed.
