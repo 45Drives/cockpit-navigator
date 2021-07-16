@@ -26,22 +26,24 @@ export class FileUpload {
 	 * 
 	 * @param {File|Blob} file 
 	 * @param {NavWindow} nav_window_ref
+	 * @param {string|undefined} path_prefix 
 	 */
-	constructor(file, nav_window_ref) {
+	constructor(file, nav_window_ref, path_prefix = "") {
 		try {
 			this.chunk_size = (parseInt(cockpit.info.version) > 238)? 1048576 : 65536;
 		} catch(e) {
 			console.log(e);
 			this.chunk_size = 65536;
 		}
-		this.filename = file.name;
+		this.filename = path_prefix + file.name;
 		this.nav_window_ref = nav_window_ref;
-		this.path = nav_window_ref.pwd().path_str() + "/" + file.name;
+		this.path = nav_window_ref.pwd().path_str() + "/" + this.filename;
 		this.reader = new FileReader();
 		this.chunks = this.slice_file(file);
 		this.chunk_index = 0;
 		this.timestamp = Date.now();
 		this.modal_prompt = new ModalPrompt();
+		this.using_webkit = true;
 	}
 
 	check_if_exists() {
@@ -111,7 +113,7 @@ export class FileUpload {
 	/**
 	 * 
 	 * @param {File|Blob} file 
-	 * @returns {Array}
+	 * @returns {Blob[]}
 	 */
 	slice_file(file) {
 		var offset = 0;
@@ -137,27 +139,38 @@ export class FileUpload {
 		this.proc.done((data) => {
 			this.nav_window_ref.refresh();
 		})
-		this.reader.onload = (function(uploader_ref) {
-			return async function(evt) {
-				uploader_ref.write_to_file(evt, uploader_ref.chunk_index * uploader_ref.chunk_size);
-				uploader_ref.chunk_index++;
-				uploader_ref.progress.value = uploader_ref.chunk_index;
-				if (uploader_ref.chunk_index < uploader_ref.num_chunks)
-					uploader_ref.reader.readAsArrayBuffer(uploader_ref.chunks[uploader_ref.chunk_index]);
-				else {
-					uploader_ref.done();
-				}
-			};
-		})(this);
+		this.reader.onerror = (evt) => {
+			this.modal_prompt.alert("Failed to read file: " + this.filename, "Upload of directories not supported.");
+			this.done();
+		}
+		this.reader.onload = (evt) => {
+			this.write_to_file(evt, this.chunk_index * this.chunk_size);
+			this.chunk_index++;
+			this.progress.value = this.chunk_index;
+			if (this.chunk_index < this.num_chunks)
+				this.reader.readAsArrayBuffer(this.chunks[this.chunk_index]);
+			else {
+				this.done();
+			}
+		};
 		try {
 			this.reader.readAsArrayBuffer(this.chunks[0]);
 		} catch {
 			this.reader.onload = () => {};
+			if (this.using_webkit) {
+				this.proc.input(JSON.stringify({seek: 0, chunk: ""}), true);
+			} else {
+				this.modal_prompt.alert("Failed to read file: " + this.filename, "Upload of directories and empty files not supported.");
+			}
 			this.done();
-			this.modal_prompt.alert("Failed to read file: " + this.filename, "Upload of directories and empty files not supported.");
 		}
 	}
 
+	/**
+	 * 
+	 * @param {ArrayBuffer} buffer 
+	 * @returns 
+	 */
 	arrayBufferToBase64(buffer) {
 		let binary = '';
 		let bytes = new Uint8Array(buffer);
