@@ -58,6 +58,21 @@ export class FileUpload {
 		header.classList.add("nav-notification-header");
 		notification.appendChild(header);
 		header.innerText = "Uploading " + this.filename;
+		header.style.position = "relative";
+		header.style.paddingRight = "1em";
+
+		var cancel = document.createElement("i");
+		cancel.classList.add("fa", "fa-times");
+		cancel.style.position = "absolute"
+		cancel.style.right = "0";
+		cancel.style.cursor = "pointer";
+		cancel.onclick = () => {
+			if (this.proc) {
+				this.reader.onload = () => {};
+				this.done();
+			}
+		}
+		header.appendChild(cancel);
 
 		var info = document.createElement("div");
 		info.classList.add("flex-row", "space-between");
@@ -110,16 +125,12 @@ export class FileUpload {
 	}
 
 	async upload() {
-		if (await this.check_if_exists()) {
-			if (!await this.nav_window_ref.modal_prompt.confirm(this.filename + ": File exists. Replace?", "", true))
-				return;
-		}
 		this.make_html_element();
 		this.proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/write-chunks.py3", this.path], {err: "out", superuser: "try"});
 		this.proc.fail((e, data) => {
 			this.reader.onload = () => {}
 			this.done();
-			this.nav_window_ref.modal_prompt.alert(data);
+			this.nav_window_ref.modal_prompt.alert(data, e);
 		})
 		this.proc.done((data) => {
 			this.nav_window_ref.refresh();
