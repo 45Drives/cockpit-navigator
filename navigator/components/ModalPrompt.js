@@ -111,6 +111,7 @@ export class ModalPrompt {
         this.footer.innerHTML = "";
         this.footer.appendChild(this.ok);
         this.show();
+        this.ok.focus();
         return new Promise((resolve, reject) => {
             this.ok.onclick = () => {
                 resolve();
@@ -137,6 +138,10 @@ export class ModalPrompt {
         else
             this.yes.classList.add(primary_btn);
         this.show();
+        if (danger)
+            this.no.focus();
+        else
+            this.yes.focus();
         return new Promise((resolve, reject) => {
             let resolve_true = () => {
                 resolve(true);
