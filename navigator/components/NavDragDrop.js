@@ -18,6 +18,7 @@
  */
 
 import {FileUpload} from "./FileUpload.js";
+import { ModalPrompt } from "./ModalPrompt.js";
 import {NavWindow} from "./NavWindow.js";
 
 export class NavDragDrop {
@@ -27,65 +28,148 @@ export class NavDragDrop {
 	 * @param {NavWindow} nav_window_ref 
 	 */
 	constructor(drop_area, nav_window_ref) {
-		drop_area.addEventListener("dragenter", this);
-		drop_area.addEventListener("dragover", this);
-		drop_area.addEventListener("dragleave", this);
-		drop_area.addEventListener("drop", this);
+		drop_area.addEventListener("dragenter", this, false);
+		drop_area.addEventListener("dragover", this, false);
+		drop_area.addEventListener("dragleave", this, false);
+		drop_area.addEventListener("drop", this, false);
 		this.drop_area = drop_area;
 		this.nav_window_ref = nav_window_ref;
+		this.modal_prompt = new ModalPrompt();
 	}
 
-	handleEvent(e) {
-		e.preventDefault();
+	/**
+	 * 
+	 * @param {FileSystemEntry} item 
+	 * @param {string} path 
+	 * @returns {Promise<FileUpload[]>}
+	 */
+	async scan_files(item, path) {
+		let new_uploads = [];
+		if (item.isDirectory) {
+			if (!path && !await this.modal_prompt.confirm(`Copy whole directory: ${item.fullPath}?`, "", true))
+				return new_uploads;
+			let directoryReader = item.createReader();
+			let promise = new Promise((resolve, reject) => {
+				directoryReader.readEntries(async (entries) => {
+					for (const entry of entries) {
+						new_uploads.push(... await this.scan_files(entry, path + item.name + "/"));
+					}
+					resolve();
+				});
+			})
+			await promise;
+		} else {
+			let promise = new Promise((resolve, reject) => {
+				item.file((file) => {
+					resolve(file);
+				})
+			});
+			new_uploads.push(new FileUpload(await promise, this.nav_window_ref, path));
+		}
+		return new_uploads;
+	}
+ 
+	/**
+	 * 
+	 * @param {DataTransferItemList} items 
+	 * @returns {Promise<DataTransferItemList>}
+	 */
+	handle_drop_advanced(items) {
+		return new Promise(async (resolve, reject) => {
+			let uploads = [];
+			for (let i = 0; i < items.length; i++) {
+				let item = items[i]?.webkitGetAsEntry?.() ?? items[i]?.getAsEntry?.() ?? null;
+				let path = "";
+				if (item) {
+					let new_uploads = await this.scan_files(item, path);
+					console.log(new_uploads);
+					uploads.push(... new_uploads);
+				} else {
+					reject();
+				}
+			}
+			resolve(uploads);
+		})
+	}
+
+	/**
+	 * 
+	 * @param {FileUpload[]} uploads 
+	 * @returns {FileUpload[]}
+	 */
+	async handle_conflicts(uploads) {
+		let keepers = [];
+		let requests = {};
+		for (let upload of uploads) {
+			if (!await upload.check_if_exists()) {
+				keepers.push(upload.filename);
+				continue;
+			}
+			let request = {};
+			request.label = upload.filename;
+			request.type = "checkbox";
+			let id = upload.filename;
+			requests[id] = request;
+		}
+		if (Object.keys(requests).length > 0) {
+			let responses = await this.nav_window_ref.modal_prompt.prompt(
+				"Conflicts found while uploading. Replace?",
+				requests
+			)
+			if (responses === null)
+				return null;
+			for (let key of Object.keys(responses)) {
+				if (responses[key])
+					keepers.push(key);
+			}
+		}
+		return uploads.filter((upload) => keepers.includes(upload.filename));
+	}
+	
+	/**
+	 * 
+	 * @param {Event} e 
+	 */
+	async handleEvent(e) {
 		switch(e.type){
 			case "dragenter":
+				e.preventDefault();
+				e.stopPropagation();
 				this.drop_area.classList.add("drag-enter");
 				break;
 			case "dragover":
+				e.preventDefault();
+				e.stopPropagation();
 				break;
 			case "dragleave":
+				e.preventDefault();
+				e.stopPropagation();
 				this.drop_area.classList.remove("drag-enter");
 				break;
 			case "drop":
-				if (e.dataTransfer.items) {
-					for (let item of e.dataTransfer.items) {
-						if (item.kind === 'file') {
-							var file = item.getAsFile();
-							if (file.type === "" && file.size !== 0) {
-								this.nav_window_ref.modal_prompt.alert(file.name + ": Cannot upload folders.");
-								continue;
-							}
-							if (file.size === 0) {
-								var proc = cockpit.spawn(
-									["/usr/share/cockpit/navigator/scripts/touch.py3", this.nav_window_ref.pwd().path_str() + "/" + file.name],
-									{superuser: "try", err: "out"}
-								);
-								proc.done(() => {
-									this.nav_window_ref.refresh();
-								});
-								proc.fail((e, data) => {
-									this.nav_window_ref.modal_prompt.alert(data);
-								});
-							} else {
-								var uploader = new FileUpload(file, this.nav_window_ref);
-								uploader.upload();
-							}
-						}
-					}
-				} else {
-					for (let file of ev.dataTransfer.files) {
-						if (file.type === "")
-							continue;
-						var uploader = new FileUpload(file, this.nav_window_ref);
-						uploader.upload();
+				let uploads;
+				let items = e.dataTransfer.items;
+				e.preventDefault();
+				e.stopPropagation();
+				try {
+					uploads = await this.handle_drop_advanced(items);
+				} catch {
+					uploads = [];
+					for (let file of e.dataTransfer.files) {
+						let uploader = new FileUpload(file, this.nav_window_ref);
+						uploader.using_webkit = false;
+						uploads.push(uploader);
 					}
 				}
 				this.drop_area.classList.remove("drag-enter");
+				if (uploads.length === 0)
+					break;
+				uploads = await this.handle_conflicts(uploads);
+				uploads.forEach((upload) => {upload.upload()});
 				break;
 			default:
 				this.drop_area.classList.remove("drag-enter");
 				break;
 		}
-		e.stopPropagation();
 	}
 }

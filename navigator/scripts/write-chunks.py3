@@ -32,27 +32,35 @@ import sys
 import json
 
 def write_chunk(chunk, file):
+    if not file:
+        path = sys.argv[1]
+        parent_path = os.path.dirname(path)
+        if not os.path.exists(parent_path):
+            os.makedirs(parent_path, exist_ok=True)
+        elif os.path.isfile(parent_path):
+            print(parent_path + ": exists and is not a directory.")
+            sys.exit(1)
+        try:
+            file = open(path, "wb")
+        except Exception as e:
+            print(e)
+            sys.exit(1)
     seek = chunk["seek"]
     data = base64.b64decode(chunk["chunk"])
     file.seek(seek)
     file.write(data)
 
 def main():
+    file = None
     if len(sys.argv) != 2:
         print("Invalid number of arguments.")
-        sys.exit(1)
-    path = sys.argv[1]
-    try:
-        file = open(path, "wb")
-    except Exception as e:
-        print(e)
         sys.exit(1)
     while True:
         try:
             json_in = input()
         except EOFError:
             break
-        json_list = json_in.split("\n")
+        json_list = json_in.split("\n") # need to split in case writes happen faster than reads
         for json_obj in json_list:
             try:
                 obj_in = json.loads(json_obj)
@@ -63,7 +71,8 @@ def main():
                 log.close()
                 sys.exit(1)
             write_chunk(obj_in, file)
-    file.close()
+    if file:
+        file.close()
     sys.exit(0)
 
 if __name__ == "__main__":

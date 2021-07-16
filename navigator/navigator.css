@@ -35,6 +35,7 @@
 	--nav-border-radius: 4px;
 	--symlink-symbol-color: var(--navigation);
 	--list-view-header: var(--selected);
+	--outline-color: black;
 }
 
 [data-theme="dark"] {
@@ -53,6 +54,11 @@
 	--nav-entry-color: #555F6E;
 	--symlink-symbol-color: var(--navigation);
 	--list-view-header: var(--container);
+	--outline-color: white;
+}
+
+button {
+	outline-color: var(--outline-color) !important;
 }
 
 html {

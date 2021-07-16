@@ -1,3 +1,10 @@
+cockpit-navigator (0.5.2-1focal) focal; urgency=medium
+
+  * Implement uploading of entire directories.
+  * Add cancel option to in-progress file uploads.
+
+ -- Josh Boudreau <jboudreau@45drives.com>  Fri, 16 Jul 2021 13:56:55 -0300
+
 cockpit-navigator (0.5.1-1focal) focal; urgency=medium
 
   * Allow modal popups to scroll if overflowing past page.

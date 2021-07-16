@@ -1,4 +1,4 @@
-## Cockpit Navigator 0.5.1-1
+## Cockpit Navigator 0.5.2-1
 
-* Allow modal popups to scroll if overflowing past page.
-* Moves focus to next input in modal popup when enter is pressed.
+* Implement uploading of entire directories.
+* Add cancel option to in-progress file uploads.

@@ -111,6 +111,7 @@ export class ModalPrompt {
         this.footer.innerHTML = "";
         this.footer.appendChild(this.ok);
         this.show();
+        this.ok.focus();
         return new Promise((resolve, reject) => {
             this.ok.onclick = () => {
                 resolve();
@@ -137,6 +138,10 @@ export class ModalPrompt {
         else
             this.yes.classList.add(primary_btn);
         this.show();
+        if (danger)
+            this.no.focus();
+        else
+            this.yes.focus();
         return new Promise((resolve, reject) => {
             let resolve_true = () => {
                 resolve(true);
@@ -179,7 +184,7 @@ export class ModalPrompt {
                 let label = document.createElement("label");
                 label.innerText = request.label;
                 label.htmlFor = key;
-                label.style.marginRight = "1em";
+                label.style.paddingRight = "1em";
                 label.style.flexBasis = "0";
                 label.style.flexGrow = "1";
                 let req = document.createElement("input");
@@ -195,6 +200,9 @@ export class ModalPrompt {
                 switch (request.type) {
                     case "text":
                         req.style.flexGrow = "3";
+                        break;
+                    case "checkbox":
+                        label.style.cursor = req.style.cursor = "pointer";
                         break;
                     default:
                         break;
