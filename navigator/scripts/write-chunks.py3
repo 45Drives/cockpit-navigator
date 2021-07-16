@@ -34,6 +34,12 @@ import json
 def write_chunk(chunk, file):
     if not file:
         path = sys.argv[1]
+        parent_path = os.path.dirname(path)
+        if not os.path.exists(parent_path):
+            os.makedirs(parent_path, exist_ok=True)
+        elif os.path.isfile(parent_path):
+            print(parent_path + ": exists and is not a directory.")
+            sys.exit(1)
         try:
             file = open(path, "wb")
         except Exception as e:
