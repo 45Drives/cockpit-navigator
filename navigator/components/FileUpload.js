@@ -19,6 +19,7 @@
 
 import {NavWindow} from "./NavWindow.js";
 import {format_time_remaining} from "../functions.js";
+import {ModalPrompt} from "./ModalPrompt.js";
 
 export class FileUpload {
 	/**
@@ -40,6 +41,7 @@ export class FileUpload {
 		this.chunks = this.slice_file(file);
 		this.chunk_index = 0;
 		this.timestamp = Date.now();
+		this.modal_prompt = new ModalPrompt();
 	}
 
 	check_if_exists() {
@@ -130,7 +132,7 @@ export class FileUpload {
 		this.proc.fail((e, data) => {
 			this.reader.onload = () => {}
 			this.done();
-			this.nav_window_ref.modal_prompt.alert(data, e);
+			this.nav_window_ref.modal_prompt.alert(e, data);
 		})
 		this.proc.done((data) => {
 			this.nav_window_ref.refresh();
@@ -147,7 +149,13 @@ export class FileUpload {
 				}
 			};
 		})(this);
-		this.reader.readAsArrayBuffer(this.chunks[0]);
+		try {
+			this.reader.readAsArrayBuffer(this.chunks[0]);
+		} catch {
+			this.reader.onload = () => {};
+			this.done();
+			this.modal_prompt.alert("Failed to read file: " + this.filename, "Upload of directories and empty files not supported.");
+		}
 	}
 
 	arrayBufferToBase64(buffer) {
