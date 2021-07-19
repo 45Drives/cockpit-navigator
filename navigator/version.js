@@ -1,1 +1,1 @@
-export let NAVIGATOR_VERSION = "0.5.3";
+export let NAVIGATOR_VERSION = "built from source";

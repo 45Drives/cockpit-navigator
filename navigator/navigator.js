@@ -143,7 +143,7 @@ function set_up_buttons() {
 	});
 	document.getElementById("nav-info-btn").addEventListener("click", () => {
 		new ModalPrompt().alert(
-			`Cockpit Navigator v${NAVIGATOR_VERSION}`,
+			`Cockpit Navigator ${NAVIGATOR_VERSION}`,
 			`<p>` +
 			`Created by <a target="_blank" href=https://www.45drives.com/?utm_source=Houston&utm_medium=UI&utm_campaign=OS-Link>45Drives</a> for Houston UI (Cockpit).<br>` +
 			`<a target="_blank" href=https://github.com/45Drives/cockpit-navigator/issues>Issue Tracker</a><br>` +

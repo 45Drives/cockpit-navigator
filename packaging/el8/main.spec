@@ -23,7 +23,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 # empty
 
 %install
-make DESTDIR=%{buildroot} DIST=%{dist} install
+make DESTDIR=%{buildroot} DIST=%{dist} NAV_VERS="%{version}-%{release}" install
 
 %clean
 rm -rf %{buildroot}
@@ -41,7 +41,7 @@ rm -rf %{buildroot}
 * Thu Jul 15 2021 Josh Boudreau <jboudreau@45drives.com> 0.5.0-1
 - Implement custom modal style popups to replace browser dialogs.
 * Wed Jul 07 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.6-3
-- Add relase for el7
+- Add release for el7
 * Wed Jun 30 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.6-2
 - First build with auto packaging
 * Fri Jun 18 2021 Josh Boudreau <jboudreau@45drives.com> 0.4.6-1
