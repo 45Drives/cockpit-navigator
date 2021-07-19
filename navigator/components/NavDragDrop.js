@@ -98,10 +98,30 @@ export class NavDragDrop {
 	 * @returns {FileUpload[]}
 	 */
 	async handle_conflicts(uploads) {
+		let test_paths = [];
+		for (let upload of uploads)
+			test_paths.push(upload.path);
+		let proc = cockpit.spawn(
+			["/usr/share/cockpit/navigator/scripts/return-exists.py3", ... test_paths],
+			{error: "out", superuser: "try"}
+		);
+		let exist_result;
+		proc.done((data) => {
+			exist_result = JSON.parse(data);
+		});
+		proc.fail((e, data) => {
+			this.nav_window_ref.modal_prompt.alert(e, data);
+		});
+		try {
+			await proc;
+		} catch {
+			return;
+		}
+		console.log(exist_result);
 		let keepers = [];
 		let requests = {};
 		for (let upload of uploads) {
-			if (!await check_if_exists(upload.path)) {
+			if (!exist_result[upload.path]) {
 				keepers.push(upload.filename);
 				continue;
 			}
@@ -163,8 +183,10 @@ export class NavDragDrop {
 					}
 				}
 				this.drop_area.classList.remove("drag-enter");
-				if (uploads.length === 0)
+				if (uploads.length === 0) {
+					this.nav_window_ref.stop_load();
 					break;
+				}
 				uploads = await this.handle_conflicts(uploads);
 				this.nav_window_ref.stop_load();
 				uploads.forEach((upload) => {upload.upload()});
