@@ -833,8 +833,13 @@ export class NavWindow {
 
 	search_filter(event) {
 		var search_name = event.target.value;
+		let search_func;
+		if (search_name[0] === '*')
+			search_func = (entry) => entry.filename.toLowerCase().includes(search_name.slice(1).toLowerCase());
+		else
+			search_func = (entry) => entry.filename.toLowerCase().startsWith(search_name.toLowerCase());
 		this.entries.forEach((entry) => {
-			if (entry.filename.toLowerCase().startsWith(search_name.toLowerCase()))
+			if (search_func(entry))
 				entry.show();
 			else
 				entry.hide();
