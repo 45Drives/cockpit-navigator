@@ -131,8 +131,8 @@ export class NavWindow {
 		document.getElementById("pwd").value = this.pwd().path_str();
 		this.set_selected(this.pwd(), false, false);
 		this.show_selected_properties();
-		document.getElementById("nav-num-dirs").innerText = num_dirs.toString();
-		document.getElementById("nav-num-files").innerText = num_files.toString();
+		document.getElementById("nav-num-dirs").innerText = `${num_dirs} Director${(num_dirs === 1)? "y" : "ies"}`;
+		document.getElementById("nav-num-files").innerText = `${num_files} File${(num_files === 1)? "" : "s"}`;
 		document.getElementById("nav-num-bytes").innerText = format_bytes(bytes_sum);
 		this.stop_load();
 		this.set_nav_button_state();
