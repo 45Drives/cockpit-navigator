@@ -158,6 +158,7 @@ export class FileUpload {
 			}
 			this.done();
 		}
+		this.update_rates_interval = setInterval(this.display_xfr_rate.bind(this), 1000);
 	}
 
 	/**
@@ -193,6 +194,7 @@ export class FileUpload {
 	done() {
 		this.proc.input(); // close stdin
 		this.remove_html_element();
+		clearInterval(this.update_rates_interval);
 	}
 
 	update_xfr_rate() {
@@ -200,12 +202,19 @@ export class FileUpload {
 		var elapsed = (now - this.timestamp) / 1000;
 		this.timestamp = now;
 		var rate = this.chunk_size / elapsed;
-		this.rate.innerText = cockpit.format_bytes_per_sec(rate);
+		this.rate_avg = (this.rate_avg)
+			? (0.125 * rate + (0.875 * this.rate_avg))
+			: rate;
 		// keep exponential moving average of chunk time for eta
 		this.chunk_time = (this.chunk_time)
 			? (0.125 * elapsed + (0.875 * this.chunk_time))
 			: elapsed;
 		var eta = (this.num_chunks - this.chunk_index) * this.chunk_time;
-		this.eta.innerText = format_time_remaining(eta);
+		this.eta_avg = eta;
+	}
+
+	display_xfr_rate() {
+		this.rate.innerText = cockpit.format_bytes_per_sec(this.rate_avg);
+		this.eta.innerText = format_time_remaining(this.eta_avg);
 	}
 }
