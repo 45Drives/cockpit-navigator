@@ -45,7 +45,7 @@ export class NavEntry {
 		let title_edit = this.dom_element.nav_item_title.editor = document.createElement("input");
 		title_edit.type = "text";
 		title_edit.style.display = "none";
-		title_edit.style.padding = title_edit.style.margin = "0";
+		title_edit.style.padding = "0";
 		title_edit.style.flexBasis = "0";
 		title_edit.style.flexGrow = "2";
 		title_edit.classList.add("nav-item-title");
