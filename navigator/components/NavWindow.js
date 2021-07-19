@@ -58,8 +58,10 @@ export class NavWindow {
 	handleEvent(e) {
 		switch (e.type) {
 			case "click":
-				this.clear_selected();
-				this.show_selected_properties();
+				if (e.target === this.window) {
+					this.clear_selected();
+					this.show_selected_properties();
+				}
 				break;
 			case "contextmenu":
 				this.context_menu.show(e, this.pwd());

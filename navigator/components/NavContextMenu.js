@@ -53,7 +53,7 @@ export class NavContextMenu {
 			var name_list = func[0].split("_");
 			name_list.forEach((word, index) => {name_list[index] = word.charAt(0).toUpperCase() + word.slice(1)});
 			elem.innerHTML = func[1] + name_list.join(" ");
-			elem.addEventListener("click", (e) => {this[func[0]].bind(this).apply()});
+			elem.addEventListener("click", (e) => {this[func[0]].bind(this, e).apply()});
 			elem.classList.add("nav-context-menu-item")
 			elem.id = "nav-context-menu-" + func[0];
 			this.dom_element.appendChild(elem);
@@ -61,58 +61,37 @@ export class NavContextMenu {
 		}
 	}
 
-	new_dir() {
+	new_dir(e) {
 		this.nav_window_ref.mkdir();
 	}
 
-	new_file() {
+	new_file(e) {
 		this.nav_window_ref.touch();
 	}
 
-	new_link() {
+	new_link(e) {
 		var default_target = "";
 		if (this.nav_window_ref.selected_entries.size <= 1 && this.target !== this.nav_window_ref.pwd())
 			default_target = this.target.filename();
 		this.nav_window_ref.ln(default_target);
 	}
 
-	cut() {
+	cut(e) {
 		this.nav_window_ref.cut();
 	}
 
-	copy() {
+	copy(e) {
 		this.nav_window_ref.copy();
 	}
 
-	paste() {
+	paste(e) {
 		this.nav_window_ref.paste();
 	}
 
-	async rename() {
+	async rename(e) {
 		this.hide();
-		let response = await this.nav_window_ref.modal_prompt.prompt("Renaming " + this.target.filename(),
-			{
-				new_name: {
-					label: "New Name: ",
-					type: "text",
-					default: this.target.filename()
-				}
-			}
-		);
-		if (response === null)
-			return;
-		var new_name = response.new_name;
-		if (new_name.includes("/")) {
-			this.nav_window_ref.modal_prompt.alert("File name can't contain `/`.");
-			return;
-		}
-		try {
-			await this.target.mv(new_name);
-		} catch(e) {
-			this.nav_window_ref.modal_prompt.alert(e);
-			return;
-		}
-		this.nav_window_ref.refresh();
+		this.target.show_edit(this.target.dom_element.nav_item_title);
+		e.stopPropagation();
 	}
 
 	zip_for_download() {
@@ -134,7 +113,7 @@ export class NavContextMenu {
 		});
 	}
 
-	async download() {
+	async download(e) {
 		var download_target = "";
 		if (this.nav_window_ref.selected_entries.size === 1 && !(this.nav_window_ref.selected_entry() instanceof NavDir)) {
 			download_target = this.nav_window_ref.selected_entry();
@@ -155,11 +134,11 @@ export class NavContextMenu {
 		download.download();
 	}
 
-	delete() {
+	delete(e) {
 		this.nav_window_ref.delete_selected();
 	}
 
-	properties() {
+	properties(e) {
 		this.nav_window_ref.show_edit_selected();
 	}
 

@@ -42,6 +42,19 @@ export class NavEntry {
 		title.innerText = this.filename();
 		this.dom_element.appendChild(icon);
 		this.dom_element.appendChild(title);
+		let title_edit = this.dom_element.nav_item_title.editor = document.createElement("input");
+		title_edit.type = "text";
+		title_edit.style.display = "none";
+		title_edit.style.padding = title_edit.style.margin = "0";
+		title_edit.style.flexBasis = "0";
+		title_edit.style.flexGrow = "2";
+		title_edit.classList.add("nav-item-title");
+		title_edit.oninput = (e) => {
+			let elem = e.target;
+			elem.style.width = elem.value.length + "ch";
+		}
+		title_edit.addEventListener("click", (e) => {e.stopPropagation();});
+		this.dom_element.appendChild(title_edit);
 		this.stat = stat;
 		if (stat && stat["inaccessible"]) {
 			this.dom_element.style.cursor = "not-allowed";
@@ -80,9 +93,18 @@ export class NavEntry {
 	handleEvent(e) {
 		switch (e.type) {
 			case "click":
+				if (this.nav_window_ref.selected_entries.size === 1 && this.nav_window_ref.selected_entries.has(this)) {
+					switch (e.target) {
+						case this.dom_element.nav_item_title:
+							this.show_edit(e.target);
+							e.stopPropagation();
+							break;
+						default:
+							break;
+					}
+				} 
 				this.nav_window_ref.set_selected(this, e.shiftKey, e.ctrlKey);
 				this.context_menu_ref.hide();
-				e.stopPropagation();
 				break;
 			case "contextmenu":
 				this.context_menu_ref.show(e, this);
@@ -225,6 +247,72 @@ export class NavEntry {
 				reject(data);
 			});
 		});
+	}
+
+	/**
+	 * 
+	 * @param {string} new_path 
+	 */
+	async rename(new_name) {
+		if (new_name === this.filename())
+			return;
+		if (new_name.includes("/")) {
+			this.nav_window_ref.modal_prompt.alert("File name can't contain `/`.");
+			return;
+		} else if (new_name === "..") {
+			this.nav_window_ref.modal_prompt.alert(
+				"File name can't be `..`.",
+				"If you want to move the file, right click > cut then right click > paste."
+			);
+			return;
+		}
+		try {
+			await this.mv(new_name);
+		} catch(e) {
+			this.nav_window_ref.modal_prompt.alert(e);
+			return;
+		}
+		this.nav_window_ref.refresh();
+	}
+
+	/**
+	 * 
+	 * @param {HTMLDivElement} element 
+	 * @returns 
+	 */
+	show_edit(element) {
+		if (!element.editor)
+			return;
+		element.hide_func = () => {this.hide_edit(element)};
+		element.editor.onchange = element.hide_func;
+		window.addEventListener("click", element.hide_func);
+		switch (element) {
+			case this.dom_element.nav_item_title:
+				element.editor.value = this.filename();
+				break;
+			default:
+				element.editor.value = element.innerText;
+				break;
+		}
+		element.editor.style.width = element.editor.value.length + "ch";
+		element.editor.style.display = "inline-block";
+		element.style.display = "none";
+		element.editor.focus();
+	}
+
+	hide_edit(element) {
+		if (!element.editor)
+			return;
+		switch (element) {
+			case this.dom_element.nav_item_title:
+				this.rename(element.editor.value);
+				break;
+			default:
+				break;
+		}
+		element.editor.style.display = "none";
+		element.style.display = "inline-block";
+		window.removeEventListener("click", element.hide_func);
 	}
 
 	/**
