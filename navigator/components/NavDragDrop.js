@@ -20,7 +20,7 @@
 import {FileUpload} from "./FileUpload.js";
 import {ModalPrompt} from "./ModalPrompt.js";
 import {NavWindow} from "./NavWindow.js";
-import {check_if_exists} from "../functions.js";
+import {FileUploadManager} from "./FileUploadManager.js";
 
 export class NavDragDrop {
 	/**
@@ -117,7 +117,6 @@ export class NavDragDrop {
 		} catch {
 			return;
 		}
-		console.log(exist_result);
 		let keepers = [];
 		let requests = {};
 		for (let upload of uploads) {
@@ -189,7 +188,8 @@ export class NavDragDrop {
 				}
 				uploads = await this.handle_conflicts(uploads);
 				this.nav_window_ref.stop_load();
-				uploads.forEach((upload) => {upload.upload()});
+				let upload_manager = new FileUploadManager(uploads, this.nav_window_ref);
+				upload_manager.start_uploads();
 				break;
 			default:
 				this.drop_area.classList.remove("drag-enter");

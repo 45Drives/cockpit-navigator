@@ -129,8 +129,10 @@ export class FileUpload {
 			this.nav_window_ref.modal_prompt.alert(e, data);
 		})
 		this.proc.done((data) => {
-			this.nav_window_ref.refresh();
+			if (!this.done_hook)
+				this.nav_window_ref.refresh();
 		})
+		this.proc.always(() => this?.done_hook?.());
 		this.reader.onerror = (evt) => {
 			this.modal_prompt.alert("Failed to read file: " + this.filename, "Upload of directories not supported.");
 			this.done();
