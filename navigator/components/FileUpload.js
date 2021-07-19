@@ -44,6 +44,7 @@ export class FileUpload {
 		this.timestamp = Date.now();
 		this.modal_prompt = new ModalPrompt();
 		this.using_webkit = true;
+		this.make_html_element();
 	}
 
 	make_html_element() {
@@ -121,7 +122,6 @@ export class FileUpload {
 	}
 
 	async upload() {
-		this.make_html_element();
 		this.proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/write-chunks.py3", this.path], {err: "out", superuser: "try"});
 		this.proc.fail((e, data) => {
 			this.reader.onload = () => {}

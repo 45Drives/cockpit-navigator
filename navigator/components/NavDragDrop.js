@@ -36,6 +36,7 @@ export class NavDragDrop {
 		this.drop_area = drop_area;
 		this.nav_window_ref = nav_window_ref;
 		this.modal_prompt = new ModalPrompt();
+		this.upload_manager = new FileUploadManager(this.nav_window_ref, 10);
 	}
 
 	/**
@@ -188,8 +189,7 @@ export class NavDragDrop {
 				}
 				uploads = await this.handle_conflicts(uploads);
 				this.nav_window_ref.stop_load();
-				let upload_manager = new FileUploadManager(uploads, this.nav_window_ref);
-				upload_manager.start_uploads();
+				this.upload_manager.add(... uploads);
 				break;
 			default:
 				this.drop_area.classList.remove("drag-enter");

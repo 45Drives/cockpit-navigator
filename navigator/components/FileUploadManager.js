@@ -23,25 +23,40 @@ import {NavWindow} from "./NavWindow.js";
 export class FileUploadManager {
     /**
      * 
-     * @param {FileUpload[]} uploads 
      * @param {NavWindow} nav_window_ref 
      * @param {number} max_concurrent 
      */
-    constructor(uploads, nav_window_ref, max_concurrent = 10) {
-        this.remaining_uploads = uploads;
-        this.max_concurrent = Math.min(max_concurrent, uploads.length);
-        let start_next = this.kickoff = () => {
+    constructor(nav_window_ref, max_concurrent = 10) {
+        this.nav_window_ref = nav_window_ref;
+        this.running = 0;
+        this.remaining_uploads = [];
+        this.max_concurrent = max_concurrent;
+        this.start_next = () => {
             let next_upload = this.remaining_uploads.pop();
-            next_upload?.upload?.();
-            if (!this.remaining_uploads.length)
-                nav_window_ref.refresh();
+            if (next_upload) {
+                next_upload?.upload?.();
+                this.running++;
+            }
         }
-        this.remaining_uploads.forEach((upload) => {upload.done_hook = start_next});
     }
 
-    start_uploads() {
-        for (let i = 0; i < this.max_concurrent; i++) {
-            this.kickoff();
+    /**
+     * 
+     * @param  {...FileUpload} uploads 
+     */
+    add(...uploads) {
+        let done_hook = () => {
+            this.running--;
+            this.start_next();
+            if (!this.running)
+                this.nav_window_ref.refresh();
+        }
+        for (let upload of uploads) {
+            upload.done_hook = done_hook;
+            this.remaining_uploads.unshift(upload);
+        }
+        while (this.remaining_uploads.length && this.running < this.max_concurrent) {
+            this.start_next();
         }
     }
 }
