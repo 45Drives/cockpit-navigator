@@ -18,7 +18,7 @@
  */
 
 import {NavWindow} from "./NavWindow.js";
-import {format_bytes, property_entry_html, format_time} from "../functions.js";
+import {format_bytes, property_entry_html, format_time, check_if_exists} from "../functions.js";
 
 export class NavEntry {
 	/**
@@ -98,7 +98,13 @@ export class NavEntry {
 				if (this.nav_window_ref.selected_entries.size === 1 && this.nav_window_ref.selected_entries.has(this)) {
 					switch (e.target) {
 						case this.dom_element.nav_item_title:
-							this.show_edit(e.target);
+							this.double_click = true;
+							if(this.timeout)
+								clearTimeout(this.timeout)
+							this.timeout = setTimeout(() => {
+								this.double_click = false;
+								this.show_edit(e.target);
+							}, 500);
 							e.stopPropagation();
 							break;
 						default:
@@ -259,12 +265,23 @@ export class NavEntry {
 		if (new_name === this.filename)
 			return;
 		if (new_name.includes("/")) {
-			this.nav_window_ref.modal_prompt.alert("File name can't contain `/`.");
+			this.nav_window_ref.modal_prompt.alert(
+				"File name can't contain `/`.",
+				"If you want to move the file, right click > cut then right click > paste."
+			);
 			return;
 		} else if (new_name === "..") {
 			this.nav_window_ref.modal_prompt.alert(
 				"File name can't be `..`.",
 				"If you want to move the file, right click > cut then right click > paste."
+			);
+			return;
+		}
+		let new_path = [this.nav_window_ref.pwd().path_str(), new_name].join("/");
+		if (await check_if_exists(new_path)) {
+			this.nav_window_ref.modal_prompt.alert(
+				"Failed to rename.",
+				"File exists: " + new_path
 			);
 			return;
 		}

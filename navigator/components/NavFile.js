@@ -44,6 +44,9 @@ export class NavFile extends NavEntry {
 		switch(e.type){
 			case "click":
 				if (this.double_click) {
+					if(this.timeout)
+						clearTimeout(this.timeout);
+					this.double_click = false;
 					this.open();
 					return;
 				} else { // single click
