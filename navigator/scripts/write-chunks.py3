@@ -18,7 +18,7 @@
 """
 
 """
-Synopsis: `write-chunks.py3 <newline delimited JSON objects>`
+Synopsis: `echo <newline delimited JSON objects> | write-chunks.py3`
 JSON objects are of form:
 obj = {
     seek: <byte offset>
