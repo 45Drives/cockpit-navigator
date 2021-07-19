@@ -53,6 +53,7 @@ export class NavEntry {
 			let elem = e.target;
 			elem.style.width = elem.value.length + "ch";
 		}
+		title_edit.addEventListener("keydown", (e) => {e.stopPropagation();});
 		title_edit.addEventListener("click", (e) => {e.stopPropagation();});
 		this.dom_element.appendChild(title_edit);
 		this.stat = stat;
