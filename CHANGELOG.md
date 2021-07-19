@@ -1,4 +1,4 @@
-## Cockpit Navigator 0.5.2-1
+## Cockpit Navigator 0.5.3-1
 
-* Implement uploading of entire directories.
-* Add cancel option to in-progress file uploads.
+* Implement inline filename editing.
+* Add information popup button.
