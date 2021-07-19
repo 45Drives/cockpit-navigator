@@ -43,9 +43,10 @@ export class NavFile extends NavEntry {
 	handleEvent(e) {
 		switch(e.type){
 			case "click":
-				if (this.double_click)
+				if (this.double_click) {
 					this.open();
-				else { // single click
+					return;
+				} else { // single click
 					this.double_click = true;
 					if(this.timeout)
 						clearTimeout(this.timeout)

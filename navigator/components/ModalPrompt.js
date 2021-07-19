@@ -96,7 +96,7 @@ export class ModalPrompt {
      */
     set_body(message) {
         this.body.innerHTML = "";
-        this.body.innerText = message;
+        this.body.innerHTML = message;
     }
 
     /**

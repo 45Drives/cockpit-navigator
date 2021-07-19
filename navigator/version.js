@@ -1,0 +1,1 @@
+export let NAVIGATOR_VERSION = "built from source";

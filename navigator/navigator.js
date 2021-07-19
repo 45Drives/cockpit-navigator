@@ -17,7 +17,9 @@
 	along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import {ModalPrompt} from "./components/ModalPrompt.js";
 import {NavWindow} from "./components/NavWindow.js";
+import {NAVIGATOR_VERSION} from "./version.js";
 
 /**
  * 
@@ -138,6 +140,16 @@ function set_up_buttons() {
 			e.target.value = `${e.target.value.substring(0, start)}\t${e.target.value.substring(end)}`;
 			e.target.selectionStart = e.target.selectionEnd = start + 1;
 		}
+	});
+	document.getElementById("nav-info-btn").addEventListener("click", () => {
+		new ModalPrompt().alert(
+			`Cockpit Navigator ${NAVIGATOR_VERSION}`,
+			`<p>` +
+			`Created by <a target="_blank" href=https://www.45drives.com/?utm_source=Houston&utm_medium=UI&utm_campaign=OS-Link>45Drives</a> for Houston UI (Cockpit).<br>` +
+			`<a target="_blank" href=https://github.com/45Drives/cockpit-navigator/issues>Issue Tracker</a><br>` +
+			`<a target="_blank" href=https://github.com/45Drives/cockpit-navigator/discussions>Feedback</a><br>` +
+			`</p>`
+		);
 	});
 }
 

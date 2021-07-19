@@ -27,6 +27,9 @@ ifeq ($(DIST),$(EL7_DIST))
 	sed -i "s/pf-c-button/btn/g;s/pf-m-primary/btn-primary/g;s/pf-m-secondary/btn-default/g;s/pf-m-danger/btn-danger/g" $(DESTDIR)/usr/share/cockpit/navigator/navigator.html
 	sed -i "s/pf-c-button/btn/g;s/pf-m-primary/btn-primary/g;s/pf-m-secondary/btn-default/g;s/pf-m-danger/btn-danger/g" $(DESTDIR)/usr/share/cockpit/navigator/components/ModalPrompt.js
 endif
+ifneq ($(NAV_VERS),)
+	echo "export let NAVIGATOR_VERSION = \"$(NAV_VERS)\";" > $(DESTDIR)/usr/share/cockpit/navigator/version.js
+endif
 
 uninstall:
 	rm -rf $(DESTDIR)/usr/share/cockpit/navigator
@@ -35,6 +38,9 @@ install-local:
 	mkdir -p $(HOME)/.local/share/cockpit
 	cp -rpf navigator $(HOME)/.local/share/cockpit
 	find $(HOME)/.local/share/cockpit/navigator -name '*.js' -exec sed -i "s#\"/usr/share/\(cockpit/navigator/scripts/.*\)\"#\"$(HOME)/.local/share/\1\"#g" {} \;
+ifneq ($(NAV_VERS),)
+	echo "export let NAVIGATOR_VERSION = \"$(NAV_VERS)\";" > $(HOME)/.local/share/cockpit/navigator/version.js
+endif
 
 uninstall-local:
 	rm -rf $(HOME)/.local/share/cockpit/navigator
