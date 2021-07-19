@@ -32,6 +32,9 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Mon Jul 19 2021 Josh Boudreau <jboudreau@45drives.com> 0.5.3-1
+- Implement inline filename editing.
+- Add information popup button.
 * Fri Jul 16 2021 Josh Boudreau <jboudreau@45drives.com> 0.5.2-1
 - Implement uploading of entire directories.
 - Add cancel option to in-progress file uploads.
