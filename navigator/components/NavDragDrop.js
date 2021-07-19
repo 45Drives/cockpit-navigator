@@ -18,8 +18,9 @@
  */
 
 import {FileUpload} from "./FileUpload.js";
-import { ModalPrompt } from "./ModalPrompt.js";
+import {ModalPrompt} from "./ModalPrompt.js";
 import {NavWindow} from "./NavWindow.js";
+import {check_if_exists} from "../functions.js";
 
 export class NavDragDrop {
 	/**
@@ -82,7 +83,6 @@ export class NavDragDrop {
 				let path = "";
 				if (item) {
 					let new_uploads = await this.scan_files(item, path);
-					console.log(new_uploads);
 					uploads.push(... new_uploads);
 				} else {
 					reject();
@@ -101,7 +101,7 @@ export class NavDragDrop {
 		let keepers = [];
 		let requests = {};
 		for (let upload of uploads) {
-			if (!await upload.check_if_exists()) {
+			if (!await check_if_exists(upload.path)) {
 				keepers.push(upload.filename);
 				continue;
 			}
@@ -147,6 +147,7 @@ export class NavDragDrop {
 				this.drop_area.classList.remove("drag-enter");
 				break;
 			case "drop":
+				this.nav_window_ref.start_load();
 				let uploads;
 				let items = e.dataTransfer.items;
 				e.preventDefault();
@@ -165,6 +166,7 @@ export class NavDragDrop {
 				if (uploads.length === 0)
 					break;
 				uploads = await this.handle_conflicts(uploads);
+				this.nav_window_ref.stop_load();
 				uploads.forEach((upload) => {upload.upload()});
 				break;
 			default:

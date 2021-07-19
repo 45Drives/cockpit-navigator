@@ -681,7 +681,7 @@ export class NavWindow {
 
 	start_load() {
 		document.getElementById("nav-loader-container").style.display = "block";
-		var buttons = document.getElementsByTagName("button");
+		var buttons = document.getElementsByClassName("disable-while-loading");
 		for (let button of buttons) {
 			button.disabled = true;
 		}
@@ -689,7 +689,7 @@ export class NavWindow {
 
 	stop_load() {
 		document.getElementById("nav-loader-container").style.display = "none";
-		var buttons = document.getElementsByTagName("button");
+		var buttons = document.getElementsByClassName("disable-while-loading");
 		for (let button of buttons) {
 			button.disabled = false;
 		}

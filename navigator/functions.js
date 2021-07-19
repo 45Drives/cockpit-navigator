@@ -96,3 +96,16 @@ export function format_permissions(mode) {
 	}
 	return result;
 }
+
+/**
+ * 
+ * @param {string} path 
+ * @returns {Promise<boolean>}
+ */
+export function check_if_exists(path) {
+	return new Promise((resolve, reject) => {
+		var proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/fail-if-exists.py3", path], {superuser: "try"});
+		proc.done((data) => {resolve(false)});
+		proc.fail((e, data) => {resolve(true)});
+	});
+}

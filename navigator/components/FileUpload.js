@@ -46,14 +46,6 @@ export class FileUpload {
 		this.using_webkit = true;
 	}
 
-	check_if_exists() {
-		return new Promise((resolve, reject) => {
-			var proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/fail-if-exists.py3", this.path], {superuser: "try"});
-			proc.done((data) => {resolve(false)});
-			proc.fail((e, data) => {resolve(true)});
-		});
-	}
-
 	make_html_element() {
 		var notification = document.createElement("div");
 		notification.classList.add("nav-notification");

@@ -40,13 +40,13 @@
 	<div class="flex-col outer-container">
 		<div class="flex-row nav-header">
 			<div class="nav-btn-group">
-				<button class="pf-c-button pf-m-secondary" id="nav-back-btn" title="Back"><i class="fas fa-arrow-left"></i></button>
+				<button class="disable-while-loading pf-c-button pf-m-secondary" id="nav-back-btn" title="Back"><i class="fas fa-arrow-left"></i></button>
 				<div class="horizontal-spacer"></div>
-				<button class="pf-c-button pf-m-secondary" id="nav-forward-btn" title="Forward"><i class="fas fa-arrow-right"></i></button>
+				<button class="disable-while-loading pf-c-button pf-m-secondary" id="nav-forward-btn" title="Forward"><i class="fas fa-arrow-right"></i></button>
 				<div class="horizontal-spacer"></div>
-				<button class="pf-c-button pf-m-secondary" id="nav-up-dir-btn" title="Up"><i class="fas fa-arrow-up"></i></button>
+				<button class="disable-while-loading pf-c-button pf-m-secondary" id="nav-up-dir-btn" title="Up"><i class="fas fa-arrow-up"></i></button>
 				<div class="horizontal-spacer"></div>
-				<button class="pf-c-button pf-m-secondary" id="nav-refresh-btn" title="Refresh"><i class="fas fa-sync"></i></button>
+				<button class="disable-while-loading pf-c-button pf-m-secondary" id="nav-refresh-btn" title="Refresh"><i class="fas fa-sync"></i></button>
 			</div>
 			<div class="horizontal-spacer"></div>
 			<input type="text" list="possible-paths-list" autocomplete="off" class="navigation-bar" id="pwd" title="Navigation Bar"></input>
@@ -59,11 +59,11 @@
 			<i class="fas fa-search"></i>
 			<div class="horizontal-spacer"></div>
 			<div class="nav-btn-group">
-				<button class="pf-c-button pf-m-primary" id="nav-mkdir-btn" title="New Directory"><i class="fas fa-folder-plus"></i></button>
+				<button class="disable-while-loading pf-c-button pf-m-primary" id="nav-mkdir-btn" title="New Directory"><i class="fas fa-folder-plus"></i></button>
 				<div class="horizontal-spacer"></div>
-				<button class="pf-c-button pf-m-primary" id="nav-touch-btn" title="New File"><i class="fas fa-file-medical"></i></button>
+				<button class="disable-while-loading pf-c-button pf-m-primary" id="nav-touch-btn" title="New File"><i class="fas fa-file-medical"></i></button>
 				<div class="horizontal-spacer"></div>
-				<button class="pf-c-button pf-m-primary" id="nav-ln-btn" title="New Symbolic Link"><i class="fas fa-link nav-icon-decorated"><i class="fas fa-plus nav-icon-decoration"></i></i></button>
+				<button class="disable-while-loading pf-c-button pf-m-primary" id="nav-ln-btn" title="New Symbolic Link"><i class="fas fa-link nav-icon-decorated"><i class="fas fa-plus nav-icon-decoration"></i></i></button>
 			</div>
 		</div>
 		<div class="vertical-spacer"></div>
@@ -86,9 +86,9 @@
 				<textarea id="nav-edit-contents-textarea" spellcheck="false"></textarea>
 				<div class="vertical-spacer"></div>
 				<div class="nav-btn-group">
-					<button class="pf-c-button pf-m-danger editor-btn" id="nav-cancel-edit-contents-btn" title="Cancel"><i class="fas fa-times"></i></button>
+					<button class="disable-while-loading pf-c-button pf-m-danger editor-btn" id="nav-cancel-edit-contents-btn" title="Cancel"><i class="fas fa-times"></i></button>
 					<div class="horizontal-spacer"></div>
-					<button class="pf-c-button pf-m-primary editor-btn" id="nav-continue-edit-contents-btn" title="Save"><i class="fas fa-save"></i></button>
+					<button class="disable-while-loading pf-c-button pf-m-primary editor-btn" id="nav-continue-edit-contents-btn" title="Save"><i class="fas fa-save"></i></button>
 				</div>
 			</div>
 			<div class="horizontal-spacer"></div>
@@ -97,9 +97,9 @@
 					<div class="flex-row space-between">
 						<div class="nav-info-column-filename"></div>
 						<div class="nav-btn-group">
-							<button class="pf-c-button pf-m-danger" id="nav-delete-btn" title="Delete"><i class="fas fa-trash-alt"></i></button>
+							<button class="disable-while-loading pf-c-button pf-m-danger" id="nav-delete-btn" title="Delete"><i class="fas fa-trash-alt"></i></button>
 							<div class="horizontal-spacer"></div>
-							<button class="pf-c-button pf-m-primary" id="nav-edit-properties-btn" title="Edit Properties"><i class="fas fa-sliders-h"></i></button>
+							<button class="disable-while-loading pf-c-button pf-m-primary" id="nav-edit-properties-btn" title="Edit Properties"><i class="fas fa-sliders-h"></i></button>
 						</div>
 					</div>
 					<div class="nav-info-column-properties" id="nav-info-column-properties"></div>
@@ -153,9 +153,9 @@
 					<div class="flex-grow monospace-sm" id="selected-files-list"></div>
 					<div class="vertical-spacer"></div>
 					<div class="nav-btn-group">
-						<button class="pf-c-button pf-m-danger" id="nav-cancel-edit-btn" title="Cancel"><i class="fas fa-times"></i></button>
+						<button class="disable-while-loading pf-c-button pf-m-danger" id="nav-cancel-edit-btn" title="Cancel"><i class="fas fa-times"></i></button>
 						<div class="horizontal-spacer"></div>
-						<button class="pf-c-button pf-m-primary" id="nav-apply-edit-btn" title="Save Changes"><i class="fas fa-save"></i></button>
+						<button class="disable-while-loading pf-c-button pf-m-primary" id="nav-apply-edit-btn" title="Save Changes"><i class="fas fa-save"></i></button>
 					</div>
 				</div>
 			</div>
