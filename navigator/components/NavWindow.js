@@ -321,7 +321,7 @@ export class NavWindow {
 			}
 			var targets = [];
 			for (let target of this.selected_entries) {
-				targets.push(target.filename());
+				targets.push(target.filename);
 			}
 			var targets_str = targets.join(", ");
 			document.getElementById("selected-files-list-header").innerText = "Applying edits to:";
@@ -834,7 +834,7 @@ export class NavWindow {
 	search_filter(event) {
 		var search_name = event.target.value;
 		this.entries.forEach((entry) => {
-			if (entry.filename().toLowerCase().startsWith(search_name.toLowerCase()))
+			if (entry.filename.toLowerCase().startsWith(search_name.toLowerCase()))
 				entry.show();
 			else
 				entry.hide();

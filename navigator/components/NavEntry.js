@@ -33,13 +33,14 @@ export class NavEntry {
 			this.path = path.split("/").splice(1);
 		else
 			this.path = (path.length) ? path : [""];
+		this.filename = this.get_filename();
 		this.dom_element = document.createElement("div");
 		this.dom_element.classList.add("nav-item");
 		let icon = this.dom_element.nav_item_icon = document.createElement("i");
 		icon.classList.add("nav-item-icon");
 		let title = this.dom_element.nav_item_title = document.createElement("div");
 		title.classList.add("nav-item-title", "no-select");
-		title.innerText = this.filename();
+		title.innerText = this.filename;
 		this.dom_element.appendChild(icon);
 		this.dom_element.appendChild(title);
 		let title_edit = this.dom_element.nav_item_title.editor = document.createElement("input");
@@ -63,10 +64,10 @@ export class NavEntry {
 			this.dom_element.addEventListener("click", this);
 			this.dom_element.addEventListener("contextmenu", this);
 		}
-		this.is_hidden_file = this.filename().startsWith('.');
+		this.is_hidden_file = this.filename.startsWith('.');
 		if (this.is_hidden_file)
 			icon.style.opacity = 0.5;
-		this.dom_element.title = this.filename();
+		this.dom_element.title = this.filename;
 		if (nav_window_ref && nav_window_ref.item_display === "list") {
 			let mode = document.createElement("div");
 			let owner = document.createElement("div");
@@ -127,7 +128,7 @@ export class NavEntry {
 	 * 
 	 * @returns {string}
 	 */
-	filename() {
+	get_filename() {
 		var name = this.path[this.path.length - 1];
 		if (!name)
 			name = "/";
@@ -255,7 +256,7 @@ export class NavEntry {
 	 * @param {string} new_path 
 	 */
 	async rename(new_name) {
-		if (new_name === this.filename())
+		if (new_name === this.filename)
 			return;
 		if (new_name.includes("/")) {
 			this.nav_window_ref.modal_prompt.alert("File name can't contain `/`.");
@@ -289,7 +290,7 @@ export class NavEntry {
 		window.addEventListener("click", element.hide_func);
 		switch (element) {
 			case this.dom_element.nav_item_title:
-				element.editor.value = this.filename();
+				element.editor.value = this.filename;
 				break;
 			default:
 				element.editor.value = element.innerText;
@@ -323,8 +324,8 @@ export class NavEntry {
 	show_properties(extra_properties = "") {
 		var selected_name_fields = document.getElementsByClassName("nav-info-column-filename");
 		for (let elem of selected_name_fields) {
-			elem.innerHTML = this.filename();
-			elem.title = this.filename();
+			elem.innerHTML = this.filename;
+			elem.title = this.filename;
 		}
 		var html = "";
 		html += property_entry_html("Mode", this.stat["mode-str"]);
@@ -339,7 +340,7 @@ export class NavEntry {
 	}
 	
 	populate_edit_fields() {
-		document.getElementById("nav-edit-filename").innerText = this.filename();
+		document.getElementById("nav-edit-filename").innerText = this.filename;
 		var mode_bits = [
 			"other-exec", "other-write", "other-read",
 			"group-exec", "group-write", "group-read",

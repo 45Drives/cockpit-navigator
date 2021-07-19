@@ -94,7 +94,7 @@ export class NavFile extends NavEntry {
 			this.show_edit_file_contents();
 		} else {
 			console.log("Unknown mimetype: " + type);
-			if (await this.nav_window_ref.modal_prompt.confirm("Can't open " + this.filename() + " for editing.", "Download it instead?")) {
+			if (await this.nav_window_ref.modal_prompt.confirm("Can't open " + this.filename + " for editing.", "Download it instead?")) {
 				var download = new NavDownloader(this);
 				download.download();
 			}
@@ -195,7 +195,7 @@ export class NavFileLink extends NavFile{
 			this.show_edit_file_contents();
 		} else {
 			console.log("Unknown mimetype: " + type);
-			this.nav_window_ref.modal_prompt.alert("Can't open " + this.filename() + " for editing.");
+			this.nav_window_ref.modal_prompt.alert("Can't open " + this.filename + " for editing.");
 		}
 	}
 

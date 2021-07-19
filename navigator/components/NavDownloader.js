@@ -26,7 +26,7 @@ export class NavDownloader {
 	 */
 	constructor(file) {
 		this.path = file.path_str();
-		this.filename = file.filename();
+		this.filename = file.filename;
 		this.read_size = file.stat["size"];
 	}
 
