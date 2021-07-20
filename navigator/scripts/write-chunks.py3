@@ -35,20 +35,24 @@ def write_chunk(chunk, file):
     if not file:
         path = sys.argv[1]
         parent_path = os.path.dirname(path)
-        if not os.path.exists(parent_path):
-            os.makedirs(parent_path, exist_ok=True)
-        elif os.path.isfile(parent_path):
-            print(parent_path + ": exists and is not a directory.")
-            sys.exit(1)
         try:
+            if not os.path.exists(parent_path):
+                os.makedirs(parent_path, exist_ok=True)
+            elif os.path.isfile(parent_path):
+                print(parent_path + ": exists and is not a directory.")
+                sys.exit(1)
             file = open(path, "wb")
         except Exception as e:
             print(e)
             sys.exit(1)
     seek = chunk["seek"]
     data = base64.b64decode(chunk["chunk"])
-    file.seek(seek)
-    file.write(data)
+    try:
+        file.seek(seek)
+        file.write(data)
+    except Exception as e:
+        print(e)
+        sys.exit(1)
 
 def main():
     file = None
