@@ -65,6 +65,7 @@ export class NavWindow {
 			"/root",
 			"/run",
 			"/sbin",
+			"/srv",
 			"/sys",
 			"/tmp",
 			"/usr",
