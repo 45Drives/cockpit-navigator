@@ -55,7 +55,6 @@ export class NavWindow {
 	 * @param {Event} e 
 	 */
 	handleEvent(e) {
-		e.stopPropagation();
 		switch (e.type) {
 			case "click":
 				if (e.target === this.window) {

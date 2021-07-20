@@ -306,7 +306,18 @@ export class NavEntry {
 		if (!element.editor)
 			return;
 		element.hide_func = () => {this.hide_edit(element)};
-		element.editor.onchange = element.hide_func;
+		element.keydown_handler = (e) => {
+			switch (e.keyCode) {
+				case 13: // enter
+					this.apply_edit(element);
+				case 27: // esc
+					this.hide_edit(element);
+					break;
+				default:
+					break;
+			}
+		};
+		element.editor.addEventListener("keydown", element.keydown_handler);
 		window.addEventListener("click", element.hide_func);
 		switch (element) {
 			case this.dom_element.nav_item_title:
@@ -322,7 +333,7 @@ export class NavEntry {
 		element.editor.focus();
 	}
 
-	hide_edit(element) {
+	apply_edit(element) {
 		if (!element.editor)
 			return;
 		switch (element) {
@@ -332,8 +343,14 @@ export class NavEntry {
 			default:
 				break;
 		}
+	}
+
+	hide_edit(element) {
+		if (!element.editor)
+			return;
 		element.editor.style.display = "none";
 		element.style.display = "inline-block";
+		element.editor.removeEventListener("keydown", element.keydown_handler)
 		window.removeEventListener("click", element.hide_func);
 	}
 
