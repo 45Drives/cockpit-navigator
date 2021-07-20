@@ -255,6 +255,7 @@ export class NavWindow {
 	}
 
 	select_all() {
+		this.clear_selected();
 		this.select_range(this.entries[0], this.entries[this.entries.length - 1]);
 		this.update_selection_info();
 	}
