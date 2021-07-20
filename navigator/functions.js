@@ -70,9 +70,7 @@ export function format_time_remaining(seconds_) {
 	if (hours) {
 		out = String(hours).padStart(2, '0') + ":";
 	}
-	if (minutes) {
-		out += String(minutes).padStart(2, '0') + ":";
-	}
+	out += String(minutes).padStart(2, '0') + ":";
 	out += String(seconds).padStart(2, '0');
 	return out;
 }

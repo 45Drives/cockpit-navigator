@@ -41,7 +41,6 @@ export class FileUpload {
 		this.reader = new FileReader();
 		this.chunks = this.slice_file(file);
 		this.chunk_index = 0;
-		this.timestamp = Date.now();
 		this.modal_prompt = new ModalPrompt();
 		this.using_webkit = true;
 		this.make_html_element();
@@ -127,6 +126,7 @@ export class FileUpload {
 	}
 
 	async upload() {
+		this.timestamp = Date.now();
 		this.dom_element.style.display = "flex";
 		this.proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/write-chunks.py3", this.path], {err: "out", superuser: "try"});
 		this.proc.fail((e, data) => {
@@ -164,7 +164,7 @@ export class FileUpload {
 			}
 			this.done();
 		}
-		this.update_rates_interval = setInterval(this.display_xfr_rate.bind(this), 2000);
+		this.update_rates_interval = setInterval(this.display_xfr_rate.bind(this), 1000);
 	}
 
 	/**
