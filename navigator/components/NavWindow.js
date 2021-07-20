@@ -404,6 +404,7 @@ export class NavWindow {
 		if (!await this.modal_prompt.confirm(prompt, "This cannot be undone. Are you sure?", true)) {
 			return;
 		}
+		this.start_load();
 		for (let target of this.selected_entries) {
 			try {
 				await target.rm();
@@ -411,6 +412,7 @@ export class NavWindow {
 				this.modal_prompt.alert(e);
 			}
 		}
+		this.stop_load();
 		this.refresh();
 	}
 
