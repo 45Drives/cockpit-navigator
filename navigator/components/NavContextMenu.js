@@ -72,7 +72,7 @@ export class NavContextMenu {
 	new_link(e) {
 		var default_target = "";
 		if (this.nav_window_ref.selected_entries.size <= 1 && this.target !== this.nav_window_ref.pwd())
-			default_target = this.target.filename();
+			default_target = this.target.filename;
 		this.nav_window_ref.ln(default_target);
 	}
 
@@ -90,7 +90,14 @@ export class NavContextMenu {
 
 	async rename(e) {
 		this.hide();
-		this.target.show_edit(this.target.dom_element.nav_item_title);
+		if (this.target.is_dangerous_path()) {
+			await this.nav_window_ref.modal_prompt.alert(
+				"Cannot rename system-critical paths.",
+				"If you think you need to, use the terminal."
+			);
+		} else {
+			this.target.show_edit(this.target.dom_element.nav_item_title);
+		}
 		e.stopPropagation();
 	}
 

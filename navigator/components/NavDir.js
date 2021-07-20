@@ -213,6 +213,18 @@ export class NavDir extends NavEntry {
 		}
 		super.show_properties(extra_properties);
 	}
+
+	style_selected() {
+		this.dom_element.nav_item_icon.classList.remove("fa-folder");
+		this.dom_element.nav_item_icon.classList.add("fa-folder-open");
+		super.style_selected();
+	}
+
+	unstyle_selected() {
+		this.dom_element.nav_item_icon.classList.add("fa-folder");
+		this.dom_element.nav_item_icon.classList.remove("fa-folder-open");
+		super.unstyle_selected();
+	}
 }
 
 export class NavDirLink extends NavDir{

@@ -44,6 +44,9 @@ export class NavFile extends NavEntry {
 		switch(e.type){
 			case "click":
 				if (this.double_click) {
+					if(this.timeout)
+						clearTimeout(this.timeout);
+					this.double_click = false;
 					this.open();
 					return;
 				} else { // single click
@@ -94,7 +97,7 @@ export class NavFile extends NavEntry {
 			this.show_edit_file_contents();
 		} else {
 			console.log("Unknown mimetype: " + type);
-			if (await this.nav_window_ref.modal_prompt.confirm("Can't open " + this.filename() + " for editing.", "Download it instead?")) {
+			if (await this.nav_window_ref.modal_prompt.confirm("Can't open " + this.filename + " for editing.", "Download it instead?")) {
 				var download = new NavDownloader(this);
 				download.download();
 			}
@@ -118,7 +121,7 @@ export class NavFile extends NavEntry {
 		document.getElementById("nav-cancel-edit-contents-btn").onclick = this.hide_edit_file_contents.bind(this);
 		document.getElementById("nav-continue-edit-contents-btn").onclick = this.write_to_file.bind(this);
 		document.getElementById("nav-edit-contents-header").innerText = "Editing " + this.path_str();
-		document.getElementById("nav-contents-view").style.display = "none";
+		document.getElementById("nav-contents-view-holder").style.display = "none";
 		document.getElementById("nav-edit-contents-view").style.display = "flex";
 	}
 	
@@ -140,7 +143,7 @@ export class NavFile extends NavEntry {
 		window.addEventListener("keydown", this.nav_window_ref);
 		document.getElementById("nav-edit-contents-textarea").removeEventListener("keydown", this);
 		document.getElementById("nav-edit-contents-view").style.display = "none";
-		document.getElementById("nav-contents-view").style.display = "flex";
+		document.getElementById("nav-contents-view-holder").style.display = "flex";
 		this.nav_window_ref.enable_buttons();
 	}
 }
@@ -195,7 +198,7 @@ export class NavFileLink extends NavFile{
 			this.show_edit_file_contents();
 		} else {
 			console.log("Unknown mimetype: " + type);
-			this.nav_window_ref.modal_prompt.alert("Can't open " + this.filename() + " for editing.");
+			this.nav_window_ref.modal_prompt.alert("Can't open " + this.filename + " for editing.");
 		}
 	}
 
@@ -218,7 +221,7 @@ export class NavFileLink extends NavFile{
 		document.getElementById("nav-cancel-edit-contents-btn").onclick = this.hide_edit_file_contents.bind(this);
 		document.getElementById("nav-continue-edit-contents-btn").onclick = this.write_to_file.bind(this);
 		document.getElementById("nav-edit-contents-header").innerHTML = "Editing " + this.path_str() + ' <i class="fas fa-long-arrow-alt-right"></i> ' + this.get_link_target_path();
-		document.getElementById("nav-contents-view").style.display = "none";
+		document.getElementById("nav-contents-view-holder").style.display = "none";
 		document.getElementById("nav-edit-contents-view").style.display = "flex";
 	}
 

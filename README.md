@@ -23,28 +23,28 @@ With no command line use needed, you can:
 # Installation
 ## From Github Release
 ### Ubuntu
-1. `$ wget https://github.com/45Drives/cockpit-navigator/releases/download/v0.5.3/cockpit-navigator_0.5.3-1focal_all.deb`
-1. `# apt install ./cockpit-navigator_0.5.3-1focal_all.deb`
+1. `$ wget https://github.com/45Drives/cockpit-navigator/releases/download/v0.5.4/cockpit-navigator_0.5.4-1focal_all.deb`
+1. `# apt install ./cockpit-navigator_0.5.4-1focal_all.deb`
 ### EL7
-1. `# yum install https://github.com/45Drives/cockpit-navigator/releases/download/v0.5.3/cockpit-navigator-0.5.3-1.el7.noarch.rpm`
+1. `# yum install https://github.com/45Drives/cockpit-navigator/releases/download/v0.5.4/cockpit-navigator-0.5.4-1.el7.noarch.rpm`
 ### EL8
-1. `# dnf install https://github.com/45Drives/cockpit-navigator/releases/download/v0.5.3/cockpit-navigator-0.5.3-1.el8.noarch.rpm`
+1. `# dnf install https://github.com/45Drives/cockpit-navigator/releases/download/v0.5.4/cockpit-navigator-0.5.4-1.el8.noarch.rpm`
 ## From Source
 1. Ensure dependencies are installed: `cockpit`, `python3`, `rsync`, `zip`.
 1. `$ git clone https://github.com/45Drives/cockpit-navigator.git`
 1. `$ cd cockpit-navigator`
-1. `$ git checkout <version>` (v0.5.2 is latest)
+1. `$ git checkout <version>` (v0.5.4 is latest)
 1. `# make install`
 ## From 45Drives Repositories
 ### Ubuntu
 1. Import GPG Key
 ```sh
-wget -qO - http://repo.45drives.com/key.asc | sudo apt-key add -
+wget -qO - https://repo.45drives.com/key/gpg.asc | gpg --dearmor -o /usr/share/keyrings/45drives-archive-keyring.gpg
 ```
-2. Add 45drives.list
+2. Add 45drives.sources
 ```sh
 cd /etc/apt/sources.list.d
-sudo wget http://repo.45drives.com/debian/45drives.list
+curl -sSL https://repo.45drives.com/lists/45drives.sources -o /etc/apt/sources.list.d/45drives.sources
 sudo apt update
 ```
 3. Install Package
@@ -52,10 +52,9 @@ sudo apt update
 sudo apt install cockpit-navigator
 ```
 ### EL7/EL8
-1. Add Repository
+1. Add 45drives.repo
 ```sh
-cd /etc/yum.repos.d
-sudo wget http://repo.45drives.com/rhel/45drives.repo
+curl -sSL https://repo.45drives.com/lists/45drives.repo -o /etc/yum.repos.d/45drives.repo
 sudo yum clean all
 ```
 2. Install Package

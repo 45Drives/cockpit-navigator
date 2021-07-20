@@ -60,11 +60,11 @@ export class SortFunctions {
 	}
 
 	name_asc(first, second) {
-		return first.filename().localeCompare(second.filename());
+		return first.filename.localeCompare(second.filename);
 	}
 
 	name_desc(first, second) {
-		return second.filename().localeCompare(first.filename());
+		return second.filename.localeCompare(first.filename);
 	}
 
 	owner_asc(first, second) {

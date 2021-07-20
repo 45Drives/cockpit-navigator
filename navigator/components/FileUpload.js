@@ -41,34 +41,30 @@ export class FileUpload {
 		this.reader = new FileReader();
 		this.chunks = this.slice_file(file);
 		this.chunk_index = 0;
-		this.timestamp = Date.now();
 		this.modal_prompt = new ModalPrompt();
 		this.using_webkit = true;
-	}
-
-	check_if_exists() {
-		return new Promise((resolve, reject) => {
-			var proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/fail-if-exists.py3", this.path], {superuser: "try"});
-			proc.done((data) => {resolve(false)});
-			proc.fail((e, data) => {resolve(true)});
-		});
+		this.make_html_element();
 	}
 
 	make_html_element() {
-		var notification = document.createElement("div");
+		var notification = this.dom_element = document.createElement("div");
 		notification.classList.add("nav-notification");
 
 		var header = document.createElement("div");
 		header.classList.add("nav-notification-header");
 		notification.appendChild(header);
-		header.innerText = "Uploading " + this.filename;
-		header.style.position = "relative";
-		header.style.paddingRight = "1em";
+		header.style.display = "grid";
+		header.style.gridTemplateColumns = "1fr 20px";
+		header.style.gap = "5px";
+
+		var title = document.createElement("p");
+		title.innerText = "Uploading " + this.filename;
+		title.title = this.filename;
 
 		var cancel = document.createElement("i");
 		cancel.classList.add("fa", "fa-times");
-		cancel.style.position = "absolute"
-		cancel.style.right = "0";
+		cancel.style.justifySelf = "center";
+		cancel.style.alignSelf = "center";
 		cancel.style.cursor = "pointer";
 		cancel.onclick = () => {
 			if (this.proc) {
@@ -76,7 +72,8 @@ export class FileUpload {
 				this.done();
 			}
 		}
-		header.appendChild(cancel);
+
+		header.append(title, cancel);
 
 		var info = document.createElement("div");
 		info.classList.add("flex-row", "space-between");
@@ -129,7 +126,8 @@ export class FileUpload {
 	}
 
 	async upload() {
-		this.make_html_element();
+		this.timestamp = Date.now();
+		this.dom_element.style.display = "flex";
 		this.proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/write-chunks.py3", this.path], {err: "out", superuser: "try"});
 		this.proc.fail((e, data) => {
 			this.reader.onload = () => {}
@@ -137,8 +135,10 @@ export class FileUpload {
 			this.nav_window_ref.modal_prompt.alert(e, data);
 		})
 		this.proc.done((data) => {
-			this.nav_window_ref.refresh();
+			if (!this.done_hook)
+				this.nav_window_ref.refresh();
 		})
+		this.proc.always(() => this?.done_hook?.());
 		this.reader.onerror = (evt) => {
 			this.modal_prompt.alert("Failed to read file: " + this.filename, "Upload of directories not supported.");
 			this.done();
@@ -164,6 +164,7 @@ export class FileUpload {
 			}
 			this.done();
 		}
+		this.update_rates_interval = setInterval(this.display_xfr_rate.bind(this), 1000);
 	}
 
 	/**
@@ -199,6 +200,7 @@ export class FileUpload {
 	done() {
 		this.proc.input(); // close stdin
 		this.remove_html_element();
+		clearInterval(this.update_rates_interval);
 	}
 
 	update_xfr_rate() {
@@ -206,12 +208,19 @@ export class FileUpload {
 		var elapsed = (now - this.timestamp) / 1000;
 		this.timestamp = now;
 		var rate = this.chunk_size / elapsed;
-		this.rate.innerText = cockpit.format_bytes_per_sec(rate);
+		this.rate_avg = (this.rate_avg)
+			? (0.125 * rate + (0.875 * this.rate_avg))
+			: rate;
 		// keep exponential moving average of chunk time for eta
 		this.chunk_time = (this.chunk_time)
 			? (0.125 * elapsed + (0.875 * this.chunk_time))
 			: elapsed;
 		var eta = (this.num_chunks - this.chunk_index) * this.chunk_time;
-		this.eta.innerText = format_time_remaining(eta);
+		this.eta_avg = eta;
+	}
+
+	display_xfr_rate() {
+		this.rate.innerText = cockpit.format_bytes_per_sec(this.rate_avg);
+		this.eta.innerText = format_time_remaining(this.eta_avg);
 	}
 }

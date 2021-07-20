@@ -130,6 +130,7 @@ function set_up_buttons() {
 	document.getElementById("search-bar").addEventListener("keydown", (e) => {
 		if (e.keyCode === 13)
 			nav_window.search_filter(e);
+		e.stopPropagation();
 	});
 	// fix tab in editor input
 	document.getElementById('nav-edit-contents-textarea').addEventListener('keydown', (e) => {

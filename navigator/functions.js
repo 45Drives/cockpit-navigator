@@ -70,9 +70,7 @@ export function format_time_remaining(seconds_) {
 	if (hours) {
 		out = String(hours).padStart(2, '0') + ":";
 	}
-	if (minutes) {
-		out += String(minutes).padStart(2, '0') + ":";
-	}
+	out += String(minutes).padStart(2, '0') + ":";
 	out += String(seconds).padStart(2, '0');
 	return out;
 }
@@ -95,4 +93,17 @@ export function format_permissions(mode) {
 		}
 	}
 	return result;
+}
+
+/**
+ * 
+ * @param {string} path 
+ * @returns {Promise<boolean>}
+ */
+export function check_if_exists(path) {
+	return new Promise((resolve, reject) => {
+		var proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/fail-if-exists.py3", path], {superuser: "try"});
+		proc.done((data) => {resolve(false)});
+		proc.fail((e, data) => {resolve(true)});
+	});
 }

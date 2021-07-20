@@ -18,7 +18,7 @@
  */
 
 import {NavWindow} from "./NavWindow.js";
-import {format_bytes, property_entry_html, format_time} from "../functions.js";
+import {format_bytes, property_entry_html, format_time, check_if_exists} from "../functions.js";
 
 export class NavEntry {
 	/**
@@ -33,13 +33,14 @@ export class NavEntry {
 			this.path = path.split("/").splice(1);
 		else
 			this.path = (path.length) ? path : [""];
+		this.filename = this.get_filename();
 		this.dom_element = document.createElement("div");
 		this.dom_element.classList.add("nav-item");
 		let icon = this.dom_element.nav_item_icon = document.createElement("i");
 		icon.classList.add("nav-item-icon");
 		let title = this.dom_element.nav_item_title = document.createElement("div");
 		title.classList.add("nav-item-title", "no-select");
-		title.innerText = this.filename();
+		title.innerText = this.filename;
 		this.dom_element.appendChild(icon);
 		this.dom_element.appendChild(title);
 		let title_edit = this.dom_element.nav_item_title.editor = document.createElement("input");
@@ -63,10 +64,10 @@ export class NavEntry {
 			this.dom_element.addEventListener("click", this);
 			this.dom_element.addEventListener("contextmenu", this);
 		}
-		this.is_hidden_file = this.filename().startsWith('.');
+		this.is_hidden_file = this.filename.startsWith('.');
 		if (this.is_hidden_file)
 			icon.style.opacity = 0.5;
-		this.dom_element.title = this.filename();
+		this.dom_element.title = this.filename;
 		if (nav_window_ref && nav_window_ref.item_display === "list") {
 			let mode = document.createElement("div");
 			let owner = document.createElement("div");
@@ -85,6 +86,7 @@ export class NavEntry {
 			this.dom_element.appendChild(group);
 			this.dom_element.appendChild(size);
 		}
+		this.visible = true;
 	}
 
 	/**
@@ -97,13 +99,20 @@ export class NavEntry {
 				if (this.nav_window_ref.selected_entries.size === 1 && this.nav_window_ref.selected_entries.has(this)) {
 					switch (e.target) {
 						case this.dom_element.nav_item_title:
-							this.show_edit(e.target);
+							this.double_click = true;
+							if(this.timeout)
+								clearTimeout(this.timeout)
+							this.timeout = setTimeout(() => {
+								this.double_click = false;
+								if (!this.is_dangerous_path())
+									this.show_edit(e.target);
+							}, 500);
 							e.stopPropagation();
 							break;
 						default:
 							break;
 					}
-				} 
+				}
 				this.nav_window_ref.set_selected(this, e.shiftKey, e.ctrlKey);
 				this.context_menu_ref.hide();
 				break;
@@ -127,7 +136,7 @@ export class NavEntry {
 	 * 
 	 * @returns {string}
 	 */
-	filename() {
+	get_filename() {
 		var name = this.path[this.path.length - 1];
 		if (!name)
 			name = "/";
@@ -151,10 +160,12 @@ export class NavEntry {
 	}
 
 	show() {
+		this.visible = true;
 		this.dom_element.style.display = "flex";
 	}
 
 	hide() {
+		this.visible = false;
 		this.dom_element.style.display = "none";
 	}
 
@@ -255,15 +266,26 @@ export class NavEntry {
 	 * @param {string} new_path 
 	 */
 	async rename(new_name) {
-		if (new_name === this.filename())
+		if (new_name === this.filename)
 			return;
 		if (new_name.includes("/")) {
-			this.nav_window_ref.modal_prompt.alert("File name can't contain `/`.");
+			this.nav_window_ref.modal_prompt.alert(
+				"File name can't contain `/`.",
+				"If you want to move the file, right click > cut then right click > paste."
+			);
 			return;
 		} else if (new_name === "..") {
 			this.nav_window_ref.modal_prompt.alert(
 				"File name can't be `..`.",
 				"If you want to move the file, right click > cut then right click > paste."
+			);
+			return;
+		}
+		let new_path = [this.nav_window_ref.pwd().path_str(), new_name].join("/");
+		if (await check_if_exists(new_path)) {
+			this.nav_window_ref.modal_prompt.alert(
+				"Failed to rename.",
+				"File exists: " + new_path
 			);
 			return;
 		}
@@ -285,11 +307,22 @@ export class NavEntry {
 		if (!element.editor)
 			return;
 		element.hide_func = () => {this.hide_edit(element)};
-		element.editor.onchange = element.hide_func;
+		element.keydown_handler = (e) => {
+			switch (e.keyCode) {
+				case 13: // enter
+					this.apply_edit(element);
+				case 27: // esc
+					this.hide_edit(element);
+					break;
+				default:
+					break;
+			}
+		};
+		element.editor.addEventListener("keydown", element.keydown_handler);
 		window.addEventListener("click", element.hide_func);
 		switch (element) {
 			case this.dom_element.nav_item_title:
-				element.editor.value = this.filename();
+				element.editor.value = this.filename;
 				break;
 			default:
 				element.editor.value = element.innerText;
@@ -301,7 +334,7 @@ export class NavEntry {
 		element.editor.focus();
 	}
 
-	hide_edit(element) {
+	apply_edit(element) {
 		if (!element.editor)
 			return;
 		switch (element) {
@@ -311,8 +344,14 @@ export class NavEntry {
 			default:
 				break;
 		}
+	}
+
+	hide_edit(element) {
+		if (!element.editor)
+			return;
 		element.editor.style.display = "none";
 		element.style.display = "inline-block";
+		element.editor.removeEventListener("keydown", element.keydown_handler)
 		window.removeEventListener("click", element.hide_func);
 	}
 
@@ -323,8 +362,8 @@ export class NavEntry {
 	show_properties(extra_properties = "") {
 		var selected_name_fields = document.getElementsByClassName("nav-info-column-filename");
 		for (let elem of selected_name_fields) {
-			elem.innerHTML = this.filename();
-			elem.title = this.filename();
+			elem.innerHTML = this.filename;
+			elem.title = this.filename;
 		}
 		var html = "";
 		html += property_entry_html("Mode", this.stat["mode-str"]);
@@ -339,7 +378,7 @@ export class NavEntry {
 	}
 	
 	populate_edit_fields() {
-		document.getElementById("nav-edit-filename").innerText = this.filename();
+		document.getElementById("nav-edit-filename").innerText = this.filename;
 		var mode_bits = [
 			"other-exec", "other-write", "other-read",
 			"group-exec", "group-write", "group-read",
@@ -352,5 +391,21 @@ export class NavEntry {
 		}
 		document.getElementById("nav-edit-owner").value = this.stat["owner"];
 		document.getElementById("nav-edit-group").value = this.stat["group"];
+	}
+
+	style_selected() {
+		this.dom_element.classList.add("nav-item-selected");
+	}
+
+	unstyle_selected() {
+		this.dom_element.classList.remove("nav-item-selected");
+	}
+
+	/**
+	 * 
+	 * @returns {boolean}
+	 */
+	is_dangerous_path() {
+		return this.nav_window_ref.dangerous_dirs.includes(this.path_str());
 	}
 }

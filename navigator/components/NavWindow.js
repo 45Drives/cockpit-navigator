@@ -38,7 +38,6 @@ export class NavWindow {
 		this.window.addEventListener("click", this);
 		this.window.addEventListener("contextmenu", this);
 		window.addEventListener("keydown", this);
-		this.last_selected_index = -1;
 
 		this.context_menu = new NavContextMenu("nav-context-menu", this);
 
@@ -49,6 +48,36 @@ export class NavWindow {
 		this.sort_function = new SortFunctions();
 
 		this.modal_prompt = new ModalPrompt();
+
+		this.dangerous_dirs = [
+			"/",
+			"/bin",
+			"/boot",
+			"/dev",
+			"/etc",
+			"/home",
+			"/lib",
+			"/lib32",
+			"/lib64",
+			"/mnt",
+			"/opt",
+			"/proc",
+			"/root",
+			"/run",
+			"/sbin",
+			"/srv",
+			"/sys",
+			"/tmp",
+			"/usr",
+			"/usr/bin",
+			"/usr/include",
+			"/usr/lib",
+			"/usr/lib32",
+			"/usr/lib64",
+			"/usr/sbin",
+			"/usr/share",
+			"/var"
+		];
 	}
 
 	/**
@@ -59,7 +88,7 @@ export class NavWindow {
 		switch (e.type) {
 			case "click":
 				if (e.target === this.window) {
-					this.clear_selected();
+					this.reset_selection();
 					this.show_selected_properties();
 				}
 				break;
@@ -73,6 +102,8 @@ export class NavWindow {
 				} else if (e.keyCode === 65 && e.ctrlKey) {
 					this.select_all();
 					e.preventDefault();
+				} else if (e.keyCode === 27) {
+					this.reset_selection();
 				} else if (e.keyCode === 67 && e.ctrlKey) {
 					this.copy();
 				} else if (e.keyCode === 86 && e.ctrlKey) {
@@ -129,7 +160,7 @@ export class NavWindow {
 			file.context_menu_ref = this.context_menu;
 		});
 		document.getElementById("pwd").value = this.pwd().path_str();
-		this.set_selected(this.pwd(), false, false);
+		this.reset_selection();
 		this.show_selected_properties();
 		document.getElementById("nav-num-dirs").innerText = `${num_dirs} Director${(num_dirs === 1)? "y" : "ies"}`;
 		document.getElementById("nav-num-files").innerText = `${num_files} File${(num_files === 1)? "" : "s"}`;
@@ -178,65 +209,85 @@ export class NavWindow {
 			this.cd(new NavDir(this.pwd().parent_dir()));
 	}
 	
+	clear_selected() {
+		for (let entry of this.selected_entries) {
+			entry.unstyle_selected();
+		}
+		this.selected_entries.clear();
+	}
+
 	/**
 	 * 
 	 * @param {NavEntry} entry 
-	 * @param {Boolean} select_range 
-	 * @param {Boolean} append 
 	 */
-	set_selected(entry, select_range, append) {
-		this.hide_edit_selected();
-		for (let i of this.selected_entries) {
-			i.dom_element.classList.remove("nav-item-selected");
-			if (i.nav_type === "dir") {
-				i.dom_element.nav_item_icon.classList.remove("fa-folder-open");
-				i.dom_element.nav_item_icon.classList.add("fa-folder");
-			}
-		}
-		var to_be_selected = [];
-		if (append && this.selected_entries.has(entry)) {
-			this.selected_entries.delete(entry);
-			if (this.selected_entries.size === 0) {
-				this.clear_selected();
-			}
-		} else if (select_range && this.last_selected_index !== -1) {
-			var start = this.last_selected_index;
-			var end = this.entries.indexOf(entry);
-			if (end < start)
-				[start, end] = [end, start];
-			if (end === -1)
-				return;
-			to_be_selected = this.entries.slice(start, end + 1).filter(entry => !entry.stat["inaccessible"]);
-		} else {
-			if (!append)
-				this.selected_entries.clear();
-			to_be_selected = [entry];
-		}
-		for (let i of to_be_selected) {
-			this.selected_entries.add(i);
-		}
-		for (let i of this.selected_entries) {
-			i.dom_element.classList.add("nav-item-selected");
-			if (i.nav_type === "dir") {
-				i.dom_element.nav_item_icon.classList.remove("fa-folder");
-				i.dom_element.nav_item_icon.classList.add("fa-folder-open");
-			}
-		}
-		if (this.selected_entries.size > 1){
-			var name_fields = document.getElementsByClassName("nav-info-column-filename");
-			for (let name_field of name_fields) {
-				name_field.innerText = this.selected_entries.size.toString() + " selected"
-				name_field.title = name_field.innerText;
-			}
-			document.getElementById("nav-info-column-properties").innerHTML = "";
-		} else {
-			this.show_selected_properties();
-		}
-		this.last_selected_index = this.entries.indexOf(entry);
+	select_one(entry) {
+		entry.style_selected();
+		this.selected_entries.add(entry);
 	}
-	
-	clear_selected() {
-		this.set_selected(this.pwd(), false, false);
+
+	deselect_one(entry) {
+		entry.unstyle_selected();
+		this.selected_entries.delete(entry);
+	}
+
+	/**
+	 * 
+	 * @param {NavEntry} start 
+	 * @param {NavEntry} end 
+	 */
+	select_range(start, end) {
+		let start_ind = this.entries.indexOf(start);
+		let end_ind = this.entries.indexOf(end);
+		if (start_ind === -1 || end_ind === -1)
+			return;
+		if (end_ind === start_ind)
+			this.select_one(start);
+		else if (end_ind < start_ind)
+			[start_ind, end_ind] = [end_ind, start_ind];
+		for (let i = start_ind; i <= end_ind; i++) {
+			let entry = this.entries[i];
+			if (entry.visible && (!entry.is_hidden_file || this.show_hidden))
+				this.select_one(entry);
+		}
+	}
+
+	reset_selection() {
+		this.clear_selected();
+		this.select_one(this.pwd());
+		this.last_selected_entry = null;
+		this.update_selection_info();
+	}
+
+	/**
+	 * 
+	 * @param {NavEntry} target 
+	 * @param {Boolean} shift 
+	 * @param {Boolean} ctrl 
+	 */
+	set_selected(target, shift, ctrl) {
+		if (!ctrl && !shift)
+			this.clear_selected();
+		if (!shift || !this.last_selected_entry)
+			this.last_selected_entry = target;
+		if (shift) {
+			if (!ctrl)
+				this.clear_selected();
+			this.select_range(
+				this.last_selected_entry ?? this.entries[0],
+				target
+			);
+		} else if (ctrl && this.selected_entries.has(target)) {
+			this.deselect_one(target)
+		} else {
+			this.select_one(target);
+		}
+		this.update_selection_info();
+	}
+
+	select_all() {
+		this.clear_selected();
+		this.select_range(this.entries[0], this.entries[this.entries.length - 1]);
+		this.update_selection_info();
 	}
 
 	selected_entry() {
@@ -248,29 +299,27 @@ export class NavWindow {
 	}
 	
 	show_selected_properties() {
-		this.selected_entry().show_properties();
+		this.selected_entry()?.show_properties?.();
+	}
+
+	update_selection_info() {
+		if (this.selected_entries.size > 1){
+			var name_fields = document.getElementsByClassName("nav-info-column-filename");
+			for (let name_field of name_fields) {
+				name_field.innerText = this.selected_entries.size.toString() + " selected"
+				name_field.title = name_field.innerText;
+			}
+			document.getElementById("nav-info-column-properties").innerHTML = "";
+		} else {
+			this.show_selected_properties();
+		}
 	}
 
 	async show_edit_selected() {
-		var dangerous_dirs = [
-			"/",
-			"/usr",
-			"/bin",
-			"/sbin",
-			"/lib",
-			"/lib32",
-			"/lib64",
-			"/usr/bin",
-			"/usr/include",
-			"/usr/lib",
-			"/usr/lib32",
-			"/usr/lib64",
-			"/usr/sbin",
-		];
 		var dangerous_selected = [];
 		for (let i of this.selected_entries) {
 			var path = i.path_str();
-			if (dangerous_dirs.includes(path)) {
+			if (this.dangerous_dirs.includes(path)) {
 				dangerous_selected.push(path);
 			}
 		}
@@ -321,7 +370,7 @@ export class NavWindow {
 			}
 			var targets = [];
 			for (let target of this.selected_entries) {
-				targets.push(target.filename());
+				targets.push(target.filename);
 			}
 			var targets_str = targets.join(", ");
 			document.getElementById("selected-files-list-header").innerText = "Applying edits to:";
@@ -395,6 +444,8 @@ export class NavWindow {
 	}
 
 	async delete_selected() {
+		if (await this.check_if_dangerous("delete"))
+			return;
 		var prompt = "";
 		if (this.selected_entries.size > 1) {
 			prompt = "Deleting " + this.selected_entries.size + " files.";
@@ -404,6 +455,7 @@ export class NavWindow {
 		if (!await this.modal_prompt.confirm(prompt, "This cannot be undone. Are you sure?", true)) {
 			return;
 		}
+		this.start_load();
 		for (let target of this.selected_entries) {
 			try {
 				await target.rm();
@@ -411,6 +463,7 @@ export class NavWindow {
 				this.modal_prompt.alert(e);
 			}
 		}
+		this.stop_load();
 		this.refresh();
 	}
 
@@ -545,7 +598,9 @@ export class NavWindow {
 		this.refresh();
 	}
 
-	cut() {
+	async cut() {
+		if (await this.check_if_dangerous("move"))
+			return;
 		this.clip_board = [...this.selected_entries];
 		this.copy_or_move = "move";
 		this.paste_cwd = this.pwd().path_str();
@@ -643,6 +698,7 @@ export class NavWindow {
 			default:
 				break;
 		}
+		e.stopPropagation();
 	}
 
 	nav_bar_cd() {
@@ -681,7 +737,7 @@ export class NavWindow {
 
 	start_load() {
 		document.getElementById("nav-loader-container").style.display = "block";
-		var buttons = document.getElementsByTagName("button");
+		var buttons = document.getElementsByClassName("disable-while-loading");
 		for (let button of buttons) {
 			button.disabled = true;
 		}
@@ -689,7 +745,7 @@ export class NavWindow {
 
 	stop_load() {
 		document.getElementById("nav-loader-container").style.display = "none";
-		var buttons = document.getElementsByTagName("button");
+		var buttons = document.getElementsByClassName("disable-while-loading");
 		for (let button of buttons) {
 			button.disabled = false;
 		}
@@ -801,15 +857,6 @@ export class NavWindow {
 		this.set_nav_button_state();
 	}
 
-	select_all() {
-		this.selected_entries.clear();
-		for (let entry of this.entries) {
-			if (!entry.is_hidden_file || this.show_hidden) {
-				this.set_selected(entry, false, true);
-			}
-		}
-	}
-
 	async switch_item_display() {
 		var button = document.getElementById("nav-item-display-icon");
 		if (this.item_display === "grid") {
@@ -833,11 +880,42 @@ export class NavWindow {
 
 	search_filter(event) {
 		var search_name = event.target.value;
+		let search_func;
+		if (search_name[0] === '*')
+			search_func = (entry) => entry.filename.toLowerCase().includes(search_name.slice(1).toLowerCase());
+		else
+			search_func = (entry) => entry.filename.toLowerCase().startsWith(search_name.toLowerCase());
 		this.entries.forEach((entry) => {
-			if (entry.filename().toLowerCase().startsWith(search_name.toLowerCase()))
+			if (search_func(entry))
 				entry.show();
 			else
 				entry.hide();
+		});
+	}
+
+	/**
+	 * 
+	 * @param {string} verb 
+	 * @returns {Promise<boolean>}
+	 */
+	check_if_dangerous(verb) {
+		return new Promise(async (resolve, reject) => {
+			let dangerous_selected = [];
+			for (let entry of this.selected_entries) {
+				let path = entry.path_str();
+				if (this.dangerous_dirs.includes(path)) {
+					dangerous_selected.push(path);
+				}
+			}
+			if (dangerous_selected.length) {
+				await this.modal_prompt.alert(
+					`Cannot ${verb} system-critical paths.`,
+					`The following path(s) are very dangerous to ${verb}: ${dangerous_selected.join(", ")}. If you think you need to ${verb} them, use the terminal.`
+				);
+				resolve(true);
+			} else {
+				resolve(false);
+			}
 		});
 	}
 }

@@ -18,8 +18,9 @@
  */
 
 import {FileUpload} from "./FileUpload.js";
-import { ModalPrompt } from "./ModalPrompt.js";
+import {ModalPrompt} from "./ModalPrompt.js";
 import {NavWindow} from "./NavWindow.js";
+import {FileUploadManager} from "./FileUploadManager.js";
 
 export class NavDragDrop {
 	/**
@@ -35,6 +36,7 @@ export class NavDragDrop {
 		this.drop_area = drop_area;
 		this.nav_window_ref = nav_window_ref;
 		this.modal_prompt = new ModalPrompt();
+		this.upload_manager = new FileUploadManager(this.nav_window_ref, 6);
 	}
 
 	/**
@@ -82,7 +84,6 @@ export class NavDragDrop {
 				let path = "";
 				if (item) {
 					let new_uploads = await this.scan_files(item, path);
-					console.log(new_uploads);
 					uploads.push(... new_uploads);
 				} else {
 					reject();
@@ -98,10 +99,29 @@ export class NavDragDrop {
 	 * @returns {FileUpload[]}
 	 */
 	async handle_conflicts(uploads) {
+		let test_paths = [];
+		for (let upload of uploads)
+			test_paths.push(upload.path);
+		let proc = cockpit.spawn(
+			["/usr/share/cockpit/navigator/scripts/return-exists.py3", ... test_paths],
+			{error: "out", superuser: "try"}
+		);
+		let exist_result;
+		proc.done((data) => {
+			exist_result = JSON.parse(data);
+		});
+		proc.fail((e, data) => {
+			this.nav_window_ref.modal_prompt.alert(e, data);
+		});
+		try {
+			await proc;
+		} catch {
+			return;
+		}
 		let keepers = [];
 		let requests = {};
 		for (let upload of uploads) {
-			if (!await upload.check_if_exists()) {
+			if (!exist_result[upload.path]) {
 				keepers.push(upload.filename);
 				continue;
 			}
@@ -147,6 +167,7 @@ export class NavDragDrop {
 				this.drop_area.classList.remove("drag-enter");
 				break;
 			case "drop":
+				this.nav_window_ref.start_load();
 				let uploads;
 				let items = e.dataTransfer.items;
 				e.preventDefault();
@@ -162,10 +183,13 @@ export class NavDragDrop {
 					}
 				}
 				this.drop_area.classList.remove("drag-enter");
-				if (uploads.length === 0)
+				if (uploads.length === 0) {
+					this.nav_window_ref.stop_load();
 					break;
+				}
 				uploads = await this.handle_conflicts(uploads);
-				uploads.forEach((upload) => {upload.upload()});
+				this.nav_window_ref.stop_load();
+				this.upload_manager.add(... uploads);
 				break;
 			default:
 				this.drop_area.classList.remove("drag-enter");
