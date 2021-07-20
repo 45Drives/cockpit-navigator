@@ -45,12 +45,12 @@ sudo bash setup-repo.sh
 #### Ubuntu
 1. Import GPG Key
 ```sh
-wget -qO - https://repo.45drives.com/key/gpg.asc | gpg --dearmor -o /usr/share/keyrings/45drives-archive-keyring.gpg
+wget -qO - https://repo.45drives.com/key/gpg.asc | sudo gpg --dearmor -o /usr/share/keyrings/45drives-archive-keyring.gpg
 ```
 2. Add 45drives.sources
 ```sh
 cd /etc/apt/sources.list.d
-curl -sSL https://repo.45drives.com/lists/45drives.sources -o /etc/apt/sources.list.d/45drives.sources
+sudo curl -sSL https://repo.45drives.com/lists/45drives.sources -o /etc/apt/sources.list.d/45drives.sources
 sudo apt update
 ```
 3. Install Package
@@ -60,7 +60,7 @@ sudo apt install cockpit-navigator
 #### EL7
 1. Add 45drives.repo
 ```sh
-curl -sSL https://repo.45drives.com/lists/45drives.repo -o /etc/yum.repos.d/45drives.repo
+sudo curl -sSL https://repo.45drives.com/lists/45drives.repo -o /etc/yum.repos.d/45drives.repo
 sudo sed -i 's/el8/el7/g;s/EL8/EL7/g' /etc/yum.repos.d/45drives.repo
 sudo yum clean all
 ```
@@ -71,7 +71,7 @@ sudo yum install cockpit-navigator
 #### EL8
 1. Add 45drives.repo
 ```sh
-curl -sSL https://repo.45drives.com/lists/45drives.repo -o /etc/yum.repos.d/45drives.repo
+sudo curl -sSL https://repo.45drives.com/lists/45drives.repo -o /etc/yum.repos.d/45drives.repo
 sudo dnf clean all
 ```
 2. Install Package
