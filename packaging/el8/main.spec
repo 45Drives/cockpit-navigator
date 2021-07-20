@@ -32,6 +32,11 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Tue Jul 20 2021 Josh Boudreau <jboudreau@45drives.com> 0.5.4-1
+- Add fuzzy search.
+- Optimize folder uploads.
+- Fix bugs with selecting entries and renaming files.
+- Stop user from deleting or renaming system-critical paths.
 * Mon Jul 19 2021 Josh Boudreau <jboudreau@45drives.com> 0.5.3-1
 - Implement inline filename editing.
 - Add information popup button.
