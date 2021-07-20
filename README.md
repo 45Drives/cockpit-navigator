@@ -36,7 +36,13 @@ With no command line use needed, you can:
 1. `$ git checkout <version>` (v0.5.4 is latest)
 1. `# make install`
 ## From 45Drives Repositories
-### Ubuntu
+### Automatic Repo Setup with Script
+```sh
+curl -sSL https://repo.45drives.com/setup -o setup-repo.sh
+sudo bash setup-repo.sh
+```
+### Manually
+#### Ubuntu
 1. Import GPG Key
 ```sh
 wget -qO - https://repo.45drives.com/key/gpg.asc | gpg --dearmor -o /usr/share/keyrings/45drives-archive-keyring.gpg
@@ -51,13 +57,24 @@ sudo apt update
 ```sh
 sudo apt install cockpit-navigator
 ```
-### EL7/EL8
+#### EL7
 1. Add 45drives.repo
 ```sh
 curl -sSL https://repo.45drives.com/lists/45drives.repo -o /etc/yum.repos.d/45drives.repo
+sudo sed -i 's/el8/el7/g;s/EL8/EL7/g' /etc/yum.repos.d/45drives.repo
 sudo yum clean all
 ```
 2. Install Package
-```sh
+```bash
 sudo yum install cockpit-navigator
+```
+#### EL8
+1. Add 45drives.repo
+```sh
+curl -sSL https://repo.45drives.com/lists/45drives.repo -o /etc/yum.repos.d/45drives.repo
+sudo dnf clean all
+```
+2. Install Package
+```bash
+sudo dnf install cockpit-navigator
 ```
