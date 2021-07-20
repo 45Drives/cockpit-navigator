@@ -651,7 +651,7 @@ input:checked + .slider:before {
 .nav-notifications {
 	position: absolute;
 	bottom: 0;
-	right: 0;
+	right: 10px;
 	padding: 5px;
 	display: flex;
 	flex-flow: column-reverse nowrap;
@@ -663,7 +663,7 @@ input:checked + .slider:before {
 .nav-notification {
 	margin: 5px;
 	position: relative;
-	display: flex;
+	display: none;
 	flex-flow: column nowrap;
 	align-items: stretch;
 	z-index: 10;
@@ -673,15 +673,23 @@ input:checked + .slider:before {
 	border-radius: var(--nav-border-radius);
 	color: var(--font);
 }
-
-.nav-notification-header {
+/* .nav-notification-header {
 	position: relative;
 	z-index: 10;
 	font-weight: bold;
-}
+} */
 
-.nav-notification-header > progress {
+/* .nav-notification-header > progress {
 	position: relative;
 	z-index: 10;
+} */
+
+.nav-notification-header > p {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
+.no-border {
+	border: none;
+}

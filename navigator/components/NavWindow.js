@@ -56,6 +56,7 @@ export class NavWindow {
 	 * @param {Event} e 
 	 */
 	handleEvent(e) {
+		console.log(e);
 		switch (e.type) {
 			case "click":
 				if (e.target === this.window) {
@@ -73,6 +74,8 @@ export class NavWindow {
 				} else if (e.keyCode === 65 && e.ctrlKey) {
 					this.select_all();
 					e.preventDefault();
+				} else if (e.keyCode === 27) {
+					this.clear_selected();
 				} else if (e.keyCode === 67 && e.ctrlKey) {
 					this.copy();
 				} else if (e.keyCode === 86 && e.ctrlKey) {
@@ -212,6 +215,7 @@ export class NavWindow {
 				this.selected_entries.clear();
 			to_be_selected = [entry];
 		}
+		to_be_selected = to_be_selected.filter((entry) => entry.visible);
 		for (let i of to_be_selected) {
 			this.selected_entries.add(i);
 		}
@@ -248,7 +252,7 @@ export class NavWindow {
 	}
 	
 	show_selected_properties() {
-		this.selected_entry().show_properties();
+		this.selected_entry()?.show_properties?.();
 	}
 
 	async show_edit_selected() {
@@ -645,6 +649,7 @@ export class NavWindow {
 			default:
 				break;
 		}
+		e.stopPropagation();
 	}
 
 	nav_bar_cd() {

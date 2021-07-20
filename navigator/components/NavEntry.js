@@ -86,6 +86,7 @@ export class NavEntry {
 			this.dom_element.appendChild(group);
 			this.dom_element.appendChild(size);
 		}
+		this.visible = true;
 	}
 
 	/**
@@ -158,10 +159,12 @@ export class NavEntry {
 	}
 
 	show() {
+		this.visible = true;
 		this.dom_element.style.display = "flex";
 	}
 
 	hide() {
+		this.visible = false;
 		this.dom_element.style.display = "none";
 	}
 

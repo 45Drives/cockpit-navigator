@@ -48,20 +48,24 @@ export class FileUpload {
 	}
 
 	make_html_element() {
-		var notification = document.createElement("div");
+		var notification = this.dom_element = document.createElement("div");
 		notification.classList.add("nav-notification");
 
 		var header = document.createElement("div");
 		header.classList.add("nav-notification-header");
 		notification.appendChild(header);
-		header.innerText = "Uploading " + this.filename;
-		header.style.position = "relative";
-		header.style.paddingRight = "1em";
+		header.style.display = "grid";
+		header.style.gridTemplateColumns = "1fr 20px";
+		header.style.gap = "5px";
+
+		var title = document.createElement("p");
+		title.innerText = "Uploading " + this.filename;
+		title.title = this.filename;
 
 		var cancel = document.createElement("i");
 		cancel.classList.add("fa", "fa-times");
-		cancel.style.position = "absolute"
-		cancel.style.right = "0";
+		cancel.style.justifySelf = "center";
+		cancel.style.alignSelf = "center";
 		cancel.style.cursor = "pointer";
 		cancel.onclick = () => {
 			if (this.proc) {
@@ -69,7 +73,8 @@ export class FileUpload {
 				this.done();
 			}
 		}
-		header.appendChild(cancel);
+
+		header.append(title, cancel);
 
 		var info = document.createElement("div");
 		info.classList.add("flex-row", "space-between");
@@ -122,6 +127,7 @@ export class FileUpload {
 	}
 
 	async upload() {
+		this.dom_element.style.display = "flex";
 		this.proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/write-chunks.py3", this.path], {err: "out", superuser: "try"});
 		this.proc.fail((e, data) => {
 			this.reader.onload = () => {}
@@ -158,7 +164,7 @@ export class FileUpload {
 			}
 			this.done();
 		}
-		this.update_rates_interval = setInterval(this.display_xfr_rate.bind(this), 1000);
+		this.update_rates_interval = setInterval(this.display_xfr_rate.bind(this), 2000);
 	}
 
 	/**

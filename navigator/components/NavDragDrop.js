@@ -36,7 +36,7 @@ export class NavDragDrop {
 		this.drop_area = drop_area;
 		this.nav_window_ref = nav_window_ref;
 		this.modal_prompt = new ModalPrompt();
-		this.upload_manager = new FileUploadManager(this.nav_window_ref, 10);
+		this.upload_manager = new FileUploadManager(this.nav_window_ref, 6);
 	}
 
 	/**
