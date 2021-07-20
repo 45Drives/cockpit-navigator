@@ -111,7 +111,7 @@ export class NavEntry {
 						default:
 							break;
 					}
-				} 
+				}
 				this.nav_window_ref.set_selected(this, e.shiftKey, e.ctrlKey);
 				this.context_menu_ref.hide();
 				break;
@@ -373,5 +373,13 @@ export class NavEntry {
 		}
 		document.getElementById("nav-edit-owner").value = this.stat["owner"];
 		document.getElementById("nav-edit-group").value = this.stat["group"];
+	}
+
+	style_selected() {
+		this.dom_element.classList.add("nav-item-selected");
+	}
+
+	unstyle_selected() {
+		this.dom_element.classList.remove("nav-item-selected");
 	}
 }
