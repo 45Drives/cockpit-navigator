@@ -104,7 +104,8 @@ export class NavEntry {
 								clearTimeout(this.timeout)
 							this.timeout = setTimeout(() => {
 								this.double_click = false;
-								this.show_edit(e.target);
+								if (!this.is_dangerous_path())
+									this.show_edit(e.target);
 							}, 500);
 							e.stopPropagation();
 							break;
@@ -398,5 +399,13 @@ export class NavEntry {
 
 	unstyle_selected() {
 		this.dom_element.classList.remove("nav-item-selected");
+	}
+
+	/**
+	 * 
+	 * @returns {boolean}
+	 */
+	is_dangerous_path() {
+		return this.nav_window_ref.dangerous_dirs.includes(this.path_str());
 	}
 }

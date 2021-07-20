@@ -90,7 +90,14 @@ export class NavContextMenu {
 
 	async rename(e) {
 		this.hide();
-		this.target.show_edit(this.target.dom_element.nav_item_title);
+		if (this.target.is_dangerous_path()) {
+			await this.nav_window_ref.modal_prompt.alert(
+				"Cannot rename system-critical paths.",
+				"If you think you need to, use the terminal."
+			);
+		} else {
+			this.target.show_edit(this.target.dom_element.nav_item_title);
+		}
 		e.stopPropagation();
 	}
 

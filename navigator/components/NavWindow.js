@@ -48,6 +48,35 @@ export class NavWindow {
 		this.sort_function = new SortFunctions();
 
 		this.modal_prompt = new ModalPrompt();
+
+		this.dangerous_dirs = [
+			"/",
+			"/bin",
+			"/boot",
+			"/dev",
+			"/etc",
+			"/home",
+			"/lib",
+			"/lib32",
+			"/lib64",
+			"/mnt",
+			"/opt",
+			"/proc",
+			"/root",
+			"/run",
+			"/sbin",
+			"/sys",
+			"/tmp",
+			"/usr",
+			"/usr/bin",
+			"/usr/include",
+			"/usr/lib",
+			"/usr/lib32",
+			"/usr/lib64",
+			"/usr/sbin",
+			"/usr/share",
+			"/var"
+		];
 	}
 
 	/**
@@ -281,31 +310,15 @@ export class NavWindow {
 			}
 			document.getElementById("nav-info-column-properties").innerHTML = "";
 		} else {
-			console.log("Single selected");
 			this.show_selected_properties();
 		}
 	}
 
 	async show_edit_selected() {
-		var dangerous_dirs = [
-			"/",
-			"/usr",
-			"/bin",
-			"/sbin",
-			"/lib",
-			"/lib32",
-			"/lib64",
-			"/usr/bin",
-			"/usr/include",
-			"/usr/lib",
-			"/usr/lib32",
-			"/usr/lib64",
-			"/usr/sbin",
-		];
 		var dangerous_selected = [];
 		for (let i of this.selected_entries) {
 			var path = i.path_str();
-			if (dangerous_dirs.includes(path)) {
+			if (this.dangerous_dirs.includes(path)) {
 				dangerous_selected.push(path);
 			}
 		}
@@ -430,6 +443,8 @@ export class NavWindow {
 	}
 
 	async delete_selected() {
+		if (await this.check_if_dangerous("delete"))
+			return;
 		var prompt = "";
 		if (this.selected_entries.size > 1) {
 			prompt = "Deleting " + this.selected_entries.size + " files.";
@@ -582,7 +597,9 @@ export class NavWindow {
 		this.refresh();
 	}
 
-	cut() {
+	async cut() {
+		if (await this.check_if_dangerous("move"))
+			return;
 		this.clip_board = [...this.selected_entries];
 		this.copy_or_move = "move";
 		this.paste_cwd = this.pwd().path_str();
@@ -872,6 +889,32 @@ export class NavWindow {
 				entry.show();
 			else
 				entry.hide();
+		});
+	}
+
+	/**
+	 * 
+	 * @param {string} verb 
+	 * @returns {Promise<boolean>}
+	 */
+	check_if_dangerous(verb) {
+		return new Promise(async (resolve, reject) => {
+			let dangerous_selected = [];
+			for (let entry of this.selected_entries) {
+				let path = entry.path_str();
+				if (this.dangerous_dirs.includes(path)) {
+					dangerous_selected.push(path);
+				}
+			}
+			if (dangerous_selected.length) {
+				await this.modal_prompt.alert(
+					`Cannot ${verb} system-critical paths.`,
+					`The following path(s) are very dangerous to ${verb}: ${dangerous_selected.join(", ")}. If you think you need to ${verb} them, use the terminal.`
+				);
+				resolve(true);
+			} else {
+				resolve(false);
+			}
 		});
 	}
 }
