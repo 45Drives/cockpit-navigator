@@ -39,12 +39,12 @@ With no command line use needed, you can:
 ### Ubuntu
 1. Import GPG Key
 ```sh
-wget -qO - http://repo.45drives.com/key.asc | sudo apt-key add -
+wget -qO - https://repo.45drives.com/key/gpg.asc | gpg --dearmor -o /usr/share/keyrings/45drives-archive-keyring.gpg
 ```
-2. Add 45drives.list
+2. Add 45drives.sources
 ```sh
 cd /etc/apt/sources.list.d
-sudo wget http://repo.45drives.com/debian/45drives.list
+curl -sSL https://repo.45drives.com/lists/45drives.sources -o /etc/apt/sources.list.d/45drives.sources
 sudo apt update
 ```
 3. Install Package
@@ -52,10 +52,9 @@ sudo apt update
 sudo apt install cockpit-navigator
 ```
 ### EL7/EL8
-1. Add Repository
+1. Add 45drives.repo
 ```sh
-cd /etc/yum.repos.d
-sudo wget http://repo.45drives.com/rhel/45drives.repo
+curl -sSL https://repo.45drives.com/lists/45drives.repo -o /etc/yum.repos.d/45drives.repo
 sudo yum clean all
 ```
 2. Install Package
