@@ -17,9 +17,9 @@
 	along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {ModalPrompt} from "./components/ModalPrompt.js";
-import {NavWindow} from "./components/NavWindow.js";
-import {NAVIGATOR_VERSION} from "./version.js";
+import { ModalPrompt } from "./components/ModalPrompt.js";
+import { NavWindow } from "./components/NavWindow.js";
+import { NAVIGATOR_VERSION } from "./version.js";
 
 /**
  * 

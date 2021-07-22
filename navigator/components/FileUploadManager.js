@@ -17,8 +17,8 @@
 	along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {FileUpload} from "./FileUpload.js";
-import {NavWindow} from "./NavWindow.js";
+import { FileUpload } from "./FileUpload.js";
+import { NavWindow } from "./NavWindow.js";
 
 export class FileUploadManager {
     /**

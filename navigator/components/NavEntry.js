@@ -17,8 +17,8 @@
 	along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {NavWindow} from "./NavWindow.js";
-import {format_bytes, property_entry_html, format_time, check_if_exists} from "../functions.js";
+import { NavWindow } from "./NavWindow.js";
+import { format_bytes, property_entry_html, format_time, check_if_exists } from "../functions.js";
 
 export class NavEntry {
 	/**

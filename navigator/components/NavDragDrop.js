@@ -17,10 +17,10 @@
 	along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {FileUpload} from "./FileUpload.js";
-import {ModalPrompt} from "./ModalPrompt.js";
-import {NavWindow} from "./NavWindow.js";
-import {FileUploadManager} from "./FileUploadManager.js";
+import { FileUpload } from "./FileUpload.js";
+import { ModalPrompt } from "./ModalPrompt.js";
+import { NavWindow } from "./NavWindow.js";
+import { FileUploadManager } from "./FileUploadManager.js";
 
 export class NavDragDrop {
 	/**
