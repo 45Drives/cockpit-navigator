@@ -7,6 +7,8 @@ assignees: ''
 
 ---
 
+## Bug Info
+
 **Describe the bug**
 A clear and concise description of what the bug is.
 
@@ -39,6 +41,8 @@ If applicable, add screenshots to help explain your problem.
 - Internet Explorer
   - Good luck
 
+## Client Side
+
 **Desktop (please complete the following information):**
  - OS: [e.g. iOS]
  - Browser [e.g. chrome, safari]
@@ -49,6 +53,10 @@ If applicable, add screenshots to help explain your problem.
  - OS: [e.g. iOS8.1]
  - Browser [e.g. stock browser, safari]
  - Version [e.g. 22]
+
+## Server Side
+ - OS: [e.g. Ubuntu 20.04, Rocky 8]
+ - Cockpit Version: [e.g. 235]
 
 **Additional context**
 Add any other context about the problem here.
