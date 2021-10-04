@@ -256,6 +256,9 @@ export class NavWindow {
 		this.select_one(this.pwd());
 		this.last_selected_entry = null;
 		this.update_selection_info();
+		var edit_btn = document.getElementById("nav-edit-contents-btn");
+		edit_btn.keep_disabled = edit_btn.disabled = true;
+		edit_btn.onclick = () => {};
 	}
 
 	/**
@@ -282,6 +285,17 @@ export class NavWindow {
 			this.select_one(target);
 		}
 		this.update_selection_info();
+
+		var edit_btn = document.getElementById("nav-edit-contents-btn")
+		if (target.nav_type === "file") {
+			edit_btn.keep_disabled = edit_btn.disabled = false;
+			edit_btn.onclick = () => {
+				target.open();
+			};
+		} else {
+			edit_btn.onclick = () => {};
+			edit_btn.keep_disabled = edit_btn.disabled = true;
+		}
 	}
 
 	select_all() {
@@ -747,7 +761,8 @@ export class NavWindow {
 		document.getElementById("nav-loader-container").style.display = "none";
 		var buttons = document.getElementsByClassName("disable-while-loading");
 		for (let button of buttons) {
-			button.disabled = false;
+			if (!button.keep_disabled)
+				button.disabled = false;
 		}
 	}
 
