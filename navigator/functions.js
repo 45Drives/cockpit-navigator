@@ -107,3 +107,25 @@ export function check_if_exists(path) {
 		proc.fail((e, data) => {resolve(true)});
 	});
 }
+
+/**
+ * Spawn process and resolve/reject with output
+ * 
+ * @param {string[]} argv argv of proc
+ * @param {string | null} input optional input to stdin of proc
+ * @returns {Promise<string>}
+ */
+export function simple_spawn(argv, input = null) {
+	return new Promise((resolve, reject) => {
+		var proc = cockpit.spawn(argv, {superuser: "try"});
+		proc.done(data => resolve(data));
+		proc.fail((e, data) => {
+			if (data)
+				reject(data);
+			else
+				reject("Execution error: " + e);
+		});
+		if (input != null)
+			proc.input(input);
+	});
+}

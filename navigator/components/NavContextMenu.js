@@ -17,10 +17,10 @@
 	along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {NavEntry} from "./NavEntry.js";
-import {NavFile, NavFileLink} from "./NavFile.js";
-import {NavDir, NavDirLink} from "./NavDir.js";
-import {NavDownloader} from "./NavDownloader.js";
+import { NavEntry } from "./NavEntry.js";
+import { NavFile, NavFileLink } from "./NavFile.js";
+import { NavDir, NavDirLink } from "./NavDir.js";
+import { NavDownloader } from "./NavDownloader.js";
 
 export class NavContextMenu {
 	/**

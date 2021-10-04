@@ -17,9 +17,9 @@
 	along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {NavWindow} from "./NavWindow.js";
-import {format_time_remaining} from "../functions.js";
-import {ModalPrompt} from "./ModalPrompt.js";
+import { NavWindow } from "./NavWindow.js";
+import { format_time_remaining } from "../functions.js";
+import { ModalPrompt } from "./ModalPrompt.js";
 
 export class FileUpload {
 	/**

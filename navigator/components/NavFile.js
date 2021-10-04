@@ -17,10 +17,10 @@
 	along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {NavEntry} from "./NavEntry.js";
-import {NavDownloader} from "./NavDownloader.js";
-import {NavWindow} from "./NavWindow.js";
-import {property_entry_html} from "../functions.js";
+import { NavEntry } from "./NavEntry.js";
+import { NavDownloader } from "./NavDownloader.js";
+import { NavWindow } from "./NavWindow.js";
+import { property_entry_html, simple_spawn } from "../functions.js";
 
 export class NavFile extends NavEntry {
 	/**
@@ -93,7 +93,7 @@ export class NavFile extends NavEntry {
 		var fields = proc_output.split(/:(?=[^:]+$)/); // ensure it's the last : with lookahead
 		var type = fields[1].trim();
 		
-		if ((/^text/.test(type) || /^inode\/x-empty$/.test(type) || this.stat["size"] === 0)) {
+		if (/^text/.test(type) || /^inode\/x-empty$/.test(type) || this.stat["size"] === 0 || (/^application\/octet-stream/.test(type) && this.stat["size"] === 1)) {
 			this.show_edit_file_contents();
 		} else {
 			console.log("Unknown mimetype: " + type);
@@ -128,12 +128,9 @@ export class NavFile extends NavEntry {
 	async write_to_file() {
 		var new_contents = document.getElementById("nav-edit-contents-textarea").value;
 		try {
-			if (new_contents.length)
-				await cockpit.file(this.path_str(), {superuser: "try"}).replace(new_contents);
-			else
-				await cockpit.script("echo -n > $1", [this.path_str()], {superuser: "try"});
+			await simple_spawn(["/usr/share/cockpit/navigator/scripts/write-to-file.py3", this.path_str()], new_contents);
 		} catch (e) {
-			this.nav_window_ref.modal_prompt.alert(e.message);
+			this.nav_window_ref.modal_prompt.alert(e);
 		}
 		this.nav_window_ref.refresh();
 		this.hide_edit_file_contents();
@@ -229,9 +226,9 @@ export class NavFileLink extends NavFile{
 		var target_path = this.get_link_target_path();
 		var new_contents = document.getElementById("nav-edit-contents-textarea").value;
 		try {
-			await cockpit.file(target_path, {superuser: "try"}).replace(new_contents);
+			await simple_spawn(["/usr/share/cockpit/navigator/scripts/write-to-file.py3", target_path], new_contents);
 		} catch (e) {
-			this.nav_window_ref.modal_prompt.alert(e.message);
+			this.nav_window_ref.modal_prompt.alert(e);
 		}
 		this.nav_window_ref.refresh();
 		this.hide_edit_file_contents();

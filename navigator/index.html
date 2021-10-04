@@ -23,13 +23,13 @@
 	<base href=".">
 	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 	<link href="../base1/cockpit.css" type="text/css" rel="stylesheet">
-	<link href="navigator.css" type="text/css" rel="stylesheet">
+	<link href="style.css" type="text/css" rel="stylesheet">
 	<link href="fontawesome/css/all.min.css" rel="stylesheet">
 	<script src="fontawesome/attribution.js"></script>
 	<script src="../base1/cockpit.js"></script>
 	<script src="../manifests.js"></script>
 	<script src="../*/po.js"></script>
-	<script src="navigator.js" type="module"></script>
+	<script src="main.js" type="module"></script>
 </head>
 <body>
 	<div class="nav-loader-container" id="nav-loader-container">
@@ -64,6 +64,8 @@
 				<button class="disable-while-loading pf-c-button pf-m-primary" id="nav-touch-btn" title="New File"><i class="fas fa-file-medical"></i></button>
 				<div class="horizontal-spacer"></div>
 				<button class="disable-while-loading pf-c-button pf-m-primary" id="nav-ln-btn" title="New Symbolic Link"><i class="fas fa-link nav-icon-decorated"><i class="fas fa-plus nav-icon-decoration"></i></i></button>
+				<div class="horizontal-spacer"></div>
+				<button class="disable-while-loading pf-c-button pf-m-primary" id="nav-upload-btn" title="Upload File(s)"><i class="fas fa-upload"></i></button>
 			</div>
 		</div>
 		<div class="vertical-spacer"></div>
@@ -102,6 +104,8 @@
 							<button class="disable-while-loading pf-c-button pf-m-danger" id="nav-delete-btn" title="Delete"><i class="fas fa-trash-alt"></i></button>
 							<div class="horizontal-spacer"></div>
 							<button class="disable-while-loading pf-c-button pf-m-primary" id="nav-edit-properties-btn" title="Edit Properties"><i class="fas fa-sliders-h"></i></button>
+							<div class="horizontal-spacer"></div>
+							<button class="disable-while-loading pf-c-button pf-m-primary" id="nav-edit-contents-btn" title="Edit Contents"><i class="fas fa-edit"></i></button>
 						</div>
 					</div>
 					<div class="nav-info-column-properties" id="nav-info-column-properties"></div>

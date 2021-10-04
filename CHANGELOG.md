@@ -1,6 +1,4 @@
-## Cockpit Navigator 0.5.4-1
+## Cockpit Navigator 0.5.5-1
 
-* Add fuzzy search.
-* Optimize folder uploads.
-* Fix bugs with selecting entries and renaming files.
-* Stop user from deleting or renaming system-critical paths.
+* Fix maintaining file permissions and ownership after editing file.
+* Add file upload button to top bar.

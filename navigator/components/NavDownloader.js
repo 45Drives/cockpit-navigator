@@ -17,7 +17,7 @@
 	along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import {NavFile} from "./NavFile.js";
+import { NavFile } from "./NavFile.js";
 
 export class NavDownloader {
 	/**
