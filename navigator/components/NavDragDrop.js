@@ -37,6 +37,21 @@ export class NavDragDrop {
 		this.nav_window_ref = nav_window_ref;
 		this.modal_prompt = new ModalPrompt();
 		this.upload_manager = new FileUploadManager(this.nav_window_ref, 6);
+		this.upload_element = document.createElement('input');
+		this.upload_element.type = 'file';
+		this.upload_element.multiple = true;
+		this.upload_element.onchange = async e => {
+			var uploads = []
+			for (const file of e.target.files) {
+				let uploader = new FileUpload(file, this.nav_window_ref);
+				uploader.using_webkit = false;
+				uploads.push(uploader);
+			}
+			uploads = await this.handle_conflicts(uploads);
+			this.upload_manager.add(... uploads);
+			this.nav_window_ref.stop_load();
+		}
+		document.getElementById("nav-upload-btn").addEventListener("click", this.upload_dialog.bind(this));
 	}
 
 	/**
@@ -195,5 +210,10 @@ export class NavDragDrop {
 				this.drop_area.classList.remove("drag-enter");
 				break;
 		}
+	}
+
+	upload_dialog() {
+		this.nav_window_ref.start_load();
+		this.upload_element.click();
 	}
 }
