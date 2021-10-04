@@ -32,6 +32,8 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Mon Oct 04 2021 Joshua Boudreau <jboudreau@45drives.com> 0.5.5-2
+- Fix sed command for packaging EL7.
 * Mon Oct 04 2021 Joshua Boudreau <jboudreau@45drives.com> 0.5.5-1
 - Fix maintaining file permissions and ownership after editing file.
 - Add file upload button to top bar.

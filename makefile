@@ -24,7 +24,7 @@ install:
 	mkdir -p $(DESTDIR)/usr/share/cockpit/
 	cp -rpf navigator $(DESTDIR)/usr/share/cockpit
 ifeq ($(DIST),$(EL7_DIST))
-	sed -i "s/pf-c-button/btn/g;s/pf-m-primary/btn-primary/g;s/pf-m-secondary/btn-default/g;s/pf-m-danger/btn-danger/g" $(DESTDIR)/usr/share/cockpit/navigator/navigator.html
+	sed -i "s/pf-c-button/btn/g;s/pf-m-primary/btn-primary/g;s/pf-m-secondary/btn-default/g;s/pf-m-danger/btn-danger/g" $(DESTDIR)/usr/share/cockpit/navigator/index.html
 	sed -i "s/pf-c-button/btn/g;s/pf-m-primary/btn-primary/g;s/pf-m-secondary/btn-default/g;s/pf-m-danger/btn-danger/g" $(DESTDIR)/usr/share/cockpit/navigator/components/ModalPrompt.js
 endif
 ifneq ($(NAV_VERS),)
