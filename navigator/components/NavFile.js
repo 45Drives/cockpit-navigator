@@ -93,7 +93,7 @@ export class NavFile extends NavEntry {
 		var fields = proc_output.split(/:(?=[^:]+$)/); // ensure it's the last : with lookahead
 		var type = fields[1].trim();
 		
-		if ((/^text/.test(type) || /^inode\/x-empty$/.test(type) || this.stat["size"] === 0)) {
+		if (/^text/.test(type) || /^inode\/x-empty$/.test(type) || this.stat["size"] === 0 || (/^application\/octet-stream/.test(type) && this.stat["size"] === 1)) {
 			this.show_edit_file_contents();
 		} else {
 			console.log("Unknown mimetype: " + type);
