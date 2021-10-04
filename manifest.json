@@ -57,10 +57,11 @@
         "version": "0.5.5",
         "buildVersion": "1",
         "ignore": [],
-        "date": "2021-10-04T13:21:43.450015",
+        "date": "2021-10-04T14:14:20.903377",
         "packager": "Joshua Boudreau <jboudreau@45drives.com>",
         "changes": [
-            "Fix maintaining file permissions and ownership after editing file."
+            "Fix maintaining file permissions and ownership after editing file.",
+            "Add file upload button to top bar."
         ]
     }
 }
