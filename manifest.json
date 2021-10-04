@@ -54,11 +54,13 @@
     ],
     "changelog": {
         "urgency": "medium",
-        "version": "0.5.4",
+        "version": "0.5.5",
         "buildVersion": "1",
         "ignore": [],
-        "date": null,
-        "packager": "Josh Boudreau <jboudreau@45drives.com>",
-        "changes": []
+        "date": "2021-10-04T13:21:43.450015",
+        "packager": "Joshua Boudreau <jboudreau@45drives.com>",
+        "changes": [
+            "Fix maintaining file permissions and ownership after editing file."
+        ]
     }
 }
