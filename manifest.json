@@ -3,7 +3,7 @@
     "name": "cockpit-navigator",
     "title": "Cockpit Navigator",
     "prerelease": false,
-    "version": "0.5.4",
+    "version": "0.5.5",
     "buildVersion": "1",
     "author": "Josh Boudreau <jboudreau@45drives.com>",
     "url": "https://github.com/45Drives/cockpit-navigator",
@@ -57,11 +57,8 @@
         "version": "0.5.5",
         "buildVersion": "1",
         "ignore": [],
-        "date": "2021-10-04T14:14:20.903377",
-        "packager": "Joshua Boudreau <jboudreau@45drives.com>",
-        "changes": [
-            "Fix maintaining file permissions and ownership after editing file.",
-            "Add file upload button to top bar."
-        ]
+        "date": null,
+        "packager": "Josh Boudreau <jboudreau@45drives.com>",
+        "changes": []
     }
 }

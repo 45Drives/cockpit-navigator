@@ -32,6 +32,9 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Mon Oct 04 2021 Joshua Boudreau <jboudreau@45drives.com> 0.5.5-1
+- Fix maintaining file permissions and ownership after editing file.
+- Add file upload button to top bar.
 * Tue Jul 20 2021 Josh Boudreau <jboudreau@45drives.com> 0.5.4-1
 - Add fuzzy search.
 - Optimize folder uploads.
