@@ -148,13 +148,13 @@ export class FileUpload {
 			this.chunk_index++;
 			this.progress.value = this.chunk_index;
 			if (this.chunk_index < this.num_chunks)
-				this.reader.readAsArrayBuffer(this.chunks[this.chunk_index]);
+				this.reader.readAsDataURL(this.chunks[this.chunk_index]);
 			else {
 				this.done();
 			}
 		};
 		try {
-			this.reader.readAsArrayBuffer(this.chunks[0]);
+			this.reader.readAsDataURL(this.chunks[0]);
 		} catch {
 			this.reader.onload = () => {};
 			if (this.using_webkit) {
@@ -169,25 +169,10 @@ export class FileUpload {
 
 	/**
 	 * 
-	 * @param {ArrayBuffer} buffer 
-	 * @returns 
-	 */
-	arrayBufferToBase64(buffer) {
-		let binary = '';
-		let bytes = new Uint8Array(buffer);
-		let len = bytes.byteLength;
-		for (let i = 0; i < len; i++) {
-			binary += String.fromCharCode(bytes[i]);
-		}
-		return window.btoa(binary);
-	}
-
-	/**
-	 * 
 	 * @param {Event} evt 
 	 */
 	write_to_file(evt) {
-		var chunk_b64 = this.arrayBufferToBase64(evt.target.result);
+		var chunk_b64 = evt.target.result.replace(/^data:[^\/]+\/[^;]+;base64,/, "");
 		const seek = this.chunk_index * this.chunk_size;
 		var obj = {
 			seek: seek,

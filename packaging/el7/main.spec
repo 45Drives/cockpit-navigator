@@ -32,6 +32,8 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Fri Nov 12 2021 Joshua Boudreau <jboudreau@45drives.com> 0.5.6-1
+- Fix mangling of large files during upload.
 * Mon Oct 04 2021 Joshua Boudreau <jboudreau@45drives.com> 0.5.5-2
 - Fix sed command for packaging EL7.
 * Mon Oct 04 2021 Joshua Boudreau <jboudreau@45drives.com> 0.5.5-1

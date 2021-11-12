@@ -1,3 +1,9 @@
+cockpit-navigator (0.5.6-1focal) focal; urgency=medium
+
+  * Fix mangling of large files during upload.
+
+ -- Joshua Boudreau <jboudreau@45drives.com>  Fri, 12 Nov 2021 08:06:44 -0400
+
 cockpit-navigator (0.5.5-2focal) focal; urgency=medium
 
   * Fix sed command for packaging EL7.
