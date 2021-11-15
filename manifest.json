@@ -54,11 +54,13 @@
     ],
     "changelog": {
         "urgency": "medium",
-        "version": "0.5.6",
+        "version": "0.5.7",
         "buildVersion": "1",
         "ignore": [],
-        "date": null,
-        "packager": "Josh Boudreau <jboudreau@45drives.com>",
-        "changes": []
+        "date": "2021-11-15T15:53:53.820222",
+        "packager": "Joshua Boudreau <jboudreau@45drives.com>",
+        "changes": [
+            "Fix bug where loading spinner doesn't go away after upload dialog is cancelled."
+        ]
     }
 }
