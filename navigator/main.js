@@ -119,7 +119,7 @@ function set_up_buttons() {
 	document.getElementById("toggle-theme").addEventListener("change", switch_theme, false);
 	document.getElementById("nav-show-hidden").addEventListener("change", nav_window.toggle_show_hidden.bind(nav_window));
 	document.getElementById("nav-item-display-btn").addEventListener("click", nav_window.switch_item_display.bind(nav_window));
-	for (let option of ["name", "owner", "group", "size"]) {
+	for (let option of ["name", "owner", "group", "size", "modified", "created"]) {
 		var elem = document.getElementById("sort-" + option + "-btn");
 		elem.addEventListener("click", (event) => {
 			nav_window.sort_function.set_func(option);
