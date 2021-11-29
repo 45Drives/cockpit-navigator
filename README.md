@@ -41,6 +41,14 @@ With no command line use needed, you can:
 curl -sSL https://repo.45drives.com/setup -o setup-repo.sh
 sudo bash setup-repo.sh
 ```
+#### Ubuntu
+```sh
+sudo apt install cockpit-navigator
+```
+#### El7/EL8
+```sh
+sudo dnf install cockpit-navigator
+```
 ### Manually
 #### Ubuntu
 1. Import GPG Key
