@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 
 """
-    Cockpit Navigator - A File System Browser for Cockpit.
-    Copyright (C) 2021 Josh Boudreau <jboudreau@45drives.com>
+	Cockpit Navigator - A File System Browser for Cockpit.
+	Copyright (C) 2021 Josh Boudreau <jboudreau@45drives.com>
 
-    This file is part of Cockpit Navigator.
-    Cockpit Navigator is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    Cockpit Navigator is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    You should have received a copy of the GNU General Public License
-    along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
+	This file is part of Cockpit Navigator.
+	Cockpit Navigator is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	Cockpit Navigator is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+	You should have received a copy of the GNU General Public License
+	along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 """
@@ -22,93 +22,135 @@ Synopsis: `paste.py3 [-m] <cwd of copy> <list of source files> <destination dire
 all full paths
 """
 
-import os
+from functools import partial
+import os, shutil, errno
 import sys
 from optparse import OptionParser
 import json
-import subprocess
 
-def prompt_user(message, wants_response, conflicts = None):
-    payload = {
-        "wants-response": wants_response,
-        "message": message
-    }
-    if conflicts != None:
-        payload["conflicts"] = conflicts
-    print(json.dumps(payload) + "\n")
-    if wants_response:
-        response = json.loads(input())
-        if isinstance(response, str) and response == "abort":
-            sys.exit(0)
-        return response
-    return
+class File:
+	def __init__(self, path, cwd, dest_path):
+		self.src = path
+		self.dst = dest_path + "/" + os.path.relpath(path, cwd)
 
-def split_paths_at_cwd(paths, cwd):
-    response = []
-    for path in paths:
-        response.append(cwd + "/./" + os.path.relpath(path, cwd))
-    return response
+	def __str__(self):
+		return self.src + " -> " + self.dst
+	
+	def __repr__(self):
+		return "File(" + self.__str__() + ")"
+	
+	def check_if_exists(self):
+		return os.path.exists(self.dst)
 
-def recursive_get_conflicts(input_array, cwd, dest):
-    conflicts = []
-    non_conflicts = []
-    for source in input_array:
-        if os.path.isdir(source):
-            child_nodes = os.listdir(source)
-            child_paths = []
-            for node in child_nodes:
-                child_paths.append(source + "/" + node)
-            (more_conflicts, more_non_conflicts) = recursive_get_conflicts(child_paths, cwd, dest)
-            conflicts += more_conflicts
-            non_conflicts += more_non_conflicts
-            continue
-        dest_path = dest + "/" + os.path.relpath(source, cwd)
-        if os.path.exists(dest_path):
-            conflicts.append((source, dest_path))
-        else:
-            non_conflicts.append(source)
-    return (conflicts, non_conflicts)
+	def move(self):
+		if self.check_if_exists(): # for overwriting
+			os.remove(self.dst)
+		if not os.path.exists(os.path.dirname(self.dst)):
+			os.makedirs(os.path.dirname(self.dst))
+		shutil.move(self.src, self.dst, copy_function=partial(shutil.copy2, follow_symlinks=False))
+	
+	def copy(self):
+		if self.check_if_exists(): # for overwriting
+			os.remove(self.dst)
+		if not os.path.exists(os.path.dirname(self.dst)):
+			os.makedirs(os.path.dirname(self.dst))
+		shutil.copy2(self.src, self.dst, follow_symlinks=False)
 
-def filter_existing(args, cwd):
-    sources = args[:-1]
-    dest = args[-1]
-    (conflicts, non_conflicts) = recursive_get_conflicts(sources, cwd, dest)
-    if len(conflicts):
-        conflicts = prompt_user("Overwrite?", True, conflicts)
-        non_conflicts.extend(conflicts)
-    if not len(non_conflicts):
-        sys.exit(0) # exit if nothing to copy
-    filtered_args = [*split_paths_at_cwd(non_conflicts, cwd), dest]
-    return filtered_args
+def prompt_user(message, wants_response, conflicts = None, detail = None):
+	payload = {
+		"wants-response": wants_response,
+		"message": message
+	}
+	if conflicts != None:
+		payload["conflicts"] = conflicts
+	if detail != None:
+		payload["detail"] = detail
+	print(json.dumps(payload) + "\n")
+	if wants_response:
+		response = json.loads(input())
+		if isinstance(response, str) and response == "abort":
+			sys.exit(0)
+		return response
+	return
 
-def paste(cmd, args):
-    try:
-        child = subprocess.Popen(
-            [*cmd, *args],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True
-        )
-    except Exception as e:
-        prompt_user(str(e), False)
-        sys.exit(1)
-    child.wait()
-    if child.returncode:
-        stdout, stderr = child.communicate()
-        prompt_user(stdout + stderr, False)
-    sys.exit(child.returncode)
+def get_conflicts(files):
+	conflicts = []
+	non_conflicts = []
+	for file in files:
+		if file.check_if_exists():
+			conflicts.append(file)
+		else:
+			non_conflicts.append(file)
+	return (conflicts, non_conflicts)
 
+def filter_existing(files):
+	(conflicts, non_conflicts) = get_conflicts(files)
+	if len(conflicts):
+		prompts = list(map(lambda f: [f.src, f.dst], conflicts)) # get list of [src, dst]
+		keeper_lut = prompt_user("Overwrite?", True, prompts) # returns dict of srcs : keep (bool)
+		non_conflicts.extend(filter(lambda f: keeper_lut[f.src], conflicts))
+	return non_conflicts
+
+def recursive_get_files(cwd, dest_path, source_directory):
+	files = []
+	directories_to_remove = []
+	for entry in os.listdir(source_directory):
+		path = source_directory + "/" + entry
+		if os.path.isdir(path):
+			(new_files, new_directories) = recursive_get_files(cwd, dest_path, path)
+			files.extend(new_files)
+			directories_to_remove.extend(new_directories)
+			directories_to_remove.append(path)
+		else:
+			files.append(File(path, cwd, dest_path))
+	return (files, directories_to_remove)
 
 def main():
-    parser = OptionParser()
-    parser.add_option("-m", "--move", help="remove source files", action="store_true", dest="move", default=False)
-    (options, args) = parser.parse_args()
-    cwd = args[0]
-    filtered_args = filter_existing(args[1:], cwd)
-    if options.move:
-        paste(["rsync", "-aI", "--relative", "--remove-source-files"], filtered_args)
-    else:
-        paste(["rsync", "-aI", "--relative"], filtered_args)
-    sys.exit(0)
-    
+	parser = OptionParser()
+	parser.add_option("-m", "--move", help="remove source files", action="store_true", dest="move", default=False)
+	(options, args) = parser.parse_args()
+	cwd = args[0]
+	sources = args[1:-1]
+	dest_path = args[-1]
+	files = []
+	directories_to_remove = []
+	for source_path in sources:
+		if os.path.isdir(source_path):
+			(new_files, new_directories) = recursive_get_files(cwd, dest_path, source_path)
+			files.extend(new_files)
+			directories_to_remove.extend(new_directories)
+			directories_to_remove.append(source_path)
+		elif os.path.exists(source_path):
+			files.append(File(source_path, cwd, dest_path))
+	files = filter(lambda f: f.src != f.dst, files)
+	files = filter_existing(files)
+	if not len(files):
+		sys.exit(0) # exit if nothing to copy
+	if options.move:
+		for file in files:
+			try:
+				file.move()
+			except Exception as e:
+				prompt_user("Failed to move " + os.path.relpath(file.src, cwd), wants_response=False, detail=str(e))
+		for directory in directories_to_remove:
+			try:
+				os.rmdir(directory)
+			except OSError as e:
+				if e.errno == errno.ENOTEMPTY:
+					pass # skip deletion
+				else:
+					prompt_user("Failed to remove directory " + directory, wants_response=False, detail=str(e))
+			except Exception as e:
+				prompt_user("Failed to remove directory " + directory, wants_response=False, detail=str(e))
+	else:
+		for file in files:
+			try:
+				file.copy()
+			except Exception as e:
+				prompt_user("Failed to copy " + os.path.relpath(file.src, cwd), wants_response=False, detail=str(e))
+	prompt_user("Directories to remove:\n" + "\n".join(directories_to_remove), False)
+	sys.exit(0)
+	
 
 if __name__ == "__main__":
-    main()
+	main()
