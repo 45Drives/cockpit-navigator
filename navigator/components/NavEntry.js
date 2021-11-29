@@ -73,18 +73,30 @@ export class NavEntry {
 			let owner = document.createElement("div");
 			let group = document.createElement("div");
 			let size = document.createElement("div");
+			let modified = document.createElement("div");
+			let created = document.createElement("div");
 			mode.title = mode.innerText = this.stat["mode-str"];
 			owner.title = owner.innerText = this.stat["owner"];
 			group.title = group.innerText = this.stat["group"];
 			size.title = size.innerText = format_bytes(this.stat["size"]);
+			modified.title = modified.innerText = format_time(this.stat["mtime"]);
+			created.title = created.innerText = format_time(this.stat["ctime"]);
 			mode.classList.add("nav-item-title", "no-select", "monospace-sm");
 			owner.classList.add("nav-item-title", "no-select");
 			group.classList.add("nav-item-title", "no-select");
 			size.classList.add("nav-item-title", "no-select");
+			modified.classList.add("nav-item-title", "no-select");
+			created.classList.add("nav-item-title", "no-select");
+			modified.style.flexGrow = 2;
+			modified.style.flexBasis = 0;
+			created.style.flexGrow = 2;
+			created.style.flexBasis = 0;
 			this.dom_element.appendChild(mode);
 			this.dom_element.appendChild(owner);
 			this.dom_element.appendChild(group);
 			this.dom_element.appendChild(size);
+			this.dom_element.appendChild(modified);
+			this.dom_element.appendChild(created);
 		}
 		this.visible = true;
 	}
