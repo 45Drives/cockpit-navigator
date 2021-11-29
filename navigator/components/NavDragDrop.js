@@ -47,9 +47,10 @@ export class NavDragDrop {
 				uploader.using_webkit = false;
 				uploads.push(uploader);
 			}
-			uploads = await this.handle_conflicts(uploads);
-			this.upload_manager.add(... uploads);
-			this.nav_window_ref.stop_load();
+			if (uploads.length) {
+				uploads = await this.handle_conflicts(uploads);
+				this.upload_manager.add(... uploads);
+			}
 		}
 		document.getElementById("nav-upload-btn").addEventListener("click", this.upload_dialog.bind(this));
 	}
@@ -213,7 +214,6 @@ export class NavDragDrop {
 	}
 
 	upload_dialog() {
-		this.nav_window_ref.start_load();
 		this.upload_element.click();
 	}
 }

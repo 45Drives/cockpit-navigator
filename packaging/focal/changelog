@@ -1,3 +1,10 @@
+cockpit-navigator (0.5.7-1focal) focal; urgency=medium
+
+  * Fix bug where loading spinner doesn't go away after upload dialog is cancelled.
+  * Add modification and creation time columns and allow sorting by them.
+
+ -- Joshua Boudreau <jboudreau@45drives.com>  Mon, 29 Nov 2021 08:52:51 -0400
+
 cockpit-navigator (0.5.6-1focal) focal; urgency=medium
 
   * Fix mangling of large files during upload.

@@ -396,6 +396,11 @@ input[type="text"] {
 	flex-grow: 2;
 }
 
+.contents-view-list > .nav-item > #sort-modified-btn, #sort-created-btn {
+	flex-basis: 0;
+	flex-grow: 2;
+}
+
 .nav-info-column {
 	background-color: var(--container);
 	flex-basis: 0;
