@@ -24,9 +24,11 @@ export class SortFunctions {
 			owner: "asc",
 			group: "asc",
 			size: "asc",
+			modified: "asc",
+			created: "asc",
 		}
 		this.icons = {};
-		for (let option of ["name", "owner", "group", "size"]) {
+		for (let option of ["name", "owner", "group", "size", "modified", "created"]) {
 			this.icons[option] = document.getElementById(`sort-${option}-icon`);
 		}
 		this.current_choice = "name";
@@ -89,5 +91,21 @@ export class SortFunctions {
 
 	size_desc(first, second) {
 		return second.stat["size"] - first.stat["size"];
+	}
+
+	modified_asc(first, second) {
+		return first.stat["mtime"] - second.stat["mtime"];
+	}
+
+	modified_desc(first, second) {
+		return second.stat["mtime"] - first.stat["mtime"];
+	}
+
+	created_asc(first, second) {
+		return first.stat["ctime"] - second.stat["ctime"];
+	}
+
+	created_desc(first, second) {
+		return second.stat["ctime"] - first.stat["ctime"];
 	}
 }
