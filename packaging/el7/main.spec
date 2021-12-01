@@ -32,6 +32,8 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Wed Dec 01 2021 Joshua Boudreau <jboudreau@45drives.com> 0.5.8-1
+- Fix non-root user file downloads.
 * Mon Nov 29 2021 Joshua Boudreau <jboudreau@45drives.com> 0.5.7-1
 - Fix bug where loading spinner doesn't go away after upload dialog is cancelled.
 - Add modification and creation time columns and allow sorting by them.

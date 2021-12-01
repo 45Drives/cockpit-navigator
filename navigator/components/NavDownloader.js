@@ -35,7 +35,7 @@ export class NavDownloader {
 			payload: 'fsread1',
 			binary: 'raw',
 			path: this.path,
-			superuser: true,
+			superuser: false,
 			max_read_size: this.read_size,
 			external: {
 				'content-disposition': 'attachment; filename="' + this.filename + '"',
