@@ -54,11 +54,13 @@
     ],
     "changelog": {
         "urgency": "medium",
-        "version": "0.5.8",
+        "version": "0.5.9",
         "buildVersion": "1",
         "ignore": [],
-        "date": null,
-        "packager": "Josh Boudreau <jboudreau@45drives.com>",
-        "changes": []
+        "date": "2021-12-15T14:58:47.615295",
+        "packager": "Joshua Boudreau <jboudreau@45drives.com>",
+        "changes": [
+            "Disallow downloading files of size 0 to avoid Cockpit bug where fsread never returns."
+        ]
     }
 }
