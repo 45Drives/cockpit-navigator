@@ -676,6 +676,25 @@ export class NavWindow {
 								keepers.push(response)
 						}
 						proc.input(JSON.stringify(keepers) + "\n", true);
+					} else if (payload.hasOwnProperty("choices")) {
+						let choices = {};
+						for (let choice of payload["choices"]) {
+							choices[choice[0]] = {
+								label: choice[1],
+								internal_name: choice[0],
+								type: "radio",
+								default: false
+							}
+						}
+						choices[payload["choices"][0][0]].default = true;
+						this.stop_load();
+						let response = await this.modal_prompt.prompt(payload["message"], choices);
+						this.start_load();
+						if (response === null) {
+							proc.input(JSON.stringify("abort") + "\n");
+							return;
+						}
+						proc.input(JSON.stringify(response) + "\n", true);
 					} else {
 						var user_response = await this.modal_prompt.confirm(payload["message"]);
 						proc.input(JSON.stringify(user_response) + "\n", true);
