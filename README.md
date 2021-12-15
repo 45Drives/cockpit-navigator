@@ -45,7 +45,11 @@ sudo bash setup-repo.sh
 ```sh
 sudo apt install cockpit-navigator
 ```
-#### El7/EL8
+#### EL7
+```sh
+sudo yum install cockpit-navigator
+```
+#### EL8
 ```sh
 sudo dnf install cockpit-navigator
 ```
