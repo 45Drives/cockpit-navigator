@@ -57,10 +57,11 @@
         "version": "0.5.9",
         "buildVersion": "1",
         "ignore": [],
-        "date": "2021-12-15T14:58:47.615295",
+        "date": "2021-12-15T17:43:15.251513",
         "packager": "Joshua Boudreau <jboudreau@45drives.com>",
         "changes": [
-            "Disallow downloading files of size 0 to avoid Cockpit bug where fsread never returns."
+            "Disallow downloading files of size 0 to avoid Cockpit bug where fsread never returns.",
+            "Overhaul copying/moving to use built in functions instead of rsync, speeding up moving files in the same fs."
         ]
     }
 }
