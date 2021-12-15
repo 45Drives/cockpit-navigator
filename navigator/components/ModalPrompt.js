@@ -202,18 +202,22 @@ export class ModalPrompt {
 			req.id = key;
 			req.type = request.type;
 			req.style.flexBasis = "0";
-			if (request.hasOwnProperty("default")) {
-				req.value = request.default;
-			}
 			row.append(label, req);
 			req_holder.appendChild(row);
 			inputs.push(req);
 			switch (request.type) {
 				case "text":
 					req.style.flexGrow = "3";
+					if (request.hasOwnProperty("default"))
+						req.value = request.default;
 					break;
+				case "radio":
+					req.name = "radio-group";
+					req.internal_name = request.internal_name;
 				case "checkbox":
 					label.style.cursor = req.style.cursor = "pointer";
+					if (request.hasOwnProperty("default"))
+						req.checked = request.default;
 					break;
 				default:
 					break;
@@ -246,6 +250,9 @@ export class ModalPrompt {
 							default:
 								response[input.id] = input.value;
 								break;
+							case "radio":
+								if (input.checked)
+									response = input.internal_name;
 						}
 					}
 				}
@@ -259,4 +266,3 @@ export class ModalPrompt {
 		});
 	}
 }
-
