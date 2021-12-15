@@ -170,6 +170,7 @@ export class NavContextMenu {
 			this.menu_options["cut"].style.display = "none";
 			this.menu_options["delete"].style.display = "none";
 			this.menu_options["download"].style.display = "none";
+			this.menu_options["rename"].style.display = "none";
 		}
 		if (this.nav_window_ref.selected_entries.size > 1) {
 			this.menu_options["rename"].style.display = "none";
