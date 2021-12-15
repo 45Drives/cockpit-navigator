@@ -128,8 +128,8 @@ export class NavWindow {
 		try {
 			var files = await this.pwd().get_children(this);
 		} catch(e) {
+			await this.modal_prompt.alert(e);
 			this.up();
-			this.modal_prompt.alert(e);
 			return;
 		}
 		while (this.entries.length) {
