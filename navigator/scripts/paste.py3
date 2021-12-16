@@ -115,10 +115,10 @@ def filter_existing(files):
 		elif choice == "rename":
 			for conflict in conflicts:
 				num = 1
-				conflict.dst += "(1)"
+				conflict.dst = "(1)".join(os.path.splitext(conflict.dst))
 				while conflict.check_if_exists():
 					num += 1
-					conflict.dst = re.sub(r'\(\d+\)$', f"({num})", conflict.dst)
+					conflict.dst = re.sub(r'\(\d+\)(?=(\.[^(]+)?$)', f"({num})", conflict.dst)
 			non_conflicts.extend(conflicts)
 		elif choice == "skip-conflicts":
 			pass
