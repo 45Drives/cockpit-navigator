@@ -28,6 +28,22 @@ import sys
 from optparse import OptionParser
 import json
 
+def copy_metadata_wrapper(copy_func):
+	def wrapper(src, dst, *args, **kwargs):
+		stat = None
+		try:
+			stat = os.stat(src, follow_symlinks=False)
+		except:
+			pass
+		copy_func(src, dst, *args, **kwargs)
+		try:
+			if stat:
+				os.chown(dst, stat.st_uid, stat.st_gid)
+				os.chmod(dst, stat.st_mode)
+		except:
+			pass
+	return wrapper
+
 class File:
 	def __init__(self, path, cwd, dest_path):
 		self.src = path
@@ -47,14 +63,15 @@ class File:
 			os.remove(self.dst)
 		if not os.path.exists(os.path.dirname(self.dst)):
 			os.makedirs(os.path.dirname(self.dst))
-		shutil.move(self.src, self.dst, copy_function=partial(shutil.copy2, follow_symlinks=False))
+		shutil.move(self.src, self.dst, copy_function=partial(copy_metadata_wrapper(shutil.copy2), follow_symlinks=False))
 	
 	def copy(self):
 		if self.check_if_exists(): # for overwriting
 			os.remove(self.dst)
 		if not os.path.exists(os.path.dirname(self.dst)):
 			os.makedirs(os.path.dirname(self.dst))
-		shutil.copy2(self.src, self.dst, follow_symlinks=False)
+		copy_metadata_wrapper(shutil.copy2)(self.src, self.dst, follow_symlinks=False)
+
 
 def prompt_user(message, wants_response, conflicts = None, choices = None, detail = None):
 	payload = {
