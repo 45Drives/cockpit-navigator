@@ -645,7 +645,6 @@ export class NavWindow {
 			cmd.push(item.path_str());
 		}
 		cmd.push(dest);
-		console.log(cmd);
 		this.clip_board.length = 0; // clear clipboard
 		var promise = new Promise((resolve, reject) => {
 			var proc = cockpit.spawn(
