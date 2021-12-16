@@ -29,10 +29,61 @@ export class NavFile extends NavEntry {
 	 * @param {object} stat 
 	 * @param {NavWindow} nav_window_ref 
 	 */
-	constructor(path, stat, nav_window_ref) {
+	constructor(path, stat, nav_window_ref, mimetype) {
 		super(path, stat, nav_window_ref);
 		this.nav_type = "file";
-		this.dom_element.nav_item_icon.classList.add("fas", "fa-file");
+		if (mimetype) {
+			if (/^image\//.test(mimetype)) {
+				this.dom_element.nav_item_icon.classList.add("fas", "fa-file-image");
+			} else if (/^video\//.test(mimetype)) {
+				this.dom_element.nav_item_icon.classList.add("fas", "fa-file-video");
+			} else if (/^audio\//.test(mimetype)) {
+				this.dom_element.nav_item_icon.classList.add("fas", "fa-file-audio");
+			} else {
+				switch (mimetype) {
+					case "text/plain":
+					case "application/rtf":
+						this.dom_element.nav_item_icon.classList.add("fas", "fa-file-alt");
+						break;
+					case "text/csv":
+						this.dom_element.nav_item_icon.classList.add("fas", "fa-file-csv");
+						break;
+					case "application/msword":
+					case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+					case "application/vnd.oasis.opendocument.text":
+						this.dom_element.nav_item_icon.classList.add("fas", "fa-file-word");
+						break;
+					case "application/vnd.ms-powerpoint":
+					case "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+					case "application/vnd.oasis.opendocument.presentation":
+						this.dom_element.nav_item_icon.classList.add("fas", "fa-file-powerpoint");
+						break;
+					case "application/vnd.ms-excel":
+					case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+					case "application/vnd.oasis.opendocument.spreadsheet":
+						this.dom_element.nav_item_icon.classList.add("fas", "fa-file-excel");
+						break;
+					case "application/pdf":
+						this.dom_element.nav_item_icon.classList.add("fas", "fa-file-pdf");
+						break;
+					case "application/x-freearc":
+					case "application/x-bzip":
+					case "application/x-bzip2":
+					case "application/gzip":
+					case "application/vnd.rar":
+					case "application/x-tar":
+					case "application/zip":
+					case "application/x-7z-compressed":
+						this.dom_element.nav_item_icon.classList.add("fas", "fa-file-archive");
+						break;
+					default:
+						this.dom_element.nav_item_icon.classList.add("fas", "fa-file");
+						break;
+				}
+			}
+		} else {
+			this.dom_element.nav_item_icon.classList.add("fas", "fa-file");
+		}
 		this.double_click = false;
 	}
 

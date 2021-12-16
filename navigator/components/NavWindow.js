@@ -28,6 +28,9 @@ import { format_bytes, format_permissions } from "../functions.js";
 export class NavWindow {
 	constructor() {
 		this.item_display = "grid";
+		var show_mimetype_icons_str = localStorage.getItem('show-mimetype-icons') ?? 'true';
+		this.show_mimetype_icons = show_mimetype_icons_str === 'true';
+		document.getElementById("nav-show-mimetype-icons").checked = this.show_mimetype_icons;
 		this.path_stack = (localStorage.getItem('navigator-path') ?? '/').split('/');
 		this.path_stack = this.path_stack.map((_, index) => new NavDir([...this.path_stack.slice(0, index + 1)].filter(part => part != ''), this));
 
@@ -126,7 +129,7 @@ export class NavWindow {
 		this.show_hidden = document.getElementById("nav-show-hidden").checked;
 		this.start_load();
 		try {
-			var files = await this.pwd().get_children(this);
+			var files = await this.pwd().get_children(this, this.show_mimetype_icons);
 		} catch(e) {
 			await this.modal_prompt.alert(e);
 			this.up();
@@ -912,6 +915,13 @@ export class NavWindow {
 		}
 		
 		localStorage.setItem("item-display", this.item_display);
+	}
+
+	async set_show_mimetype_icons(e) {
+		console.log(e);
+		this.show_mimetype_icons = e.target.checked;
+		localStorage.setItem("show-mimetype-icons", e.target.checked.toString());
+		await this.refresh();
 	}
 
 	search_filter(event) {

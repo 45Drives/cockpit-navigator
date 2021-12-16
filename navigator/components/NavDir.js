@@ -62,16 +62,21 @@ export class NavDir extends NavEntry {
 	/**
 	 * 
 	 * @param {NavWindow} nav_window_ref 
+	 * @param {Boolean} show_mimetype_icons 
 	 * @returns {Promise<NavEntry[]>}
 	 */
-	get_children(nav_window_ref) {
+	get_children(nav_window_ref, show_mimetype_icons = false) {
 		return new Promise(async (resolve, reject) => {
 			var children = [];
+			var argv = ["/usr/share/cockpit/navigator/scripts/ls.py3", this.path_str()];
+			if (!show_mimetype_icons)
+				argv.push("--no-mimetype");
 			var proc = cockpit.spawn(
-				["/usr/share/cockpit/navigator/scripts/ls.py3", this.path_str()],
+				argv,
 				{err:"out", superuser: "try"}
 			);
 			proc.fail((e, data) => {
+				console.log(argv);
 				reject(data);
 			});
 			var data;
@@ -100,7 +105,7 @@ export class NavDir extends NavEntry {
 							children.push(new NavFileLink(path, stat, nav_window_ref, entry["link-target"]));
 						break;
 					default:
-						children.push(new NavFile(path, stat, nav_window_ref));
+						children.push(new NavFile(path, stat, nav_window_ref, entry["mimetype"]));
 						break;
 				}
 			});

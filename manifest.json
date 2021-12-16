@@ -25,13 +25,13 @@
         "deb": [
             "cockpit",
             "python3",
-            "rsync",
+            "python3-magic",
             "zip"
         ],
         "el": [
             "cockpit",
             "python3",
-            "rsync",
+            "python3-magic",
             "zip"
         ]
     },
@@ -57,11 +57,12 @@
         "version": "0.5.9",
         "buildVersion": "1",
         "ignore": [],
-        "date": "2021-12-15T17:43:15.251513",
+        "date": "2021-12-16T14:46:53.434779",
         "packager": "Joshua Boudreau <jboudreau@45drives.com>",
         "changes": [
             "Disallow downloading files of size 0 to avoid Cockpit bug where fsread never returns.",
-            "Overhaul copying/moving to use built in python functions instead of rsync, making moving large files within the same fs instant."
+            "Overhaul copying/moving to use built in python functions instead of rsync, making moving large files within the same fs instant.",
+            "Add descriptive icons using mimetype with the option to disable."
         ]
     }
 }

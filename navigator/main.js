@@ -117,6 +117,7 @@ function set_up_buttons() {
 	document.getElementById("pwd").addEventListener("focus", nav_window.nav_bar_update_choices.bind(nav_window), false);
 	document.getElementById("pwd").addEventListener("keydown", nav_window.nav_bar_event_handler.bind(nav_window));
 	document.getElementById("toggle-theme").addEventListener("change", switch_theme, false);
+	document.getElementById("nav-show-mimetype-icons").addEventListener("change", nav_window.set_show_mimetype_icons.bind(nav_window));
 	document.getElementById("nav-show-hidden").addEventListener("change", nav_window.toggle_show_hidden.bind(nav_window));
 	document.getElementById("nav-item-display-btn").addEventListener("click", nav_window.switch_item_display.bind(nav_window));
 	for (let option of ["name", "owner", "group", "size", "modified", "created"]) {
