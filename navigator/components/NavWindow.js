@@ -645,6 +645,7 @@ export class NavWindow {
 			cmd.push(item.path_str());
 		}
 		cmd.push(dest);
+		console.log(cmd);
 		this.clip_board.length = 0; // clear clipboard
 		var promise = new Promise((resolve, reject) => {
 			var proc = cockpit.spawn(
@@ -700,13 +701,15 @@ export class NavWindow {
 						proc.input(JSON.stringify(user_response) + "\n", true);
 					}
 				} else {
-					await this.modal_prompt.alert(payload["message"]);
+					await this.modal_prompt.alert(payload["message"], payload?.detail);
 				}
 			});
 			proc.done((data) => {
 				resolve();
 			});
 			proc.fail((e, data) => {
+				console.log(e);
+				console.log(data);
 				reject("Paste failed.");
 			});
 		});
