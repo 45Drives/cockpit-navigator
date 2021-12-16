@@ -61,7 +61,7 @@
         "packager": "Joshua Boudreau <jboudreau@45drives.com>",
         "changes": [
             "Disallow downloading files of size 0 to avoid Cockpit bug where fsread never returns.",
-            "Overhaul copying/moving to use built in functions instead of rsync, speeding up moving files in the same fs."
+            "Overhaul copying/moving to use built in python functions instead of rsync, making moving large files within the same fs instant."
         ]
     }
 }
