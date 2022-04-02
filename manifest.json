@@ -26,13 +26,17 @@
             "cockpit",
             "python3",
             "rsync",
-            "zip"
+            "zip",
+            "file",
+            "coreutils"
         ],
         "el": [
             "cockpit",
             "python3",
             "rsync",
-            "zip"
+            "zip",
+            "file",
+            "coreutils"
         ]
     },
     "releases": [
