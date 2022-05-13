@@ -16,7 +16,7 @@
 				<LabelledSwitch v-model="settings.directoryView.showHidden">Show hidden files</LabelledSwitch>
 				<LabelledSwitch
 					v-model="booleanAnalogs.directoryView.view.bool"
-				>{{ booleanAnalogs.directoryView.view.bool ? "List view" : "Grid view" }}</LabelledSwitch>
+				>List view</LabelledSwitch>
 				<LabelledSwitch v-model="settings.directoryView.separateDirs">Separate directories while sorting</LabelledSwitch>
 			</div>
 			<div v-if="booleanAnalogs.directoryView.view.bool" class="self-stretch">
@@ -198,7 +198,6 @@ export default {
 				}
 			},
 		});
-		console.log(settings);
 
 		watch(settings, () => {
 			localStorage.setItem(settingsStorageKey, JSON.stringify(settings));

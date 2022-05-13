@@ -24,7 +24,6 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
-	console.log(to);
 	if (to.name === 'redirectToBrowse') {
 		const lastLocation = localStorage.getItem(lastPathStorageKey) ?? '/';
 		next(`/browse${lastLocation}`);

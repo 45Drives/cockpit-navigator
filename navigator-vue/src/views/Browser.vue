@@ -1,71 +1,88 @@
 <template>
 	<div class="grow overflow-hidden">
 		<div class="h-full flex flex-col items-stretch">
-			<div class="flex gap-buttons items-stretch divide-x divide-default">
-				<div class="button-group-row px-4 py-2">
-					<button
-						class="p-2 rounded-lg hover:bg-accent relative"
-						:disabled="!pathHistory.backAllowed()"
-						@click="back()"
-						@mouseenter="backHistoryDropdown.mouseEnter"
-						@mouseleave="backHistoryDropdown.mouseLeave"
-					>
-						<ArrowLeftIcon class="size-icon icon-default" />
-						<ChevronDownIcon
-							class="w-3 h-3 icon-default absolute bottom-1 right-1"
-							v-if="pathHistory.backAllowed()"
-						/>
-						<div
-							v-if="backHistoryDropdown.showDropdown"
-							class="absolute top-full left-0 flex flex-col items-stretch z-50 bg-default shadow-lg rounded-lg overflow-y-auto max-h-80"
+			<div class="flex items-stretch divide-x divide-y divide-default flex-wrap">
+				<div class="flex items-stretch divide-x divide-default grow-[6] basis-0">
+					<div class="button-group-row px-4 py-2">
+						<button
+							class="p-2 rounded-lg hover:bg-accent relative"
+							:disabled="!pathHistory.backAllowed()"
+							@click="back()"
+							@mouseenter="backHistoryDropdown.mouseEnter"
+							@mouseleave="backHistoryDropdown.mouseLeave"
 						>
+							<ArrowLeftIcon class="size-icon icon-default" />
+							<ChevronDownIcon
+								class="w-3 h-3 icon-default absolute bottom-1 right-1"
+								v-if="pathHistory.backAllowed()"
+							/>
 							<div
-								v-for="item, index in pathHistory.stack.slice(0, pathHistory.index).reverse()"
-								:key="index"
-								@click="pathHistory.index = pathHistory.index - index"
-								class="hover:text-white hover:bg-red-600 px-4 py-2 text-sm text-left whitespace-nowrap"
-							>{{ item }}</div>
-						</div>
-					</button>
-					<button
-						class="p-2 rounded-lg hover:bg-accent relative"
-						:disabled="!pathHistory.forwardAllowed()"
-						@click="forward()"
-						@mouseenter="forwardHistoryDropdown.mouseEnter"
-						@mouseleave="forwardHistoryDropdown.mouseLeave"
-					>
-						<ArrowRightIcon class="size-icon icon-default" />
-						<ChevronDownIcon
-							class="w-3 h-3 icon-default absolute bottom-1 right-1"
-							v-if="pathHistory.forwardAllowed()"
-						/>
-						<div
-							v-if="forwardHistoryDropdown.showDropdown"
-							class="absolute top-full left-0 flex flex-col items-stretch z-50 bg-default shadow-lg rounded-lg overflow-y-auto max-h-80"
+								v-if="backHistoryDropdown.showDropdown"
+								class="absolute top-full left-0 flex flex-col items-stretch z-50 bg-default shadow-lg rounded-lg overflow-y-auto max-h-80"
+							>
+								<div
+									v-for="item, index in pathHistory.stack.slice(0, pathHistory.index).reverse()"
+									:key="index"
+									@click="pathHistory.index = pathHistory.index - index"
+									class="hover:text-white hover:bg-red-600 px-4 py-2 text-sm text-left whitespace-nowrap"
+								>{{ item }}</div>
+							</div>
+						</button>
+						<button
+							class="p-2 rounded-lg hover:bg-accent relative"
+							:disabled="!pathHistory.forwardAllowed()"
+							@click="forward()"
+							@mouseenter="forwardHistoryDropdown.mouseEnter"
+							@mouseleave="forwardHistoryDropdown.mouseLeave"
 						>
+							<ArrowRightIcon class="size-icon icon-default" />
+							<ChevronDownIcon
+								class="w-3 h-3 icon-default absolute bottom-1 right-1"
+								v-if="pathHistory.forwardAllowed()"
+							/>
 							<div
-								v-for="item, index in pathHistory.stack.slice(pathHistory.index + 1)"
-								:key="index"
-								@click="pathHistory.index = pathHistory.index + index"
-								class="hover:text-white hover:bg-red-600 px-4 py-2 text-sm text-left whitespace-nowrap"
-							>{{ item }}</div>
-						</div>
-					</button>
-					<button class="p-2 rounded-lg hover:bg-accent" @click="up()">
-						<ArrowUpIcon class="size-icon icon-default" />
-					</button>
-					<button class="p-2 rounded-lg hover:bg-accent" @click="directoryViewRef.getEntries()">
-						<RefreshIcon class="size-icon icon-default" />
-					</button>
+								v-if="forwardHistoryDropdown.showDropdown"
+								class="absolute top-full left-0 flex flex-col items-stretch z-50 bg-default shadow-lg rounded-lg overflow-y-auto max-h-80"
+							>
+								<div
+									v-for="item, index in pathHistory.stack.slice(pathHistory.index + 1)"
+									:key="index"
+									@click="pathHistory.index = pathHistory.index + index"
+									class="hover:text-white hover:bg-red-600 px-4 py-2 text-sm text-left whitespace-nowrap"
+								>{{ item }}</div>
+							</div>
+						</button>
+						<button class="p-2 rounded-lg hover:bg-accent" @click="up()">
+							<ArrowUpIcon class="size-icon icon-default" />
+						</button>
+						<button class="p-2 rounded-lg hover:bg-accent" @click="directoryViewRef.getEntries()">
+							<RefreshIcon class="size-icon icon-default" />
+						</button>
+					</div>
+					<div class="grow px-4 py-2">
+						<PathBreadCrumbs :path="pathHistory.current() ?? '/'" @cd="newPath => cd(newPath)" />
+					</div>
 				</div>
-				<div class="grow card-header px-4 py-2">
-					<PathBreadCrumbs :path="pathHistory.current() ?? '/'" @cd="newPath => cd(newPath)" />
+
+				<div class="grow shrink-0 px-4 py-2">
+					<div class="relative">
+						<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+							<SearchIcon class="size-icon icon-default" aria-hidden="true" />
+						</div>
+						<input
+							type="text"
+							class="block input-textlike w-full pl-10"
+							v-model="searchFilter"
+							placeholder="Search in directory"
+						/>
+					</div>
 				</div>
 			</div>
 			<div class="grow overflow-hidden">
 				<DirectoryView
 					:path="pathHistory.current() ?? '/'"
 					@cd="newPath => cd(newPath)"
+					@edit="(...args) => console.log('edit', ...args)"
 					@updateStats="stats => $emit('updateFooterText', `${stats.files} file${stats.files === 1 ? '' : 's'}, ${stats.dirs} director${stats.dirs === 1 ? 'y' : 'ies'}`)"
 					ref="directoryViewRef"
 				/>
@@ -82,7 +99,7 @@ import { errorStringHTML, canonicalPath } from '@45drives/cockpit-helpers';
 import PathBreadCrumbs from '../components/PathBreadCrumbs.vue';
 import { checkIfExists, checkIfAllowed } from '../mode';
 import { notificationsInjectionKey, pathHistoryInjectionKey, lastPathStorageKey } from '../keys';
-import { ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, RefreshIcon, ChevronDownIcon } from '@heroicons/vue/solid';
+import { ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, RefreshIcon, ChevronDownIcon, SearchIcon } from '@heroicons/vue/solid';
 
 export default {
 	setup() {
@@ -90,6 +107,7 @@ export default {
 		const route = useRoute();
 		const pathHistory = inject(pathHistoryInjectionKey);
 		const directoryViewRef = ref();
+		const searchFilter = ref("");
 		const backHistoryDropdown = reactive({
 			showDropdown: false,
 			timeoutHandle: null,
@@ -173,8 +191,10 @@ export default {
 
 		return {
 			cockpit,
+			console,
 			pathHistory,
 			directoryViewRef,
+			searchFilter,
 			backHistoryDropdown,
 			forwardHistoryDropdown,
 			cd,
@@ -191,6 +211,7 @@ export default {
 		ArrowUpIcon,
 		RefreshIcon,
 		ChevronDownIcon,
+		SearchIcon,
 	},
 	emits: [
 		'updateFooterText'

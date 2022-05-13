@@ -1,4 +1,4 @@
-import { useSpawn } from '@45drives/cockpit-helpers';
+import { useSpawn, errorString } from '@45drives/cockpit-helpers';
 
 /** Run test with given expression and return boolean result. Throws on abnormal errors.
  * 
