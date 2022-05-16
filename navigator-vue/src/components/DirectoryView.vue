@@ -115,9 +115,9 @@ export default {
 			owner: (a, b) => a.owner.localeCompare(b.owner),
 			group: (a, b) => a.group.localeCompare(b.group),
 			size: (a, b) => a.size - b.size,
-			ctime: (a, b) => a.ctime.getTime() - b.ctime.getTime(),
-			mtime: (a, b) => a.mtime.getTime() - b.mtime.getTime(),
-			atime: (a, b) => a.atime.getTime() - b.atime.getTime(),
+			ctime: (a, b) => a.ctime?.getTime() ?? 0 - b.ctime?.getTime() ?? 0,
+			mtime: (a, b) => a.mtime?.getTime() ?? 0 - b.mtime?.getTime() ?? 0,
+			atime: (a, b) => a.atime?.getTime() ?? 0 - b.atime?.getTime() ?? 0,
 		}
 		const sortCallback = ref(() => 0);
 
