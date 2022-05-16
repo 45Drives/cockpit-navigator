@@ -229,7 +229,6 @@ export default {
 		}
 
 		const getEntries = async () => {
-			console.time('getEntries');
 			processingHandler.start();
 			try {
 				const cwd = props.path;
@@ -287,7 +286,6 @@ export default {
 				return Promise.all(procs).then(() => {
 					emitStats();
 					sortEntries();
-					console.timeEnd('getEntries');
 				}).finally(() => processingHandler.stop());
 			} catch (error) {
 				entries.value = [];
