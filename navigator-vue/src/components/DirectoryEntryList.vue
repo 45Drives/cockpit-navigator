@@ -89,7 +89,7 @@ export default {
 			}
 		}
 
-		const getAsyncEntryStats = (cwd, entry, modeStr, path, linkTargetRaw) => {
+		const parseModeStr = (cwd, entry, modeStr, linkTargetRaw = null) => {
 			const procs = [];
 			Object.assign(entry, {
 				permissions: {
@@ -128,14 +128,15 @@ export default {
 							rawPath: linkTargetRaw,
 							path: canonicalPath(linkTargetRaw.replace(/^(?!\/)/, cwd + '/')),
 						};
-						procs.push(useSpawn(['stat', '-c', '%A', entry.target.path]).promise()
-							.then(state => {
-								getAsyncEntryStats(cwd, entry.target, state.stdout.trim());
-								entry.target.broken = false;
-							})
-							.catch(() => {
-								entry.target.broken = true;
-							})
+						procs.push(
+							useSpawn(['stat', '-c', '%A', entry.target.path]).promise()
+								.then(state => {
+									parseModeStr(cwd, entry.target, state.stdout.trim());
+									entry.target.broken = false;
+								})
+								.catch(() => {
+									entry.target.broken = true;
+								})
 						);
 					}
 					break;
@@ -152,8 +153,8 @@ export default {
 					entry.type = 'unk';
 					break;
 			}
-			if (entry.permissions.acl && path) {
-				procs.push(useSpawn(['getfacl', '--omit-header', '--no-effective', path], { superuser: 'try' }).promise()
+			if (entry.permissions.acl && entry.rawPath === undefined) { // skip for link targets
+				procs.push(useSpawn(['getfacl', '--omit-header', '--no-effective', entry.path], { superuser: 'try' }).promise()
 					.then(state => {
 						entry.permissions.acl = state.stdout
 							.split('\n')
@@ -170,29 +171,65 @@ export default {
 							}, {});
 					})
 					.catch(state => {
-						console.error(`failed to get ACL for ${path}:`, errorString(state));
+						console.error(`failed to get ACL for ${entry.path}:`, errorString(state));
 					})
-				);
-			}
-			if (path) {
-				procs.push(useSpawn(['stat', '-c', '%W:%Y:%X', path], { superuser: 'try' }).promise() // birth:modification:access
-					.then(state => {
-						const [ctime, mtime, atime] = state.stdout.trim().split(':').map(str => parseInt(str));
-						Object.assign(entry, {
-							ctime: ctime ? new Date(ctime * 1000) : null,
-							mtime: mtime ? new Date(mtime * 1000) : null,
-							atime: atime ? new Date(atime * 1000) : null,
-						});
-					})
-					.catch(state =>
-						notifications.value.constructNotification(`Failed to get stats for ${path}`, errorStringHTML(state), 'error')
-					)
 				);
 			}
 			return Promise.all(procs);
 		}
 
+		const getAsyncEntryStats = () => {
+			const callback = (state, resolver) => {
+				state.stdout.trim().split('\n')
+					.map(line => {
+						try {
+							// birth:modification:access
+							const [path, ctime, mtime, atime] = line.trim().split(':')
+								.map(str => isNaN(Number(str)) ? str : Number(str))
+								.map(ts => typeof ts === 'number' ? (ts ? new Date(ts * 1000) : null) : ts);
+							return {
+								path,
+								result: {
+									ctime,
+									mtime,
+									atime,
+								}
+							}
+						} catch (error) {
+							console.error(error);
+							return {
+								path: "",
+								result: {
+									ctime: null,
+									mtime: null,
+									atime: null,
+								}
+							}
+						}
+					})
+					.map(({ path, result: metadata }, index) => {
+						let target = entries.value[index];
+						if (!target || target.path !== path) {
+							console.error(`Had to reverse lookup entry for ${path}, index did not match`);
+							target = entries.value.find(entry => entry.path === path);
+						}
+						if (!target) {
+							console.error(`Could not reverse lookup ${path} to assign stats`);
+						} else {
+							Object.assign(target, metadata)
+						}
+					});
+				resolver();
+			}
+			return new Promise((resolve, reject) => {
+				useSpawn(['stat', '-c', '%n:%W:%Y:%X', '--', ...entries.value.map(({ path }) => path)], { superuser: 'try', err: 'out' }).promise()
+					.then(state => callback(state, resolve))
+					.catch(state => callback(state, resolve)); // ignore errors to keep list order, err:out for stderr as placeholder
+			});
+		}
+
 		const getEntries = async () => {
+			console.time('getEntries');
 			processingHandler.start();
 			try {
 				const cwd = props.path;
@@ -236,7 +273,7 @@ export default {
 								entry.sizeHuman = cockpit.format_bytes(entry.size, 1000).replace(/(?<!B)$/, ' B');
 								entry.major = entry.minor = null;
 							}
-							procs.push(getAsyncEntryStats(cwd, entry, entry.modeStr, entry.path, fields[7]));
+							procs.push(parseModeStr(cwd, entry, entry.modeStr, fields[7]));
 							return entry;
 						} catch (error) {
 							notifications.value.constructNotification(`Error while gathering info for ${entry.path ?? record}`, errorStringHTML(error), 'error');
@@ -246,9 +283,11 @@ export default {
 					.filter(entry => entry !== null)
 					?? [];
 				processingHandler.start();
+				procs.push(getAsyncEntryStats());
 				return Promise.all(procs).then(() => {
 					emitStats();
 					sortEntries();
+					console.timeEnd('getEntries');
 				}).finally(() => processingHandler.stop());
 			} catch (error) {
 				entries.value = [];
@@ -269,9 +308,13 @@ export default {
 		}
 
 		const sortEntries = () => {
-			processingHandler.start();
-			entries.value.sort(sortCallbackComputed.value);
-			processingHandler.stop();
+			if (processingHandler.count) {
+				setTimeout(sortEntries, 100); // poll until nothing processing
+			} else {
+				processingHandler.start();
+				entries.value.sort(sortCallbackComputed.value);
+				processingHandler.stop();
+			}
 		}
 
 		const entryFilterCallback = (entry) =>
@@ -283,7 +326,6 @@ export default {
 		});
 
 		watch(() => props.sortCallback, sortEntries);
-		watch(entries, sortEntries);
 		watch(() => settings.directoryView?.separateDirs, sortEntries);
 
 		watch(() => props.path, getEntries, { immediate: true });
