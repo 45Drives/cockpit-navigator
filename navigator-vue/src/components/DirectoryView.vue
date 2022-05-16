@@ -38,7 +38,7 @@
 					</th>
 					<th v-if="settings?.directoryView?.cols?.size">
 						<div class="flex flex-row flex-nowrap gap-2 items-center">
-							<div class="grow">Size</div>
+							<div class="grow text-right">Size</div>
 							<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.size" />
 						</div>
 					</th>
@@ -66,6 +66,7 @@
 				<DirectoryEntryList
 					:path="path"
 					:sortCallback="sortCallback"
+					:searchFilterRegExp="searchFilterRegExp"
 					@cd="(...args) => $emit('cd', ...args)"
 					@edit="(...args) => $emit('edit', ...args)"
 					@updateStats="(...args) => $emit('updateStats', ...args)"
@@ -80,6 +81,7 @@
 			<DirectoryEntryList
 				:path="path"
 				:sortCallback="sortCallback"
+				:searchFilterRegExp="searchFilterRegExp"
 				@cd="(...args) => $emit('cd', ...args)"
 				@edit="(...args) => $emit('edit', ...args)"
 				@updateStats="(...args) => $emit('updateStats', ...args)"
@@ -101,6 +103,7 @@ import DirectoryEntryList from './DirectoryEntryList.vue';
 export default {
 	props: {
 		path: String,
+		searchFilterRegExp: RegExp,
 	},
 	setup() {
 		const settings = inject(settingsInjectionKey);

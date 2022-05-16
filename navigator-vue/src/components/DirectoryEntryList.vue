@@ -1,22 +1,35 @@
 <template>
-	<DirectoryEntry
-		v-for="entry, index in entries"
-		:key="entry.path"
-		:entry="entry"
-		:inheritedSortCallback="sortCallback"
-		@cd="(...args) => $emit('cd', ...args)"
-		@edit="(...args) => $emit('edit', ...args)"
-		@sortEntries="sortEntries"
-		@updateStats="emitStats"
-		@startProcessing="(...args) => $emit('startProcessing', ...args)"
-		@stopProcessing="(...args) => $emit('stopProcessing', ...args)"
-		ref="entryRefs"
-		:level="level"
-	/>
+	<template v-for="entry, index in entries" :key="entry.path">
+		<DirectoryEntry
+			:show="entryFilterCallback(entry)"
+			:entry="entry"
+			:inheritedSortCallback="sortCallback"
+			:searchFilterRegExp="searchFilterRegExp"
+			@cd="(...args) => $emit('cd', ...args)"
+			@edit="(...args) => $emit('edit', ...args)"
+			@sortEntries="sortEntries"
+			@updateStats="emitStats"
+			@startProcessing="(...args) => $emit('startProcessing', ...args)"
+			@stopProcessing="(...args) => $emit('stopProcessing', ...args)"
+			ref="entryRefs"
+			:level="level"
+		/>
+	</template>
+	<tr
+		v-if="show && entries.reduce((sum, entry) => entryFilterCallback(entry) ? sum + 1 : sum, 0) === 0"
+	>
+		<td
+			:colspan="Object.values(settings?.directoryView?.cols ?? {}).reduce((sum, current) => current ? sum + 1 : sum, 1) ?? 100"
+			class="!pl-1 text-muted text-sm"
+		>
+			<div class="inline-block" :style="{ width: `${24 * level}px` }"></div>
+			<div class="inline-block">No entries.</div>
+		</td>
+	</tr>
 </template>
 
 <script>
-import { ref, reactive, computed, inject, watch } from 'vue';
+import { ref, reactive, computed, inject, watch, onBeforeUnmount, onMounted } from 'vue';
 import { useSpawn, errorString, errorStringHTML, canonicalPath } from '@45drives/cockpit-helpers';
 import { notificationsInjectionKey, settingsInjectionKey } from '../keys';
 import DirectoryEntry from './DirectoryEntry.vue';
@@ -25,6 +38,12 @@ export default {
 	name: 'DirectoryEntryList',
 	props: {
 		path: String,
+		searchFilterRegExp: RegExp,
+		show: {
+			type: Boolean,
+			required: false,
+			default: true,
+		},
 		sortCallback: {
 			type: Function,
 			required: false,
@@ -52,6 +71,23 @@ export default {
 				return props.sortCallback(a, b);
 			}
 		});
+		const processingHandler = {
+			count: 0,
+			start: () => {
+				emit('startProcessing');
+				processingHandler.count++;
+			},
+			stop: () => {
+				if (processingHandler.count > 0) {
+					emit('stopProcessing');
+					processingHandler.count--;
+				}
+			},
+			resolveDangling: () => {
+				for (; processingHandler.count > 0; processingHandler.count--)
+					emit('stopProcessing');
+			}
+		}
 
 		const getAsyncEntryStats = (cwd, entry, modeStr, path, linkTargetRaw) => {
 			const procs = [];
@@ -90,9 +126,8 @@ export default {
 					if (linkTargetRaw) {
 						entry.target = {
 							rawPath: linkTargetRaw,
-							path: canonicalPath(linkTargetRaw.replace(/^(?!=\/)/, cwd + '/')),
+							path: canonicalPath(linkTargetRaw.replace(/^(?!\/)/, cwd + '/')),
 						};
-						emit('startProcessing');
 						procs.push(useSpawn(['stat', '-c', '%A', entry.target.path]).promise()
 							.then(state => {
 								getAsyncEntryStats(cwd, entry.target, state.stdout.trim());
@@ -101,7 +136,6 @@ export default {
 							.catch(() => {
 								entry.target.broken = true;
 							})
-							.finally(() => emit('stopProcessing'))
 						);
 					}
 					break;
@@ -119,7 +153,6 @@ export default {
 					break;
 			}
 			if (entry.permissions.acl && path) {
-				emit('startProcessing');
 				procs.push(useSpawn(['getfacl', '--omit-header', '--no-effective', path], { superuser: 'try' }).promise()
 					.then(state => {
 						entry.permissions.acl = state.stdout
@@ -139,31 +172,28 @@ export default {
 					.catch(state => {
 						console.error(`failed to get ACL for ${path}:`, errorString(state));
 					})
-					.finally(() => emit('stopProcessing'))
 				);
 			}
 			if (path) {
-				emit('startProcessing');
 				procs.push(useSpawn(['stat', '-c', '%W:%Y:%X', path], { superuser: 'try' }).promise() // birth:modification:access
 					.then(state => {
-						const [ctimeStr, mtimeStr, atimeStr] = state.stdout.trim().split(':');
+						const [ctime, mtime, atime] = state.stdout.trim().split(':').map(str => parseInt(str));
 						Object.assign(entry, {
-							ctime: new Date(parseInt(ctimeStr) * 1000),
-							mtime: new Date(parseInt(mtimeStr) * 1000),
-							atime: new Date(parseInt(atimeStr) * 1000),
+							ctime: ctime ? new Date(ctime * 1000) : null,
+							mtime: mtime ? new Date(mtime * 1000) : null,
+							atime: atime ? new Date(atime * 1000) : null,
 						});
 					})
 					.catch(state =>
 						notifications.value.constructNotification(`Failed to get stats for ${path}`, errorStringHTML(state), 'error')
 					)
-					.finally(() => emit('stopProcessing'))
 				);
 			}
 			return Promise.all(procs);
 		}
 
 		const getEntries = async () => {
-			emit('startProcessing');
+			processingHandler.start();
 			try {
 				const cwd = props.path;
 				const procs = [];
@@ -215,15 +245,16 @@ export default {
 					})
 					.filter(entry => entry !== null)
 					?? [];
+				processingHandler.start();
 				return Promise.all(procs).then(() => {
 					emitStats();
 					sortEntries();
-				})
+				}).finally(() => processingHandler.stop());
 			} catch (error) {
 				entries.value = [];
 				notifications.value.constructNotification("Error getting directory entries", errorStringHTML(error), 'error');
 			} finally {
-				emit('stopProcessing');
+				processingHandler.stop();
 			}
 		}
 
@@ -238,10 +269,18 @@ export default {
 		}
 
 		const sortEntries = () => {
-			emit('startProcessing');
+			processingHandler.start();
 			entries.value.sort(sortCallbackComputed.value);
-			emit('stopProcessing');
+			processingHandler.stop();
 		}
+
+		const entryFilterCallback = (entry) =>
+			(!/^\./.test(entry.name) || settings?.directoryView?.showHidden)
+			&& (props.searchFilterRegExp?.test(entry.name) ?? true);
+
+		onBeforeUnmount(() => {
+			processingHandler.resolveDangling();
+		});
 
 		watch(() => props.sortCallback, sortEntries);
 		watch(entries, sortEntries);
@@ -256,6 +295,7 @@ export default {
 			getEntries,
 			emitStats,
 			sortEntries,
+			entryFilterCallback,
 		}
 	},
 	components: {
