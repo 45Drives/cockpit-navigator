@@ -59,8 +59,8 @@ export default {
 		const sortCallbackComputed = computed(() => {
 			return (a, b) => {
 				if (settings.directoryView?.separateDirs) {
-					const checkA = a.type === 'link' ? (a.target?.type ?? null) : a.type;
-					const checkB = b.type === 'link' ? (b.target?.type ?? null) : b.type;
+					const checkA = a.type === 'symbolic link' ? (a.target?.type ?? null) : a.type;
+					const checkB = b.type === 'symbolic link' ? (b.target?.type ?? null) : b.type;
 					if (checkA === null || checkB === null)
 						return 0;
 					if (checkA === 'directory' && checkB !== 'directory')
@@ -89,204 +89,287 @@ export default {
 			}
 		}
 
-		const parseModeStr = (cwd, entry, modeStr, linkTargetRaw = null) => {
-			const procs = [];
-			Object.assign(entry, {
-				permissions: {
-					owner: {
-						read: modeStr[1] !== '-',
-						write: modeStr[2] !== '-',
-						execute: modeStr[3] !== '-',
-					},
-					group: {
-						read: modeStr[4] !== '-',
-						write: modeStr[5] !== '-',
-						execute: modeStr[6] !== '-',
-					},
-					other: {
-						read: modeStr[7] !== '-',
-						write: modeStr[8] !== '-',
-						execute: modeStr[9] !== '-',
-					},
-					acl: modeStr[10] === '+' ? {} : null,
-				}
-			});
-			switch (modeStr[0]) {
-				case 'd':
-					entry.type = 'directory';
-					break;
-				case '-':
-					entry.type = 'file';
-					break;
-				case 'p':
-					entry.type = 'pipe';
-					break;
-				case 'l':
-					entry.type = 'link';
-					if (linkTargetRaw) {
-						entry.target = {
-							rawPath: linkTargetRaw,
-							path: canonicalPath(linkTargetRaw.replace(/^(?!\/)/, cwd + '/')),
-						};
-						procs.push(
-							useSpawn(['stat', '-c', '%A', entry.target.path]).promise()
-								.then(state => {
-									parseModeStr(cwd, entry.target, state.stdout.trim());
-									entry.target.broken = false;
-								})
-								.catch(() => {
-									entry.target.broken = true;
-								})
-						);
-					}
-					break;
-				case 's':
-					entry.type = 'socket';
-					break;
-				case 'c':
-					entry.type = 'character';
-					break;
-				case 'b':
-					entry.type = 'block';
-					break;
-				default:
-					entry.type = 'unk';
-					break;
-			}
-			if (entry.permissions.acl && entry.rawPath === undefined) { // skip for link targets
-				procs.push(useSpawn(['getfacl', '--omit-header', '--no-effective', entry.path], { superuser: 'try' }).promise()
-					.then(state => {
-						entry.permissions.acl = state.stdout
-							.split('\n')
-							.filter(line => line && !/^\s*(?:#|$)/.test(line))
-							.reduce((acl, line) => {
-								const match = line.match(/^([^:]*):([^:]+)?:(.*)$/).slice(1);
-								acl[match[0]] = acl[match[0]] ?? {};
-								acl[match[0]][match[1] ?? '*'] = {
-									r: match[2][0] !== '-',
-									w: match[2][1] !== '-',
-									x: match[2][2] !== '-',
-								}
-								return acl;
-							}, {});
-					})
-					.catch(state => {
-						console.error(`failed to get ACL for ${entry.path}:`, errorString(state));
-					})
-				);
-			}
-			return Promise.all(procs);
-		}
+		// const parseModeStr = (cwd, entry, modeStr, linkTargetRaw = null) => {
+		// 	const procs = [];
+		// 	Object.assign(entry, {
+		// 		permissions: {
+		// 			owner: {
+		// 				read: modeStr[1] !== '-',
+		// 				write: modeStr[2] !== '-',
+		// 				execute: modeStr[3] !== '-',
+		// 			},
+		// 			group: {
+		// 				read: modeStr[4] !== '-',
+		// 				write: modeStr[5] !== '-',
+		// 				execute: modeStr[6] !== '-',
+		// 			},
+		// 			other: {
+		// 				read: modeStr[7] !== '-',
+		// 				write: modeStr[8] !== '-',
+		// 				execute: modeStr[9] !== '-',
+		// 			},
+		// 			acl: modeStr[10] === '+' ? {} : null,
+		// 		}
+		// 	});
+		// 	switch (modeStr[0]) {
+		// 		case 'd':
+		// 			entry.type = 'directory';
+		// 			break;
+		// 		case '-':
+		// 			entry.type = 'file';
+		// 			break;
+		// 		case 'p':
+		// 			entry.type = 'pipe';
+		// 			break;
+		// 		case 'l':
+		// 			entry.type = 'link';
+		// 			if (linkTargetRaw) {
+		// 				entry.target = {
+		// 					rawPath: linkTargetRaw,
+		// 					path: canonicalPath(linkTargetRaw.replace(/^(?!\/)/, cwd + '/')),
+		// 				};
+		// 				procs.push(
+		// 					useSpawn(['stat', '-c', '%A', entry.target.path]).promise()
+		// 						.then(state => {
+		// 							parseModeStr(cwd, entry.target, state.stdout.trim());
+		// 							entry.target.broken = false;
+		// 						})
+		// 						.catch(() => {
+		// 							entry.target.broken = true;
+		// 						})
+		// 				);
+		// 			}
+		// 			break;
+		// 		case 's':
+		// 			entry.type = 'socket';
+		// 			break;
+		// 		case 'c':
+		// 			entry.type = 'character';
+		// 			break;
+		// 		case 'b':
+		// 			entry.type = 'block';
+		// 			break;
+		// 		default:
+		// 			entry.type = 'unk';
+		// 			break;
+		// 	}
+		// 	if (entry.permissions.acl && entry.rawPath === undefined) { // skip for link targets
+		// 		procs.push(useSpawn(['getfacl', '--omit-header', '--no-effective', entry.path], { superuser: 'try' }).promise()
+		// 			.then(state => {
+		// 				entry.permissions.acl = state.stdout
+		// 					.split('\n')
+		// 					.filter(line => line && !/^\s*(?:#|$)/.test(line))
+		// 					.reduce((acl, line) => {
+		// 						const match = line.match(/^([^:]*):([^:]+)?:(.*)$/).slice(1);
+		// 						acl[match[0]] = acl[match[0]] ?? {};
+		// 						acl[match[0]][match[1] ?? '*'] = {
+		// 							r: match[2][0] !== '-',
+		// 							w: match[2][1] !== '-',
+		// 							x: match[2][2] !== '-',
+		// 						}
+		// 						return acl;
+		// 					}, {});
+		// 			})
+		// 			.catch(state => {
+		// 				console.error(`failed to get ACL for ${entry.path}:`, errorString(state));
+		// 			})
+		// 		);
+		// 	}
+		// 	return Promise.all(procs);
+		// }
 
-		const getAsyncEntryStats = () => {
-			const callback = (state, resolver) => {
-				state.stdout.trim().split('\n')
-					.map(line => {
-						try {
-							// birth:modification:access
-							const [path, ctime, mtime, atime] = line.trim().split(':')
-								.map(str => isNaN(Number(str)) ? str : Number(str))
-								.map(ts => typeof ts === 'number' ? (ts ? new Date(ts * 1000) : null) : ts);
-							return {
-								path,
-								result: {
-									ctime,
-									mtime,
-									atime,
-								}
-							}
-						} catch (error) {
-							console.error(error);
-							return {
-								path: "",
-								result: {
-									ctime: null,
-									mtime: null,
-									atime: null,
-								}
-							}
-						}
-					})
-					.map(({ path, result: metadata }, index) => {
-						let target = entries.value[index];
-						if (!target || target.path !== path) {
-							console.error(`Had to reverse lookup entry for ${path}, index did not match`);
-							target = entries.value.find(entry => entry.path === path);
-						}
-						if (!target) {
-							console.error(`Could not reverse lookup ${path} to assign stats`);
-						} else {
-							Object.assign(target, metadata)
-						}
-					});
-				resolver();
-			}
-			return new Promise((resolve, reject) => {
-				useSpawn(['stat', '-c', '%n:%W:%Y:%X', '--', ...entries.value.map(({ path }) => path)], { superuser: 'try', err: 'out' }).promise()
-					.then(state => callback(state, resolve))
-					.catch(state => callback(state, resolve)); // ignore errors to keep list order, err:out for stderr as placeholder
-			});
-		}
+		// const getAsyncEntryStats = () => {
+		// 	const callback = (state, resolver) => {
+		// 		state.stdout.trim().split('\n')
+		// 			.map(line => {
+		// 				try {
+		// 					// birth:modification:access
+		// 					const [path, ctime, mtime, atime] = line.trim().split(':')
+		// 						.map(str => isNaN(Number(str)) ? str : Number(str))
+		// 						.map(ts => typeof ts === 'number' ? (ts ? new Date(ts * 1000) : null) : ts);
+		// 					return {
+		// 						path,
+		// 						result: {
+		// 							ctime,
+		// 							mtime,
+		// 							atime,
+		// 						}
+		// 					}
+		// 				} catch (error) {
+		// 					console.error(error);
+		// 					return {
+		// 						path: "",
+		// 						result: {
+		// 							ctime: null,
+		// 							mtime: null,
+		// 							atime: null,
+		// 						}
+		// 					}
+		// 				}
+		// 			})
+		// 			.map(({ path, result: metadata }, index) => {
+		// 				let target = entries.value[index];
+		// 				if (!target || target.path !== path) {
+		// 					console.error(`Had to reverse lookup entry for ${path}, index did not match`);
+		// 					target = entries.value.find(entry => entry.path === path);
+		// 				}
+		// 				if (!target) {
+		// 					console.error(`Could not reverse lookup ${path} to assign stats`);
+		// 				} else {
+		// 					Object.assign(target, metadata)
+		// 				}
+		// 			});
+		// 		resolver();
+		// 	}
+		// 	return new Promise((resolve, reject) => {
+		// 		useSpawn(['stat', '-c', '%n:%W:%Y:%X', '--', ...entries.value.map(({ path }) => path)], { superuser: 'try', err: 'out' }).promise()
+		// 			.then(state => callback(state, resolve))
+		// 			.catch(state => callback(state, resolve)); // ignore errors to keep list order, err:out for stderr as placeholder
+		// 	});
+		// }
 
 		const getEntries = async () => {
 			processingHandler.start();
+			const readLink = (target, cwd, symlinkStr) => {
+				return new Promise((resolve, reject) => {
+					const linkTargetRaw = symlinkStr.split(/\s*->\s*/)[1].trim().replace(/^['"]|['"]$/g, '');
+					Object.assign(target, {
+						rawPath: linkTargetRaw,
+						path: canonicalPath(linkTargetRaw.replace(/^(?!\/)/, `${cwd}/`)),
+					});
+					useSpawn(['stat', '-c', '%F', target.path], { superuser: 'try' }).promise()
+						.then(state => {
+							target.type = state.stdout.trim();
+							target.broken = false;
+						})
+						.catch(() => {
+							target.broken = true;
+						})
+						.finally(resolve);
+				})
+			}
+			const US = '\x1F';
+			const RS = '\x1E';
 			try {
 				const cwd = props.path;
 				const procs = [];
-				procs.push(entryRefs.value.map(entryRef => entryRef.getEntries()));
-				let lsOutput;
-				try {
-					lsOutput = (await useSpawn(['ls', '-al', '--color=never', '--time-style=full-iso', '--quote-name', '--dereference-command-line-symlink-to-dir', cwd], { superuser: 'try' }).promise()).stdout
-				} catch (state) {
-					if (state.exit_code === 1)
-						lsOutput = state.stdout; // non-fatal ls error
-					else
-						throw new Error(state.stderr);
-				}
-				entries.value = lsOutput
-					.split('\n')
-					.filter(line => !/^(?:\s*$|total)/.test(line)) // remove empty lines
-					.map(record => {
-						try {
-							if (cwd !== props.path)
-								return null;
-							const entry = reactive({});
-							const fields = record.match(/^([a-z-]+\+?)\s+(\d+)\s+(\S+)\s+(\S+)\s+(\d+(?:,\s+\d+)?)\s+([^"]+)"([^"]+)"(?:\s+->\s+"([^"]+)")?/)?.slice(1);
-							if (!fields) {
-								console.error('regex failed to match on', record);
+				procs.push(...entryRefs.value.filter(entryRef => entryRef.showEntries).map(entryRef => entryRef.getEntries()));
+				const entryNames =
+					(await useSpawn(['dir', '--almost-all', '--dereference-command-line-symlink-to-dir', '--quoting-style=c', '-1', cwd], { superuser: 'try' }).promise()).stdout
+						.split('\n')
+						.filter(name => name)
+						.map(escaped => {
+							try {
+								return JSON.parse(escaped);
+							} catch (error) {
+								notifications.constructNotification("Failed to parse file name", `${errorStringHTML(error)}\ncaused by ${escaped}`, 'error');
 								return null;
 							}
-							entry.name = fields[6];
-							if (entry.name === '.' || entry.name === '..')
-								return null;
-							entry.path = canonicalPath(cwd + `/${entry.name}`);
-							entry.modeStr = fields[0];
-							entry.hardlinkCount = parseInt(fields[1]);
-							entry.owner = fields[2];
-							entry.group = fields[3];
-							if (/,/.test(fields[4])) {
-								[entry.major, entry.minor] = fields[4].split(/,\s+/);
-								entry.size = null;
-							} else {
-								entry.size = parseInt(fields[4]);
-								entry.sizeHuman = cockpit.format_bytes(entry.size, 1000).replace(/(?<!B)$/, ' B');
-								entry.major = entry.minor = null;
-							}
-							procs.push(parseModeStr(cwd, entry, entry.modeStr, fields[7]));
-							return entry;
-						} catch (error) {
-							notifications.value.constructNotification(`Error while gathering info for ${entry.path ?? record}`, errorStringHTML(error), 'error');
-							return null;
-						}
-					})
-					.filter(entry => entry !== null)
-					?? [];
+						})
+						.filter(entry => entry !== null);
+				const fields = [
+					'%n', // path
+					'%f', // mode (raw hex)
+					'%A', // modeStr
+					'%s', // size
+					'%U', // owner
+					'%G', // group
+					'%W', // ctime
+					'%Y', // mtime
+					'%X', // atime
+					'%F', // type
+					'%N', // quoted name with symlink
+				]
+				entries.value =
+					entryNames.length
+						? (await useSpawn(['stat', `--printf=${fields.join(US)}${RS}`, ...entryNames], { superuser: 'try', directory: cwd }).promise()).stdout
+							.split(RS)
+							.filter(record => record) // remove empty lines
+							.map(record => {
+								try {
+									let [name, mode, modeStr, size, owner, group, ctime, mtime, atime, type, symlinkStr] = record.split(US);
+									[size, ctime, mtime, atime] = [size, ctime, mtime, atime].map(num => parseInt(num));
+									[ctime, mtime, atime] = [ctime, mtime, atime].map(ts => ts ? new Date(ts * 1000) : null);
+									mode = parseInt(mode, 16);
+									const entry = reactive({
+										name,
+										path: canonicalPath(`/${cwd}/${name}`),
+										mode,
+										modeStr,
+										size,
+										sizeHuman: cockpit.format_bytes(size, 1000).replace(/(?<!B)$/, ' B'),
+										owner,
+										group,
+										ctime,
+										mtime,
+										atime,
+										type,
+										target: {},
+									});
+									if (type === 'symbolic link')
+										procs.push(readLink(entry.target, cwd, symlinkStr));
+									return entry;
+								} catch (error) {
+									console.error(errorString(error));
+									return null;
+								}
+							}).filter(entry => entry !== null)
+						: [];
+				// let lsOutput;
+				// try {
+				// 	lsOutput = (await useSpawn(['dir', '-al', '--color=never', '--time-style=full-iso', '--quote-name', '--dereference-command-line-symlink-to-dir', cwd], { superuser: 'try' }).promise()).stdout
+				// } catch (state) {
+				// 	if (state.exit_code === 1)
+				// 		lsOutput = state.stdout; // non-fatal ls error
+				// 	else
+				// 		throw new Error(state.stderr);
+				// }
+				// entries.value = lsOutput
+				// 	.split('\n')
+				// 	.filter(line => !/^(?:\s*$|total)/.test(line)) // remove empty lines
+				// 	.map(record => {
+				// 		try {
+				// 			if (cwd !== props.path)
+				// 				return null;
+				// 			const entry = reactive({});
+				// 			const fields = record.match(/^([a-z-]+\+?)\s+(\d+)\s+(\S+)\s+(\S+)\s+(\d+(?:,\s+\d+)?)\s+([^"]+)"([^"]+)"(?:\s+->\s+"([^"]+)")?/)?.slice(1);
+				// 			if (!fields) {
+				// 				console.error('regex failed to match on', record);
+				// 				return null;
+				// 			}
+				// 			entry.name = fields[6];
+				// 			if (entry.name === '.' || entry.name === '..')
+				// 				return null;
+				// 			entry.path = canonicalPath(cwd + `/${entry.name}`);
+				// 			entry.modeStr = fields[0];
+				// 			entry.hardlinkCount = parseInt(fields[1]);
+				// 			entry.owner = fields[2];
+				// 			entry.group = fields[3];
+				// 			if (/,/.test(fields[4])) {
+				// 				[entry.major, entry.minor] = fields[4].split(/,\s+/);
+				// 				entry.size = null;
+				// 			} else {
+				// 				entry.size = parseInt(fields[4]);
+				// 				entry.sizeHuman = cockpit.format_bytes(entry.size, 1000).replace(/(?<!B)$/, ' B');
+				// 				entry.major = entry.minor = null;
+				// 			}
+				// 			procs.push(parseModeStr(cwd, entry, entry.modeStr, fields[7]));
+				// 			return entry;
+				// 		} catch (error) {
+				// 			notifications.value.constructNotification(`Error while gathering info for ${entry.path ?? record}`, errorStringHTML(error), 'error');
+				// 			return null;
+				// 		}
+				// 	})
+				// 	.filter(entry => entry !== null)
+				// 	?? [];
 				processingHandler.start();
-				procs.push(getAsyncEntryStats());
-				return Promise.all(procs).then(() => {
-					emitStats();
-					sortEntries();
-				}).finally(() => processingHandler.stop());
+				console.log("resolving", procs.length, 'symlinks');
+				return Promise.all(procs)
+					.then(() => {
+						emitStats();
+						sortEntries();
+					})
+					.finally(() => processingHandler.stop());
 			} catch (error) {
 				entries.value = [];
 				notifications.value.constructNotification("Error getting directory entries", errorStringHTML(error), 'error');
@@ -297,7 +380,7 @@ export default {
 
 		const emitStats = () => {
 			emit('updateStats', entries.value.reduce((stats, entry) => {
-				if (entry.type === 'directory' || (entry.type === 'link' && entry.target?.type === 'directory'))
+				if (entry.type === 'directory' || (entry.type === 'symbolic link' && entry.target?.type === 'directory'))
 					stats.dirs++;
 				else
 					stats.files++;
