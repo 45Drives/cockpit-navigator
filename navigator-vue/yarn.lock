@@ -25,9 +25,9 @@
   integrity sha512-YHjFxJv8vKoG+Jm5K5Q9/myz7lmenKmKyx4Cw04VJP+imTW+oYe8He41jibF1JSUqgZXOSOBWf4HpUcFaTKfmA==
 
 "@babel/parser@^7.16.4":
-  version "7.17.10"
-  resolved "https://registry.yarnpkg.com/@babel/parser/-/parser-7.17.10.tgz#873b16db82a8909e0fbd7f115772f4b739f6ce78"
-  integrity sha512-n2Q6i+fnJqzOaq2VkdXxy2TCPCWQZHiCo0XqmrCvDWcZQKRyZzYi4Z0yxlBuN0w+r2ZHmre+Q087DSrw3pbJDQ==
+  version "7.17.12"
+  resolved "https://registry.yarnpkg.com/@babel/parser/-/parser-7.17.12.tgz#36c2ed06944e3691ba82735fc4cf62d12d491a23"
+  integrity sha512-FLzHmN9V3AJIrWfOpvRlZCeVg/WLdicSnTMsLur6uDj9TT8ymUlG9XxURdW/XvuygK+2CW0poOJABdA4m/YKxA==
 
 "@fontsource/red-hat-text@^4.5.4":
   version "4.5.9"
