@@ -1,6 +1,6 @@
 <template>
 	<div class="flex items-center cursor-text h-10" @click="typing = true">
-		<input v-if="typing" v-model="pathInput" type="text" class="block w-full input-textlike" @change="$emit('cd', canonicalPath(pathInput))" ref="inputRef" @focusout="typing = false" />
+		<input v-if="typing" v-model="pathInput" type="text" class="block w-full input-textlike" @change="changeCallback" ref="inputRef" @focusout="typing = false" />
 		<div v-else class="inline-flex items-center gap-1">
 			<template v-for="segment, index in pathArr" :key="index">
 				<ChevronRightIcon v-if="index > 0" class="size-icon icon-default" />
@@ -22,11 +22,18 @@ export default {
 	props: {
 		path: String,
 	},
-	setup(props) {
+	setup(props, { emit }) {
 		const pathArr = ref([]);
 		const typing = ref(false);
 		const pathInput = ref("");
 		const inputRef = ref();
+
+		const changeCallback = () => {
+			if (/^(?!\/)/.test(pathInput.value))
+				pathInput.value = `${props.path}/${pathInput.value}`;
+			pathInput.value = canonicalPath(pathInput.value);
+			emit('cd', pathInput.value);
+		}
 
 		watch(() => props.path, () => {
 			pathArr.value = ['/', ...canonicalPath(props.path).replace(/^\//, '').split('/')].filter(segment => segment);
@@ -44,6 +51,7 @@ export default {
 			typing,
 			pathInput,
 			inputRef,
+			changeCallback,
 			canonicalPath,
 		}
 	},
