@@ -5,14 +5,14 @@
 				<div :style="{ width: `${24 * level}px` }"></div>
 				<div class="relative w-6">
 					<component :is="icon" class="size-icon icon-default" />
-					<LinkIcon v-if="entry.type === 'link'" class="w-2 h-2 absolute right-0 bottom-0 text-default" />
+					<LinkIcon v-if="entry.type === 'symbolic link'" class="w-2 h-2 absolute right-0 bottom-0 text-default" />
 				</div>
 				<button v-if="directoryLike" @click.stop="() => showEntries = !showEntries">
 					<ChevronDownIcon v-if="!showEntries" class="size-icon icon-default" />
 					<ChevronUpIcon v-else class="size-icon icon-default" />
 				</button>
 				<div>{{ entry.name }}</div>
-				<div v-if="entry.type === 'link'" class="inline-flex gap-1 items-center">
+				<div v-if="entry.type === 'symbolic link'" class="inline-flex gap-1 items-center">
 					<div class="inline relative">
 						<ArrowNarrowRightIcon class="text-default size-icon-sm inline" />
 						<XIcon
@@ -26,7 +26,7 @@
 			<td v-if="settings?.directoryView?.cols?.mode" class="font-mono">{{ entry.modeStr }}</td>
 			<td v-if="settings?.directoryView?.cols?.owner">{{ entry.owner }}</td>
 			<td v-if="settings?.directoryView?.cols?.group">{{ entry.group }}</td>
-			<td v-if="settings?.directoryView?.cols?.size" class="text-right">{{ entry.sizeHuman }}</td>
+			<td v-if="settings?.directoryView?.cols?.size" class="font-mono text-right">{{ entry.sizeHuman }}</td>
 			<td v-if="settings?.directoryView?.cols?.ctime">{{ entry.ctime?.toLocaleString() ?? '-' }}</td>
 			<td v-if="settings?.directoryView?.cols?.mtime">{{ entry.mtime?.toLocaleString() ?? '-' }}</td>
 			<td v-if="settings?.directoryView?.cols?.atime">{{ entry.atime?.toLocaleString() ?? '-' }}</td>
@@ -60,7 +60,7 @@
 				:title="`-> ${entry.target?.rawPath ?? '?'}`"
 			>
 				<LinkIcon
-					v-if="entry.type === 'link'"
+					v-if="entry.type === 'symbolic link'"
 					:class="[entry.target?.broken ? 'text-red-300 dark:text-red-800' : 'text-gray-100 dark:text-gray-900', 'w-4 h-auto']"
 				/>
 			</div>
@@ -108,7 +108,7 @@ export default {
 		}
 
 		watch(props.entry, () => {
-			if (props.entry.type === 'directory' || (props.entry.type === 'link' && props.entry.target?.type === 'directory')) {
+			if (props.entry.type === 'directory' || (props.entry.type === 'symbolic link' && props.entry.target?.type === 'directory')) {
 				icon.value = FolderIcon;
 				directoryLike.value = true;
 			} else {
