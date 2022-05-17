@@ -64,7 +64,7 @@
 				<div
 					class="p-1 md:px-4 md:py-2 col-start-1 col-end-3 row-start-2 row-end-3 md:col-start-auto md:col-end-auto md:row-start-auto md:row-end-auto"
 				>
-					<PathBreadCrumbs :path="pathHistory.current() ?? '/'" @cd="newPath => cd(newPath)" />
+					<PathBreadCrumbs :path="pathHistory.current() ?? '/'" @cd="newPath => cd(newPath, newPath !== pathHistory.current())" />
 				</div>
 
 				<div class="p-1 md:px-4 md:py-2">
