@@ -1,16 +1,17 @@
 import { createApp, reactive } from 'vue';
 import App from './App.vue';
-import { FIFO } from '@45drives/cockpit-helpers';
+import { errorString, FIFO } from '@45drives/cockpit-helpers';
 import '@45drives/cockpit-css/src/index.css';
+import { useSpawn, errorStringHTML } from '@45drives/cockpit-helpers';
 
 import router from './router';
 
 const notificationFIFO = reactive(new FIFO());
 
-const errorHandler = (error) => {
+const errorHandler = (error, title = "System Error") => {
 	console.error(error);
 	const notificationObj = {
-		title: "System Error",
+		title,
 		body: "",
 		show: true,
 		timeout: 10000,
@@ -31,6 +32,33 @@ const errorHandler = (error) => {
 	else
 		throw error;
 }
+
+router.beforeEach(async (to, from) => {
+	if (to.name === 'browse') {
+		if (!to.params.path)
+			return "/browse/"; // force / for opening root
+		try {
+			let realPath = (await useSpawn(['realpath', '--canonicalize-existing', to.params.path], { superuser: 'try' }).promise()).stdout.trim();
+			if (to.params.path !== realPath)
+				return `/browse${realPath}`;
+			try {
+				await useSpawn(['test', '-r', to.params.path, '-a', '-x', to.params.path], { superuser: 'try' }).promise();
+			} catch {
+				throw new Error(`Permission denied for ${to.params.path}`);
+			}
+		} catch (error) {
+			if (from.name === undefined)
+				return { name: 'errorRedirect', query: { title: "Error opening path", message: errorString(error) } }
+			errorHandler(errorStringHTML(error), "Failed to open path");
+			return false;
+		}
+	}
+	if (cockpit.location.href !== to.fullPath.replace(/\/$/, '') && to.name !== 'errorRedirect') {
+		cockpit.location.replace(to.fullPath);
+		return false; // avoid double render from router change and cockpit path change
+	}
+	return true;
+})
 
 const app = createApp(App, { notificationFIFO }).use(router);
 

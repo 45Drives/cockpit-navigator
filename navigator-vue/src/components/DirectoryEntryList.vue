@@ -90,30 +90,40 @@ export default {
 		}
 
 		const getEntries = async () => {
-			processingHandler.start();
-			const readLink = (target, cwd, symlinkStr) => {
-				return new Promise((resolve, reject) => {
-					const linkTargetRaw = symlinkStr.split(/\s*->\s*/)[1].trim().replace(/^['"]|['"]$/g, '');
-					Object.assign(target, {
-						rawPath: linkTargetRaw,
-						path: canonicalPath(linkTargetRaw.replace(/^(?!\/)/, `${cwd}/`)),
-					});
-					useSpawn(['stat', '-c', '%F', target.path], { superuser: 'try' }).promise()
-						.then(state => {
-							target.type = state.stdout.trim();
-							target.broken = false;
-						})
-						.catch(() => {
-							target.broken = true;
-						})
-						.finally(resolve);
-				})
+			if (!props.path) {
+				return;
 			}
+			processingHandler.start();
 			const US = '\x1F';
 			const RS = '\x1E';
+			const processLinks = (linkTargets) => {
+				if (linkTargets.length === 0)
+					return null;
+				const callback = state => state.stdout
+					.trim()
+					.split('\n')
+					.filter(record => record)
+					.map((record, index) => {
+						if (record.includes(US)) {
+							const [type, mode] = record.split(US);
+							linkTargets[index].type = type;
+							linkTargets[index].mode = mode;
+							linkTargets[index].broken = false;
+						} else { // error
+							linkTargets[index].broken = true;
+						}
+					});
+				return new Promise((resolve, reject) =>
+					useSpawn(['stat', `--printf=%F${US}%f\n`, ...linkTargets.map(target => target.path)], { superuser: 'try', err: 'out' }).promise()
+						.then(callback)
+						.catch(callback)
+						.finally(resolve)
+				)
+			}
 			try {
 				const cwd = props.path;
 				const procs = [];
+				let tmpEntries;
 				procs.push(...entryRefs.value.filter(entryRef => entryRef.showEntries).map(entryRef => entryRef.getEntries()));
 				const entryNames =
 					(await useSpawn(['dir', '--almost-all', '--dereference-command-line-symlink-to-dir', '--quoting-style=c', '-1', cwd], { superuser: 'try' }).promise()).stdout
@@ -123,7 +133,7 @@ export default {
 							try {
 								return JSON.parse(escaped);
 							} catch (error) {
-								notifications.constructNotification("Failed to parse file name", `${errorStringHTML(error)}\ncaused by ${escaped}`, 'error');
+								notifications.value.constructNotification("Failed to parse file name", `${errorStringHTML(error)}\ncaused by ${escaped}`, 'error');
 								return null;
 							}
 						})
@@ -141,7 +151,7 @@ export default {
 					'%F', // type
 					'%N', // quoted name with symlink
 				]
-				entries.value =
+				tmpEntries =
 					entryNames.length
 						? (await useSpawn(['stat', `--printf=${fields.join(US)}${RS}`, ...entryNames], { superuser: 'try', directory: cwd }).promise()).stdout
 							.split(RS)
@@ -154,7 +164,7 @@ export default {
 									mode = parseInt(mode, 16);
 									const entry = reactive({
 										name,
-										path: canonicalPath(`/${cwd}/${name}`),
+										path: `${cwd}/${name}`.replace(/\/+/g, '/'),
 										mode,
 										modeStr,
 										size,
@@ -167,8 +177,10 @@ export default {
 										type,
 										target: {},
 									});
-									if (type === 'symbolic link')
-										procs.push(readLink(entry.target, cwd, symlinkStr));
+									if (type === 'symbolic link') {
+										entry.target.rawPath = symlinkStr.split(/\s*->\s*/)[1].trim().replace(/^['"]|['"]$/g, '');
+										entry.target.path = entry.target.rawPath.replace(/^(?!\/)/, `${cwd}/`);
+									}
 									return entry;
 								} catch (error) {
 									console.error(errorString(error));
@@ -176,10 +188,13 @@ export default {
 								}
 							}).filter(entry => entry !== null)
 						: [];
+				procs.push(processLinks(tmpEntries.filter(entry => entry.type === 'symbolic link').map(entry => entry.target)));
 				processingHandler.start();
-				console.log("resolving", procs.length, 'symlinks');
 				return Promise.all(procs)
 					.then(() => {
+						if (props.path !== cwd)
+							return;
+						entries.value = [...tmpEntries];
 						emitStats();
 						sortEntries();
 					})
@@ -223,7 +238,11 @@ export default {
 		watch(() => props.sortCallback, sortEntries);
 		watch(() => settings.directoryView?.separateDirs, sortEntries);
 
-		watch(() => props.path, getEntries, { immediate: true });
+		watch(() => props.path, (current, old) => {
+			if (current === old)
+				return;
+			getEntries();
+		}, { immediate: true });
 
 		return {
 			settings,

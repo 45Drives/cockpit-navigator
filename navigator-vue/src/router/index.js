@@ -1,36 +1,32 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
-import { lastPathStorageKey } from '../keys';
 
 const routes = [
 	{
-		path: '/browse:path(.+)',
+		path: '/browse:path(/.*)?',
 		name: 'browse',
 		component: () => import('../views/Browser.vue'),
 	},
 	{
-		path: '/edit/:path(.*)',
+		path: '/edit:path(/.+)',
 		name: 'edit',
 		component: () => import('../views/Editor.vue'),
 	},
 	{
-		path: '/:pathMatch(.*)*',
-		name: 'redirectToBrowse',
+		path: '/errorRedirect',
+		name: 'errorRedirect',
+		component: () => import('../views/ErrorRedirect.vue'),
+		props: route => ({ title: route.query.title, message: route.query.message }),
 	},
+	{
+		path: '/:pathMatch(.*)',
+		name: 'notFound',
+		redirect: route => ({ name: 'errorRedirect', query: { title: 'Not found', message: `${route.href} is not a valid location.` }}),
+	}
 ];
 
 const router = createRouter({
 	history: createWebHashHistory(),
 	routes,
 });
-
-router.beforeEach((to, from, next) => {
-	if (to.name === 'redirectToBrowse') {
-		const lastLocation = localStorage.getItem(lastPathStorageKey) ?? '/';
-		next(`/browse${lastLocation}`);
-		cockpit.location.go(`/browse${lastLocation}`);
-	} else {
-		next();
-	}
-})
 
 export default router;

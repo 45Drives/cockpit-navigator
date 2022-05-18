@@ -5,7 +5,7 @@
 			<template v-for="segment, index in pathArr" :key="index">
 				<ChevronRightIcon v-if="index > 0" class="size-icon icon-default" />
 				<button
-					@click.prevent.stop="$emit('cd', canonicalPath(pathArr.slice(0, index + 1).join('/')))"
+					@click.prevent.stop="$emit('cd', `/${pathArr.slice(1, index + 1).join('/')}`)"
 					class="p-2 hover:bg-accent rounded-lg cursor-pointer"
 				>{{ segment }}</button>
 			</template>

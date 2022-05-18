@@ -7,7 +7,7 @@
 					<component :is="icon" class="size-icon icon-default" />
 					<LinkIcon v-if="entry.type === 'symbolic link'" class="w-2 h-2 absolute right-0 bottom-0 text-default" />
 				</div>
-				<button v-if="directoryLike" @click.stop="() => showEntries = !showEntries">
+				<button v-if="directoryLike" @click.stop="toggleShowEntries">
 					<ChevronDownIcon v-if="!showEntries" class="size-icon icon-default" />
 					<ChevronUpIcon v-else class="size-icon icon-default" />
 				</button>
@@ -107,6 +107,14 @@ export default {
 			return directoryViewRef.value?.getEntries?.();
 		}
 
+		const toggleShowEntries = () => {
+			emit('startProcessing');
+			nextTick(() => {
+				showEntries.value = !showEntries.value;
+				nextTick(() => emit('stopProcessing'));
+			})
+		}
+
 		watch(props.entry, () => {
 			if (props.entry.type === 'directory' || (props.entry.type === 'symbolic link' && props.entry.target?.type === 'directory')) {
 				icon.value = FolderIcon;
@@ -125,6 +133,7 @@ export default {
 			directoryViewRef,
 			doubleClickCallback,
 			getEntries,
+			toggleShowEntries,
 			DirectoryEntryList,
 			nextTick,
 		}
