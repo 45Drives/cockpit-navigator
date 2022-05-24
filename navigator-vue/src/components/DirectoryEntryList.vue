@@ -7,12 +7,14 @@
 			:searchFilterRegExp="searchFilterRegExp"
 			@cd="(...args) => $emit('cd', ...args)"
 			@edit="(...args) => $emit('edit', ...args)"
+			@toggleSelected="entry.selected = !entry.selected"
 			@sortEntries="sortEntries"
 			@updateStats="emitStats"
 			@startProcessing="(...args) => $emit('startProcessing', ...args)"
 			@stopProcessing="(...args) => $emit('stopProcessing', ...args)"
 			ref="entryRefs"
 			:level="level"
+			:class="['border-2 box-border', entry.selected ? 'border-dashed border-x-red-600/50' : 'border-x-transparent', (entry.selected && !entries[index - 1]?.selected) ? 'border-t-red-600/50' : 'border-t-transparent', (entry.selected && !entries[index + 1]?.selected) ? 'border-b-red-600/50' : 'border-b-transparent']"
 		/>
 	</template>
 	<tr
@@ -153,7 +155,7 @@ export default {
 				]
 				tmpEntries =
 					entryNames.length
-						? (await useSpawn(['stat', `--printf=${fields.join(US)}${RS}`, ...entryNames], { superuser: 'try', directory: cwd }).promise()).stdout
+						? (await useSpawn(['stat', `--printf=${fields.join(US)}${RS}`, ...entryNames], { superuser: 'try', directory: cwd }).promise().catch(state => state)).stdout
 							.split(RS)
 							.filter(record => record) // remove empty lines
 							.map(record => {
@@ -176,6 +178,7 @@ export default {
 										atime,
 										type,
 										target: {},
+										selected: false,
 									});
 									if (type === 'symbolic link') {
 										entry.target.rawPath = symlinkStr.split(/\s*->\s*/)[1].trim().replace(/^['"]|['"]$/g, '');
@@ -202,6 +205,7 @@ export default {
 			} catch (error) {
 				entries.value = [];
 				notifications.value.constructNotification("Error getting directory entries", errorStringHTML(error), 'error');
+				emit('cancelShowEntries');
 			} finally {
 				processingHandler.stop();
 			}
@@ -231,6 +235,11 @@ export default {
 			(!/^\./.test(entry.name) || settings?.directoryView?.showHidden)
 			&& (props.searchFilterRegExp?.test(entry.name) ?? true);
 
+		const getSelected = () => [
+			...entries.value.filter(entry => entry.selected),
+			...entryRefs.value.filter(entryRef => entryRef.showEntries).map(entryRef => entryRef.getSelected()).flat(1),
+		];
+
 		onBeforeUnmount(() => {
 			processingHandler.resolveDangling();
 		});
@@ -252,6 +261,7 @@ export default {
 			emitStats,
 			sortEntries,
 			entryFilterCallback,
+			getSelected,
 		}
 	},
 	components: {
@@ -263,6 +273,7 @@ export default {
 		'updateStats',
 		'startProcessing',
 		'stopProcessing',
+		'cancelShowEntries',
 	]
 }
 </script>

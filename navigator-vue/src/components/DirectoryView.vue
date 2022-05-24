@@ -125,6 +125,8 @@ export default {
 			return directoryEntryListRef.value?.getEntries?.();
 		}
 
+		const getSelected = () => directoryEntryListRef.value?.getSelected?.() ?? [];
+
 		return {
 			settings,
 			processing,
@@ -132,6 +134,7 @@ export default {
 			sortCallbacks,
 			sortCallback,
 			getEntries,
+			getSelected,
 		}
 	},
 	components: {

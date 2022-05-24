@@ -1,11 +1,20 @@
 <template>
 	<template v-if="settings.directoryView?.view === 'list'">
-		<tr v-show="show || showEntries" @dblclick="doubleClickCallback" class="hover:!bg-red-600/10">
+		<tr
+			v-show="show || showEntries"
+			@dblclick.stop="doubleClickCallback"
+			@click.stop="$emit('toggleSelected')"
+			:class="['hover:!bg-red-600/10']"
+			v-bind="$attrs"
+		>
 			<td class="flex items-center gap-1 !pl-1">
 				<div :style="{ width: `${24 * level}px` }"></div>
 				<div class="relative w-6">
 					<component :is="icon" class="size-icon icon-default" />
-					<LinkIcon v-if="entry.type === 'symbolic link'" class="w-2 h-2 absolute right-0 bottom-0 text-default" />
+					<LinkIcon
+						v-if="entry.type === 'symbolic link'"
+						class="w-2 h-2 absolute right-0 bottom-0 text-default"
+					/>
 				</div>
 				<button v-if="directoryLike" @click.stop="toggleShowEntries">
 					<ChevronDownIcon v-if="!showEntries" class="size-icon icon-default" />
@@ -43,6 +52,7 @@
 			@edit="(...args) => $emit('edit', ...args)"
 			@startProcessing="(...args) => $emit('startProcessing', ...args)"
 			@stopProcessing="(...args) => $emit('stopProcessing', ...args)"
+			@cancelShowEntries="showEntries = false"
 			ref="directoryViewRef"
 			:level="level + 1"
 		/>
@@ -50,7 +60,8 @@
 	<div
 		v-else
 		v-show="show"
-		@dblclick="doubleClickCallback"
+		@dblclick.stop="doubleClickCallback"
+		@click.stop="$emit('toggleSelected')"
 		class="flex flex-col items-center w-20 overflow-hidden"
 	>
 		<div class="relative w-20">
@@ -115,6 +126,8 @@ export default {
 			})
 		}
 
+		const getSelected = () => directoryViewRef.value?.getSelected?.() ?? [];
+
 		watch(props.entry, () => {
 			if (props.entry.type === 'directory' || (props.entry.type === 'symbolic link' && props.entry.target?.type === 'directory')) {
 				icon.value = FolderIcon;
@@ -134,6 +147,7 @@ export default {
 			doubleClickCallback,
 			getEntries,
 			toggleShowEntries,
+			getSelected,
 			DirectoryEntryList,
 			nextTick,
 		}
@@ -152,6 +166,7 @@ export default {
 	emits: [
 		'cd',
 		'edit',
+		'toggleSelected',
 		'startProcessing',
 		'stopProcessing',
 	]
