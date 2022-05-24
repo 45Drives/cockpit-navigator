@@ -2,7 +2,7 @@
     "version": 2.0,
 
     "menu": {
-        "identities": {
+        "navigator": {
             "label": "Navigator",
             "path": "index.html",
             "order": 116
