@@ -18,9 +18,13 @@ const routes = [
 		props: route => ({ title: route.query.title, message: route.query.message }),
 	},
 	{
-		path: '/:pathMatch(.*)',
+		path: '/:pathMatch(.+)',
 		name: 'notFound',
 		redirect: route => ({ name: 'errorRedirect', query: { title: 'Not found', message: `${route.href} is not a valid location.` }}),
+	},
+	{
+		path: '/',
+		name: 'root',
 	}
 ];
 

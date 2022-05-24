@@ -3,6 +3,7 @@ import App from './App.vue';
 import { errorString, FIFO } from '@45drives/cockpit-helpers';
 import '@45drives/cockpit-css/src/index.css';
 import { useSpawn, errorStringHTML } from '@45drives/cockpit-helpers';
+import { lastPathStorageKey } from './keys';
 
 import router from './router';
 
@@ -33,7 +34,14 @@ const errorHandler = (error, title = "System Error") => {
 		throw error;
 }
 
+let lastValidRoutePath = null;
 router.beforeEach(async (to, from) => {
+	if (to.name === 'root')
+		return `/browse${localStorage.getItem(lastPathStorageKey) ?? '/'}`;
+	if (to.fullPath === lastValidRoutePath) {
+		console.log("Route to same path");
+		return true;
+	}
 	if (to.name === 'browse') {
 		if (!to.params.path)
 			return "/browse/"; // force / for opening root
@@ -48,15 +56,13 @@ router.beforeEach(async (to, from) => {
 			}
 		} catch (error) {
 			if (from.name === undefined)
-				return { name: 'errorRedirect', query: { title: "Error opening path", message: errorString(error) } }
+				return { name: 'errorRedirect', query: { title: "Error opening path", message: errorString(error), ...to.query } }
 			errorHandler(errorStringHTML(error), "Failed to open path");
 			return false;
 		}
 	}
-	if (cockpit.location.href !== to.fullPath.replace(/\/$/, '') && to.name !== 'errorRedirect') {
-		cockpit.location.replace(to.fullPath);
-		return false; // avoid double render from router change and cockpit path change
-	}
+	lastValidRoutePath = to.fullPath; // protect double-update from next line
+	cockpit.location.go(to.fullPath); // needed to update URL in address bar
 	return true;
 })
 

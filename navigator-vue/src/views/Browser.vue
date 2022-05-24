@@ -167,6 +167,8 @@ export default {
 			router.push(`/edit${path}`);
 		}
 
+		const getSelected = () => directoryViewRef.value?.getSelected?.() ?? [];
+
 		watch(searchFilterStr, () => {
 			searchFilterRegExp.value = new RegExp(
 				`^${searchFilterStr.value
@@ -177,33 +179,15 @@ export default {
 			);
 		}, { immediate: true });
 
-		watch(() => route.params.path, async (current, last) => {
-			if (!last) {
-				console.log("First watch execute", last);
+		watch(() => route.params.path, async (newPath, lastPath) => {
+			if (!lastPath) {
+				console.log("First watch execute", lastPath);
 			}
-			if (route.name !== 'browse' || current === last)
+			if (route.name !== 'browse' || newPath === lastPath)
 				return;
-			try {
-				const tmpPath = route.params.path;
-				// let realPath = (await useSpawn(['realpath', '--canonicalize-existing', tmpPath], { superuser: 'try' }).promise()).stdout.trim();
-				// if (tmpPath !== realPath)
-				// 	return cd(realPath);
-				try {
-					await useSpawn(['test', '-r', tmpPath, '-a', '-x', tmpPath], { superuser: 'try' }).promise();
-				} catch (error) {
-					console.error(error);
-					throw new Error(`Permission denied for ${tmpPath}`);
-				}
-				localStorage.setItem(lastPathStorageKey, tmpPath);
-				if (pathHistory.current() !== tmpPath) {
-					pathHistory.push(tmpPath); // updates actual view
-				}
-			} catch (error) {
-				notifications.value.constructNotification("Failed to open path", errorStringHTML(error), 'error');
-				if (pathHistory.backAllowed())
-					back();
-				else
-					up();
+			localStorage.setItem(lastPathStorageKey, newPath);
+			if (pathHistory.current() !== newPath) {
+				pathHistory.push(newPath); // updates actual view
 			}
 		}, { immediate: true });
 
@@ -221,6 +205,7 @@ export default {
 			forward,
 			up,
 			openEditor,
+			getSelected,
 		}
 	},
 	components: {
