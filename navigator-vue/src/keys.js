@@ -3,7 +3,7 @@
  */
 export const notificationsInjectionKey = Symbol();
 /**
- * Settings object
+ * Settings object {@link NavigatorSettings}
  */
 export const settingsInjectionKey = Symbol();
 /**
