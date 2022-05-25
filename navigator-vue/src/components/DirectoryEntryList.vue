@@ -192,7 +192,7 @@ export default {
 						cwd,
 						(message) => notifications.value.constructNotification("Failed to parse file name", message, 'error')
 					)
-				).map(entry => reactive(entry));
+				);
 				procs.push(processLinks(tmpEntries.filter(entry => entry.type === 'symbolic link').map(entry => entry.target)));
 				processingHandler.start();
 				return Promise.all(procs)
