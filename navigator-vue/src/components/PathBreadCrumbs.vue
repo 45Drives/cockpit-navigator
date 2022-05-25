@@ -7,7 +7,9 @@
 				<button
 					@click.prevent.stop="$emit('cd', `/${pathArr.slice(1, index + 1).join('/')}`)"
 					class="p-2 hover:bg-accent rounded-lg cursor-pointer"
-				>{{ segment }}</button>
+					v-html="escapeStringHTML(segment)"
+					:title="escapeString(`/${pathArr.slice(1, index + 1).join('/')}`)"
+				></button>
 			</template>
 		</div>
 	</div>
@@ -17,6 +19,7 @@
 import { ref, watch, nextTick } from 'vue';
 import { canonicalPath } from "@45drives/cockpit-helpers";
 import { ChevronRightIcon } from '@heroicons/vue/solid';
+import { escapeString, escapeStringHTML } from '../functions/escapeStringHTML';
 
 export default {
 	props: {
@@ -53,6 +56,8 @@ export default {
 			inputRef,
 			changeCallback,
 			canonicalPath,
+			escapeString,
+			escapeStringHTML,
 		}
 	},
 	components: {
