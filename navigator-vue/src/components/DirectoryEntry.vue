@@ -20,7 +20,7 @@
 						<ChevronDownIcon v-if="!showEntries" class="size-icon icon-default" />
 						<ChevronUpIcon v-else class="size-icon icon-default" />
 					</button>
-					<div v-html="escapeName(entry.name)"></div>
+					<div v-html="escapeStringHTML(entry.name)" :title="entry.name"></div>
 					<div v-if="entry.type === 'symbolic link'" class="inline-flex gap-1 items-center">
 						<div class="inline relative">
 							<ArrowNarrowRightIcon class="text-default size-icon-sm inline" />
@@ -29,7 +29,7 @@
 								class="icon-danger size-icon-sm absolute inset-x-0 bottom-0"
 							/>
 						</div>
-						<div v-html="escapeName(entry.target?.rawPath ?? '')"></div>
+						<div v-html="escapeStringHTML(entry.target?.rawPath ?? '')" :title="entry.target.rawPath"></div>
 					</div>
 				</div>
 			</td>
@@ -103,6 +103,7 @@ import { ref, inject, watch, nextTick } from 'vue';
 import { DocumentIcon, FolderIcon, LinkIcon, DocumentRemoveIcon, ArrowNarrowRightIcon, XIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/vue/solid';
 import { settingsInjectionKey } from '../keys';
 import DirectoryEntryList from './DirectoryEntryList.vue';
+import { escapeStringHTML } from '../functions/escapeStringHTML';
 
 export default {
 	name: 'DirectoryEntry',
@@ -157,8 +158,6 @@ export default {
 			directoryViewRef.value?.selection.deselectAllForward();
 		}
 
-		const escapeName = (string) => string.replace(/[^ -~]/gi, c => `<span class="text-orange-500">${JSON.stringify(c).replace(/^['"]|['"]$/g, '')}</span>`)
-
 		watch(props.entry, () => {
 			if (props.entry.type === 'directory' || (props.entry.type === 'symbolic link' && props.entry.target?.type === 'directory')) {
 				icon.value = FolderIcon;
@@ -189,7 +188,7 @@ export default {
 			getSelected,
 			selectAll,
 			deselectAllForward,
-			escapeName,
+			escapeStringHTML,
 			DirectoryEntryList,
 			nextTick,
 		}
