@@ -150,6 +150,9 @@ import ModalPopup from './ModalPopup.vue';
 import { AdjustmentsIcon, ChevronRightIcon, ChevronLeftIcon } from '@heroicons/vue/solid';
 import { settingsInjectionKey } from '../keys';
 
+/**
+ * @type {NavigatorSettings}
+ */
 const defaultSettings = {
 	directoryView: {
 		view: 'list',
