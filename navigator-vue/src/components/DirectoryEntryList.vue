@@ -38,6 +38,7 @@ import { notificationsInjectionKey, settingsInjectionKey } from '../keys';
 import DirectoryEntry from './DirectoryEntry.vue';
 import getDirListing from '../functions/getDirListing';
 import getDirEntryObjects from '../functions/getDirEntryObjects';
+import { RECORD_SEPARATOR, UNIT_SEPARATOR } from '../constants';
 
 export default {
 	name: 'DirectoryEntryList',
@@ -155,18 +156,16 @@ export default {
 			}
 			selection.lastSelectedInd = null;
 			processingHandler.start();
-			const US = '\x1F';
-			const RS = '\x1E';
 			const processLinks = (linkTargets) => {
 				if (linkTargets.length === 0)
 					return null;
 				const callback = state => state.stdout
 					.trim()
-					.split('\n')
+					.split(RECORD_SEPARATOR)
 					.filter(record => record)
 					.map((record, index) => {
-						if (record.includes(US)) {
-							const [type, mode] = record.split(US);
+						if (record.includes(UNIT_SEPARATOR)) {
+							const [type, mode] = record.split(UNIT_SEPARATOR);
 							linkTargets[index].type = type;
 							linkTargets[index].mode = mode;
 							linkTargets[index].broken = false;
@@ -175,7 +174,7 @@ export default {
 						}
 					});
 				return new Promise((resolve, reject) =>
-					useSpawn(['stat', `--printf=%F${US}%f\n`, ...linkTargets.map(target => target.path)], { superuser: 'try', err: 'out' }).promise()
+					useSpawn(['stat', `--printf=%F${UNIT_SEPARATOR}%f${RECORD_SEPARATOR}`, ...linkTargets.map(target => target.path)], { superuser: 'try', err: 'out' }).promise()
 						.then(callback)
 						.catch(callback)
 						.finally(resolve)

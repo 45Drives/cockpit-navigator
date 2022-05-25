@@ -1,4 +1,5 @@
 import { useSpawn, errorString } from "@45drives/cockpit-helpers";
+import { UNIT_SEPARATOR, RECORD_SEPARATOR } from "../constants";
 
 /**
 * Callback for handling errors during parsing of `dir` output lines
@@ -47,8 +48,6 @@ import { useSpawn, errorString } from "@45drives/cockpit-helpers";
  * @returns {Promise<DirectoryEntry[]>} Array of DirectoryEntry objects
  */
 export default async function getDirEntryObjects(dirListing, cwd, failCallback, byteFormatter = cockpit.format_bytes) {
-	const US = '\x1F';
-	const RS = '\x1E';
 	const fields = [
 		'%n', // path
 		'%f', // mode (raw hex)
@@ -67,7 +66,7 @@ export default async function getDirEntryObjects(dirListing, cwd, failCallback, 
 			(
 				await useSpawn([
 					'stat',
-					`--printf=${fields.join(US)}${RS}`,
+					`--printf=${fields.join(UNIT_SEPARATOR)}${RECORD_SEPARATOR}`,
 					...dirListing
 				], { superuser: 'try', directory: cwd }
 				)
@@ -87,13 +86,13 @@ export default async function getDirEntryObjects(dirListing, cwd, failCallback, 
  * @returns {DirectoryEntry[]}
  */
 function parseRawEntryStats(raw, cwd, failCallback, byteFormatter = cockpit.format_bytes) {
-	const US = '\x1F';
-	const RS = '\x1E';
-	return raw.split(RS)
+	const UNIT_SEPARATOR = '\x1F'; // "Unit Separator"   - ASCII field delimiter
+	const RECORD_SEPARATOR = '\x1E'; // "Record Separator" - ASCII record delimiter
+	return raw.split(RECORD_SEPARATOR)
 		.filter(record => record) // remove empty lines
 		.map(record => {
 			try {
-				let [name, mode, modeStr, size, owner, group, ctime, mtime, atime, type, symlinkStr] = record.split(US);
+				let [name, mode, modeStr, size, owner, group, ctime, mtime, atime, type, symlinkStr] = record.split(UNIT_SEPARATOR);
 				[size, ctime, mtime, atime] = [size, ctime, mtime, atime].map(num => parseInt(num));
 				[ctime, mtime, atime] = [ctime, mtime, atime].map(ts => ts ? new Date(ts * 1000) : null);
 				mode = parseInt(mode, 16);
