@@ -1,5 +1,5 @@
 <template>
-	<div class="h-full" @keypress="keyHandler($event)">
+	<div class="h-full" @keydown.prevent.stop="keyHandler($event)" tabindex="-1">
 		<Table
 			v-if="settings.directoryView?.view === 'list'"
 			emptyText="No entries."
@@ -129,6 +129,9 @@ export default {
 		searchFilterRegExp: RegExp,
 	},
 	setup() {
+		/**
+		 * @type {NavigatorSettings}
+		 */
 		const settings = inject(settingsInjectionKey);
 		const processing = ref(0);
 		const directoryEntryListRef = ref();
@@ -150,12 +153,17 @@ export default {
 
 		const getSelected = () => directoryEntryListRef.value?.selection.getSelected?.() ?? [];
 
+		/**
+		 * @param {KeyboardEvent} event
+		 */
 		const keyHandler = (event) => {
 			console.log("DirectoryView::keyHandler:", event);
-			if (event.key === 'esc')
+			if (event.key === 'Escape')
 				directoryEntryListRef.value?.selection.deselectAllForward();
-			else if (event.key === 'a' && event.ctrlKey)
+			else if (event.ctrlKey && event.key.toLowerCase() === 'a')
 				directoryEntryListRef.value?.selection.selectAll();
+			else if (event.ctrlKey && event.key.toLowerCase() === 'h')
+				settings.directoryView.showHidden = !settings.directoryView.showHidden;
 		}
 
 		return {
