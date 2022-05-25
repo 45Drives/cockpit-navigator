@@ -7,14 +7,15 @@
 			:searchFilterRegExp="searchFilterRegExp"
 			@cd="(...args) => $emit('cd', ...args)"
 			@edit="(...args) => $emit('edit', ...args)"
-			@toggleSelected="entry.selected = !entry.selected"
+			@toggleSelected="modifiers => selection.toggle(entry, index, modifiers)"
+			@deselectAll="selection.deselectAllBackward()"
 			@sortEntries="sortEntries"
 			@updateStats="emitStats"
 			@startProcessing="(...args) => $emit('startProcessing', ...args)"
 			@stopProcessing="(...args) => $emit('stopProcessing', ...args)"
 			ref="entryRefs"
 			:level="level"
-			:class="['border-2 box-border', entry.selected ? 'border-dashed border-x-red-600/50' : 'border-x-transparent', (entry.selected && !entries[index - 1]?.selected) ? 'border-t-red-600/50' : 'border-t-transparent', (entry.selected && !entries[index + 1]?.selected) ? 'border-b-red-600/50' : 'border-b-transparent']"
+			:neighboursSelected="{ above: entries[index - 1]?.selected ?? false, below: entries[index + 1]?.selected ?? false }"
 		/>
 	</template>
 	<tr
@@ -35,6 +36,8 @@ import { ref, reactive, computed, inject, watch, onBeforeUnmount, onMounted } fr
 import { useSpawn, errorString, errorStringHTML, canonicalPath } from '@45drives/cockpit-helpers';
 import { notificationsInjectionKey, settingsInjectionKey } from '../keys';
 import DirectoryEntry from './DirectoryEntry.vue';
+import getDirListing from '../functions/getDirListing';
+import getDirEntryObjects from '../functions/getDirEntryObjects';
 
 export default {
 	name: 'DirectoryEntryList',
@@ -73,6 +76,61 @@ export default {
 				return props.sortCallback(a, b);
 			}
 		});
+		const selection = reactive({
+			lastSelectedInd: null,
+			toggle: (entry, index, modifiers) => {
+				const entrySelectedValue = entry.selected;
+				if (!modifiers.ctrlKey) {
+					const tmpLastSelectedInd = selection.lastSelectedInd;
+					selection.deselectAllBackward();
+					selection.lastSelectedInd = tmpLastSelectedInd;
+				}
+				if (modifiers.shiftKey && selection.lastSelectedInd !== null) {
+					let [startInd, endInd] = [selection.lastSelectedInd, index];
+					if (endInd < startInd)
+						[startInd, endInd] = [endInd, startInd];
+					entries.value
+						.slice(startInd, endInd + 1)
+						.filter(entryFilterCallback)
+						.map(entry => entry.selected = true);
+				} else {
+					entry.selected = modifiers.ctrlKey ? !entrySelectedValue : true;
+					if (entry.selected)
+						selection.lastSelectedInd = index;
+					else
+						selection.lastSelectedInd = null;
+				}
+			},
+			getSelected: () => [
+				...entries.value.filter(entry => entry.selected),
+				...entryRefs.value
+					.filter(entryRef => entryRef.showEntries)
+					.map(entryRef => entryRef.getSelected())
+					.flat(1),
+			],
+			clear: () => {
+				entries.value.map(entry => entry.selected = false);
+			},
+			selectAll: () => {
+				entries.value
+					.filter(entryFilterCallback)
+					.map(entry => entry.selected = true);
+				entryRefs.value
+					.map(entryRef => entryRef.selectAll());
+			},
+			deselectAllBackward: () => {
+				if (props.level > 0)
+					emit('deselectAll');
+				else
+					selection.deselectAllForward();
+			},
+			deselectAllForward: () => {
+				selection.clear();
+				selection.lastSelectedInd = null;
+				entryRefs.value
+					.map(entryRef => entryRef.deselectAllForward());
+			},
+		});
 		const processingHandler = {
 			count: 0,
 			start: () => {
@@ -95,6 +153,7 @@ export default {
 			if (!props.path) {
 				return;
 			}
+			selection.lastSelectedInd = null;
 			processingHandler.start();
 			const US = '\x1F';
 			const RS = '\x1E';
@@ -125,72 +184,15 @@ export default {
 			try {
 				const cwd = props.path;
 				const procs = [];
-				let tmpEntries;
 				procs.push(...entryRefs.value.filter(entryRef => entryRef.showEntries).map(entryRef => entryRef.getEntries()));
-				const entryNames =
-					(await useSpawn(['dir', '--almost-all', '--dereference-command-line-symlink-to-dir', '--quoting-style=c', '-1', cwd], { superuser: 'try' }).promise()).stdout
-						.split('\n')
-						.filter(name => name)
-						.map(escaped => {
-							try {
-								return JSON.parse(escaped);
-							} catch (error) {
-								notifications.value.constructNotification("Failed to parse file name", `${errorStringHTML(error)}\ncaused by ${escaped}`, 'error');
-								return null;
-							}
-						})
-						.filter(entry => entry !== null);
-				const fields = [
-					'%n', // path
-					'%f', // mode (raw hex)
-					'%A', // modeStr
-					'%s', // size
-					'%U', // owner
-					'%G', // group
-					'%W', // ctime
-					'%Y', // mtime
-					'%X', // atime
-					'%F', // type
-					'%N', // quoted name with symlink
-				]
-				tmpEntries =
-					entryNames.length
-						? (await useSpawn(['stat', `--printf=${fields.join(US)}${RS}`, ...entryNames], { superuser: 'try', directory: cwd }).promise().catch(state => state)).stdout
-							.split(RS)
-							.filter(record => record) // remove empty lines
-							.map(record => {
-								try {
-									let [name, mode, modeStr, size, owner, group, ctime, mtime, atime, type, symlinkStr] = record.split(US);
-									[size, ctime, mtime, atime] = [size, ctime, mtime, atime].map(num => parseInt(num));
-									[ctime, mtime, atime] = [ctime, mtime, atime].map(ts => ts ? new Date(ts * 1000) : null);
-									mode = parseInt(mode, 16);
-									const entry = reactive({
-										name,
-										path: `${cwd}/${name}`.replace(/\/+/g, '/'),
-										mode,
-										modeStr,
-										size,
-										sizeHuman: cockpit.format_bytes(size, 1000).replace(/(?<!B)$/, ' B'),
-										owner,
-										group,
-										ctime,
-										mtime,
-										atime,
-										type,
-										target: {},
-										selected: false,
-									});
-									if (type === 'symbolic link') {
-										entry.target.rawPath = symlinkStr.split(/\s*->\s*/)[1].trim().replace(/^['"]|['"]$/g, '');
-										entry.target.path = entry.target.rawPath.replace(/^(?!\/)/, `${cwd}/`);
-									}
-									return entry;
-								} catch (error) {
-									console.error(errorString(error));
-									return null;
-								}
-							}).filter(entry => entry !== null)
-						: [];
+				const entryNames = await getDirListing(cwd, (message) => notifications.value.constructNotification("Failed to parse file name", message, 'error'));
+				const tmpEntries = (
+					await getDirEntryObjects(
+						entryNames,
+						cwd,
+						(message) => notifications.value.constructNotification("Failed to parse file name", message, 'error')
+					)
+				).map(entry => reactive(entry));
 				procs.push(processLinks(tmpEntries.filter(entry => entry.type === 'symbolic link').map(entry => entry.target)));
 				processingHandler.start();
 				return Promise.all(procs)
@@ -235,11 +237,6 @@ export default {
 			(!/^\./.test(entry.name) || settings?.directoryView?.showHidden)
 			&& (props.searchFilterRegExp?.test(entry.name) ?? true);
 
-		const getSelected = () => [
-			...entries.value.filter(entry => entry.selected),
-			...entryRefs.value.filter(entryRef => entryRef.showEntries).map(entryRef => entryRef.getSelected()).flat(1),
-		];
-
 		onBeforeUnmount(() => {
 			processingHandler.resolveDangling();
 		});
@@ -257,11 +254,11 @@ export default {
 			settings,
 			entries,
 			entryRefs,
+			selection,
 			getEntries,
 			emitStats,
 			sortEntries,
 			entryFilterCallback,
-			getSelected,
 		}
 	},
 	components: {
@@ -274,6 +271,7 @@ export default {
 		'startProcessing',
 		'stopProcessing',
 		'cancelShowEntries',
+		'deselectAll',
 	]
 }
 </script>
