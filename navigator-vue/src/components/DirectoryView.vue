@@ -1,5 +1,5 @@
 <template>
-	<div class="h-full">
+	<div class="h-full" @keypress="keyHandler($event)">
 		<Table
 			v-if="settings.directoryView?.view === 'list'"
 			emptyText="No entries."
@@ -9,8 +9,8 @@
 			noShrinkHeight="h-full"
 		>
 			<template #thead>
-				<tr v-if="!isChild">
-					<th class="!pl-1">
+				<tr>
+					<th class="!pl-1 border-l-2 border-l-transparent">
 						<div class="flex flex-row flex-nowrap gap-1 items-center">
 							<div class="flex items-center justify-center w-6">
 								<LoadingSpinner v-if="processing" class="size-icon" />
@@ -23,38 +23,59 @@
 							/>
 						</div>
 					</th>
-					<th v-if="settings?.directoryView?.cols?.mode">Mode</th>
-					<th v-if="settings?.directoryView?.cols?.owner">
+					<th
+						class="last:border-r-2 last:border-r-transparent"
+						v-if="settings?.directoryView?.cols?.mode"
+					>Mode</th>
+					<th
+						class="last:border-r-2 last:border-r-transparent"
+						v-if="settings?.directoryView?.cols?.owner"
+					>
 						<div class="flex flex-row flex-nowrap gap-2 items-center">
 							<div class="grow">Owner</div>
 							<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.owner" />
 						</div>
 					</th>
-					<th v-if="settings?.directoryView?.cols?.group">
+					<th
+						class="last:border-r-2 last:border-r-transparent"
+						v-if="settings?.directoryView?.cols?.group"
+					>
 						<div class="flex flex-row flex-nowrap gap-2 items-center">
 							<div class="grow">Group</div>
 							<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.group" />
 						</div>
 					</th>
-					<th v-if="settings?.directoryView?.cols?.size">
+					<th
+						class="last:border-r-2 last:border-r-transparent"
+						v-if="settings?.directoryView?.cols?.size"
+					>
 						<div class="flex flex-row flex-nowrap gap-2 items-center">
 							<div class="grow text-right">Size</div>
 							<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.size" />
 						</div>
 					</th>
-					<th v-if="settings?.directoryView?.cols?.ctime">
+					<th
+						class="last:border-r-2 last:border-r-transparent"
+						v-if="settings?.directoryView?.cols?.ctime"
+					>
 						<div class="flex flex-row flex-nowrap gap-2 items-center">
 							<div class="grow">Created</div>
 							<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.ctime" />
 						</div>
 					</th>
-					<th v-if="settings?.directoryView?.cols?.mtime">
+					<th
+						class="last:border-r-2 last:border-r-transparent"
+						v-if="settings?.directoryView?.cols?.mtime"
+					>
 						<div class="flex flex-row flex-nowrap gap-2 items-center">
 							<div class="grow">Modified</div>
 							<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.mtime" />
 						</div>
 					</th>
-					<th v-if="settings?.directoryView?.cols?.atime">
+					<th
+						class="last:border-r-2 last:border-r-transparent"
+						v-if="settings?.directoryView?.cols?.atime"
+					>
 						<div class="flex flex-row flex-nowrap gap-2 items-center">
 							<div class="grow">Accessed</div>
 							<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.atime" />
@@ -87,6 +108,8 @@
 				@updateStats="(...args) => $emit('updateStats', ...args)"
 				@startProcessing="processing++"
 				@stopProcessing="processing--"
+				ref="directoryEntryListRef"
+				:level="0"
 			/>
 		</div>
 	</div>
@@ -125,7 +148,15 @@ export default {
 			return directoryEntryListRef.value?.getEntries?.();
 		}
 
-		const getSelected = () => directoryEntryListRef.value?.getSelected?.() ?? [];
+		const getSelected = () => directoryEntryListRef.value?.selection.getSelected?.() ?? [];
+
+		const keyHandler = (event) => {
+			console.log("DirectoryView::keyHandler:", event);
+			if (event.key === 'esc')
+				directoryEntryListRef.value?.selection.deselectAllForward();
+			else if (event.key === 'a' && event.ctrlKey)
+				directoryEntryListRef.value?.selection.selectAll();
+		}
 
 		return {
 			settings,
@@ -135,6 +166,7 @@ export default {
 			sortCallback,
 			getEntries,
 			getSelected,
+			keyHandler,
 		}
 	},
 	components: {
