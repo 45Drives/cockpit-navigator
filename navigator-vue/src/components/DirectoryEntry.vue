@@ -62,7 +62,7 @@
 			v-if="directoryLike && showEntries"
 			:path="entry.path"
 			:isChild="true"
-			:inheritedSortCallback="inheritedSortCallback"
+			:sortCallback="inheritedSortCallback"
 			:searchFilterRegExp="searchFilterRegExp"
 			@cd="(...args) => $emit('cd', ...args)"
 			@edit="(...args) => $emit('edit', ...args)"
