@@ -3,42 +3,58 @@
 		<tr
 			v-show="show || showEntries"
 			@dblclick.stop="doubleClickCallback"
-			@click.stop="$emit('toggleSelected')"
-			:class="['hover:!bg-red-600/10']"
-			v-bind="$attrs"
+			@click.stop.prevent="$emit('toggleSelected', { ctrlKey: $event.ctrlKey, shiftKey: $event.shiftKey })"
+			:class="['hover:!bg-red-600/10 select-none']"
 		>
-			<td class="flex items-center gap-1 !pl-1">
-				<div :style="{ width: `${24 * level}px` }"></div>
-				<div class="relative w-6">
-					<component :is="icon" class="size-icon icon-default" />
-					<LinkIcon
-						v-if="entry.type === 'symbolic link'"
-						class="w-2 h-2 absolute right-0 bottom-0 text-default"
-					/>
-				</div>
-				<button v-if="directoryLike" @click.stop="toggleShowEntries">
-					<ChevronDownIcon v-if="!showEntries" class="size-icon icon-default" />
-					<ChevronUpIcon v-else class="size-icon icon-default" />
-				</button>
-				<div>{{ entry.name }}</div>
-				<div v-if="entry.type === 'symbolic link'" class="inline-flex gap-1 items-center">
-					<div class="inline relative">
-						<ArrowNarrowRightIcon class="text-default size-icon-sm inline" />
-						<XIcon
-							v-if="entry.target?.broken"
-							class="icon-danger size-icon-sm absolute inset-x-0 bottom-0"
+			<td :class="['!pl-1', ...selectedClasses]">
+				<div :class="['flex items-center gap-1']">
+					<div :style="{ width: `${24 * level}px` }"></div>
+					<div class="relative w-6">
+						<component :is="icon" class="size-icon icon-default" />
+						<LinkIcon
+							v-if="entry.type === 'symbolic link'"
+							class="w-2 h-2 absolute right-0 bottom-0 text-default"
 						/>
 					</div>
-					<div>{{ entry.target?.rawPath ?? '' }}</div>
+					<button v-if="directoryLike" @click.stop="toggleShowEntries">
+						<ChevronDownIcon v-if="!showEntries" class="size-icon icon-default" />
+						<ChevronUpIcon v-else class="size-icon icon-default" />
+					</button>
+					<div v-html="escapeName(entry.name)"></div>
+					<div v-if="entry.type === 'symbolic link'" class="inline-flex gap-1 items-center">
+						<div class="inline relative">
+							<ArrowNarrowRightIcon class="text-default size-icon-sm inline" />
+							<XIcon
+								v-if="entry.target?.broken"
+								class="icon-danger size-icon-sm absolute inset-x-0 bottom-0"
+							/>
+						</div>
+						<div v-html="escapeName(entry.target?.rawPath ?? '')"></div>
+					</div>
 				</div>
 			</td>
-			<td v-if="settings?.directoryView?.cols?.mode" class="font-mono">{{ entry.modeStr }}</td>
-			<td v-if="settings?.directoryView?.cols?.owner">{{ entry.owner }}</td>
-			<td v-if="settings?.directoryView?.cols?.group">{{ entry.group }}</td>
-			<td v-if="settings?.directoryView?.cols?.size" class="font-mono text-right">{{ entry.sizeHuman }}</td>
-			<td v-if="settings?.directoryView?.cols?.ctime">{{ entry.ctime?.toLocaleString() ?? '-' }}</td>
-			<td v-if="settings?.directoryView?.cols?.mtime">{{ entry.mtime?.toLocaleString() ?? '-' }}</td>
-			<td v-if="settings?.directoryView?.cols?.atime">{{ entry.atime?.toLocaleString() ?? '-' }}</td>
+			<td
+				v-if="settings?.directoryView?.cols?.mode"
+				:class="['font-mono', ...(selectedClasses)]"
+			>{{ entry.modeStr }}</td>
+			<td v-if="settings?.directoryView?.cols?.owner" :class="selectedClasses">{{ entry.owner }}</td>
+			<td v-if="settings?.directoryView?.cols?.group" :class="selectedClasses">{{ entry.group }}</td>
+			<td
+				v-if="settings?.directoryView?.cols?.size"
+				:class="['font-mono text-right', ...(selectedClasses)]"
+			>{{ entry.sizeHuman }}</td>
+			<td
+				v-if="settings?.directoryView?.cols?.ctime"
+				:class="selectedClasses"
+			>{{ entry.ctime?.toLocaleString() ?? '-' }}</td>
+			<td
+				v-if="settings?.directoryView?.cols?.mtime"
+				:class="selectedClasses"
+			>{{ entry.mtime?.toLocaleString() ?? '-' }}</td>
+			<td
+				v-if="settings?.directoryView?.cols?.atime"
+				:class="selectedClasses"
+			>{{ entry.atime?.toLocaleString() ?? '-' }}</td>
 		</tr>
 		<component
 			:show="show || showEntries"
@@ -53,6 +69,7 @@
 			@startProcessing="(...args) => $emit('startProcessing', ...args)"
 			@stopProcessing="(...args) => $emit('stopProcessing', ...args)"
 			@cancelShowEntries="showEntries = false"
+			@deselectAll="$emit('deselectAll')"
 			ref="directoryViewRef"
 			:level="level + 1"
 		/>
@@ -61,22 +78,23 @@
 		v-else
 		v-show="show"
 		@dblclick.stop="doubleClickCallback"
-		@click.stop="$emit('toggleSelected')"
-		class="flex flex-col items-center w-20 overflow-hidden"
+		@click.stop.prevent="$emit('toggleSelected', { ctrlKey: $event.ctrlKey, shiftKey: $event.shiftKey })"
 	>
-		<div class="relative w-20">
-			<component :is="icon" class="icon-default w-20 h-auto" />
-			<div
-				:class="[directoryLike ? 'right-3 bottom-5' : 'right-5 bottom-3', 'inline absolute']"
-				:title="`-> ${entry.target?.rawPath ?? '?'}`"
-			>
-				<LinkIcon
-					v-if="entry.type === 'symbolic link'"
-					:class="[entry.target?.broken ? 'text-red-300 dark:text-red-800' : 'text-gray-100 dark:text-gray-900', 'w-4 h-auto']"
-				/>
+		<div :class="[...selectedClasses, 'flex flex-col items-center w-20 overflow-hidden select-none']">
+			<div class="relative w-20">
+				<component :is="icon" class="icon-default w-20 h-auto" />
+				<div
+					:class="[directoryLike ? 'right-3 bottom-5' : 'right-5 bottom-3', 'inline absolute']"
+					:title="`-> ${entry.target?.rawPath ?? '?'}`"
+				>
+					<LinkIcon
+						v-if="entry.type === 'symbolic link'"
+						:class="[entry.target?.broken ? 'text-red-300 dark:text-red-800' : 'text-gray-100 dark:text-gray-900', 'w-4 h-auto']"
+					/>
+				</div>
 			</div>
+			<div class="text-center w-full" style="overflow-wrap: break-word;">{{ entry.name }}</div>
 		</div>
-		<div class="text-center w-full" style="overflow-wrap: break-word;">{{ entry.name }}</div>
 	</div>
 </template>
 
@@ -98,6 +116,7 @@ export default {
 			default: null,
 		},
 		level: Number,
+		neighboursSelected: Object,
 	},
 	setup(props, { emit }) {
 		const settings = inject(settingsInjectionKey);
@@ -105,6 +124,8 @@ export default {
 		const directoryLike = ref(false);
 		const showEntries = ref(false);
 		const directoryViewRef = ref();
+
+		const selectedClasses = ref([]);
 
 		const doubleClickCallback = () => {
 			if (directoryLike.value) {
@@ -128,6 +149,16 @@ export default {
 
 		const getSelected = () => directoryViewRef.value?.getSelected?.() ?? [];
 
+		const selectAll = () => {
+			directoryViewRef.value?.selection.selectAll();
+		}
+
+		const deselectAllForward = () => {
+			directoryViewRef.value?.selection.deselectAllForward();
+		}
+
+		const escapeName = (string) => string.replace(/[^ -~]/gi, c => `<span class="text-orange-500">${JSON.stringify(c).replace(/^['"]|['"]$/g, '')}</span>`)
+
 		watch(props.entry, () => {
 			if (props.entry.type === 'directory' || (props.entry.type === 'symbolic link' && props.entry.target?.type === 'directory')) {
 				icon.value = FolderIcon;
@@ -138,16 +169,27 @@ export default {
 			}
 		}, { immediate: true });
 
+		watch([() => props.neighboursSelected, () => props.entry.selected, () => settings.directoryView?.view], () => selectedClasses.value = [
+			'border-dashed border-red-600/50 first:border-l-2 last:border-r-2',
+			props.entry.selected ? 'bg-red-600/5 first:border-l-red-600/50 last:border-r-red-600/50' : 'first:border-l-transparent last:border-r-transparent',
+			props.entry.selected && (!props.neighboursSelected.above || settings.directoryView?.view !== 'list') ? 'border-t-2' : 'border-t-0',
+			props.entry.selected && (!props.neighboursSelected.below || settings.directoryView?.view !== 'list') ? 'border-b-2' : 'border-b-0',
+		], { immediate: true, deep: true });
+
 		return {
 			settings,
 			icon,
 			directoryLike,
+			selectedClasses,
 			showEntries,
 			directoryViewRef,
 			doubleClickCallback,
 			getEntries,
 			toggleShowEntries,
 			getSelected,
+			selectAll,
+			deselectAllForward,
+			escapeName,
 			DirectoryEntryList,
 			nextTick,
 		}
@@ -169,6 +211,7 @@ export default {
 		'toggleSelected',
 		'startProcessing',
 		'stopProcessing',
+		'deselectAll',
 	]
 }
 </script>
