@@ -149,6 +149,7 @@ import LabelledSwitch from './LabelledSwitch.vue';
 import ModalPopup from './ModalPopup.vue';
 import { AdjustmentsIcon, ChevronRightIcon, ChevronLeftIcon } from '@heroicons/vue/solid';
 import { settingsInjectionKey } from '../keys';
+import assignObjectRecursive from '../functions/assignObjectRecursive';
 
 /**
  * @type {NavigatorSettings}
@@ -196,19 +197,7 @@ export default {
 			},
 		})
 
-		const storedSettings = JSON.parse(localStorage.getItem(settingsStorageKey)) ?? {};
-		Object.assign(settings, {
-			...defaultSettings,
-			...storedSettings,
-			directoryView: {
-				...defaultSettings.directoryView,
-				...(storedSettings.directoryView ?? {}),
-				cols: {
-					...defaultSettings.directoryView.cols,
-					...(storedSettings.directoryView?.cols ?? {}),
-				}
-			},
-		});
+		assignObjectRecursive(settings, JSON.parse(localStorage.getItem(settingsStorageKey)) ?? {}, defaultSettings);
 
 		watch(settings, () => {
 			localStorage.setItem(settingsStorageKey, JSON.stringify(settings));
