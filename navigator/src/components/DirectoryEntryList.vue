@@ -81,7 +81,6 @@ export default {
 		const selection = reactive({
 			lastSelectedInd: null,
 			toggle: (entry, index, modifiers) => {
-				console.log("toggle", entry, index);
 				const entrySelectedValue = entry.selected;
 				if (!modifiers.ctrlKey) {
 					const tmpLastSelectedInd = selection.lastSelectedInd;
@@ -243,7 +242,7 @@ export default {
 		watch(() => props.sortCallback, sortEntries);
 		watch(() => settings.directoryView?.separateDirs, sortEntries);
 
-		watch([() => entries.value, () => settings?.directoryView?.showHidden, props.searchFilterRegExp], () => {
+		watch([() => entries.value, () => settings?.directoryView?.showHidden, () => props.searchFilterRegExp], () => {
 			visibleEntries.value = entries.value.filter(entryFilterCallback);
 		})
 
