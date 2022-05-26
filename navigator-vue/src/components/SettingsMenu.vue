@@ -173,8 +173,14 @@ const defaultSettings = {
 export default {
 	setup() {
 		const showMenu = ref(false);
+		/**
+		 * @type {NavigatorSettings}
+		 */
 		const settings = inject(settingsInjectionKey);
 		const settingsStorageKey = "houstonNavigatorSettingsKey";
+		/**
+		 * @type {Ref<boolean>}
+		 */
 		const darkMode = inject('darkModeInjectionKey') ?? ref(false);
 		function getTheme() {
 			let prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
