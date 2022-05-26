@@ -1,7 +1,7 @@
 <template>
-	<template v-for="entry, index in entries" :key="entry.path">
+	<template v-for="entry, index in visibleEntries" :key="entry.path">
 		<DirectoryEntry
-			:show="entryFilterCallback(entry)"
+			:show="true"
 			:entry="entry"
 			:inheritedSortCallback="sortCallback"
 			:searchFilterRegExp="searchFilterRegExp"
@@ -15,11 +15,11 @@
 			@stopProcessing="(...args) => $emit('stopProcessing', ...args)"
 			ref="entryRefs"
 			:level="level"
-			:neighboursSelected="{ above: entries[index - 1]?.selected ?? false, below: entries[index + 1]?.selected ?? false }"
+			:neighboursSelected="{ above: visibleEntries[index - 1]?.selected ?? false, below: visibleEntries[index + 1]?.selected ?? false }"
 		/>
 	</template>
 	<tr
-		v-if="show && entries.reduce((sum, entry) => entryFilterCallback(entry) ? sum + 1 : sum, 0) === 0"
+		v-if="show && visibleEntries.length === 0"
 	>
 		<td
 			:colspan="Object.values(settings?.directoryView?.cols ?? {}).reduce((sum, current) => current ? sum + 1 : sum, 1) ?? 100"
@@ -60,6 +60,7 @@ export default {
 	setup(props, { emit }) {
 		const settings = inject(settingsInjectionKey);
 		const entries = ref([]);
+		const visibleEntries = ref([]);
 		const notifications = inject(notificationsInjectionKey);
 		const entryRefs = ref([]);
 		const sortCallbackComputed = computed(() => {
@@ -80,6 +81,7 @@ export default {
 		const selection = reactive({
 			lastSelectedInd: null,
 			toggle: (entry, index, modifiers) => {
+				console.log("toggle", entry, index);
 				const entrySelectedValue = entry.selected;
 				if (!modifiers.ctrlKey) {
 					const tmpLastSelectedInd = selection.lastSelectedInd;
@@ -90,9 +92,8 @@ export default {
 					let [startInd, endInd] = [selection.lastSelectedInd, index];
 					if (endInd < startInd)
 						[startInd, endInd] = [endInd, startInd];
-					entries.value
+					visibleEntries.value
 						.slice(startInd, endInd + 1)
-						.filter(entryFilterCallback)
 						.map(entry => entry.selected = true);
 				} else {
 					entry.selected = modifiers.ctrlKey ? !entrySelectedValue : true;
@@ -103,7 +104,7 @@ export default {
 				}
 			},
 			getSelected: () => [
-				...entries.value.filter(entry => entry.selected),
+				...visibleEntries.value.filter(entry => entry.selected),
 				...entryRefs.value
 					.filter(entryRef => entryRef.showEntries)
 					.map(entryRef => entryRef.getSelected())
@@ -113,8 +114,7 @@ export default {
 				entries.value.map(entry => entry.selected = false);
 			},
 			selectAll: () => {
-				entries.value
-					.filter(entryFilterCallback)
+				visibleEntries.value
 					.map(entry => entry.selected = true);
 				entryRefs.value
 					.map(entryRef => entryRef.selectAll());
@@ -199,8 +199,8 @@ export default {
 						if (props.path !== cwd)
 							return;
 						entries.value = [...tmpEntries];
-						emitStats();
 						sortEntries();
+						emitStats();
 					})
 					.finally(() => processingHandler.stop());
 			} catch (error) {
@@ -227,7 +227,7 @@ export default {
 				setTimeout(sortEntries, 100); // poll until nothing processing
 			} else {
 				processingHandler.start();
-				entries.value.sort(sortCallbackComputed.value);
+				entries.value = [...entries.value].sort(sortCallbackComputed.value);
 				processingHandler.stop();
 			}
 		}
@@ -243,6 +243,10 @@ export default {
 		watch(() => props.sortCallback, sortEntries);
 		watch(() => settings.directoryView?.separateDirs, sortEntries);
 
+		watch([() => entries.value, () => settings?.directoryView?.showHidden, props.searchFilterRegExp], () => {
+			visibleEntries.value = entries.value.filter(entryFilterCallback);
+		})
+
 		watch(() => props.path, (current, old) => {
 			if (current === old)
 				return;
@@ -252,6 +256,7 @@ export default {
 		return {
 			settings,
 			entries,
+			visibleEntries,
 			entryRefs,
 			selection,
 			getEntries,
