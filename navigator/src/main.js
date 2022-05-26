@@ -39,7 +39,6 @@ router.beforeEach(async (to, from) => {
 	if (to.name === 'root')
 		return `/browse${localStorage.getItem(lastPathStorageKey) ?? '/'}`;
 	if (to.fullPath === lastValidRoutePath) {
-		console.log("Route to same path");
 		return true;
 	}
 	if (to.name === 'browse') {
