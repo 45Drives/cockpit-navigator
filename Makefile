@@ -75,7 +75,7 @@ $(VERSION_FILES): ./manifest.json
 
 # build outputs
 .SECONDEXPANSION:
-$(OUTPUTS): %/dist/index.html: $$(shell find $$*/src -type f) $$(shell find $$*/public -type f) $$(shell find $$* -name 'yarn.lock' -o -name 'package.json' -not -path '*node_modules*') $$*/*.html  $$*/*.js
+$(OUTPUTS): %/dist/index.html: $$(shell find $$*/src -type f -not -name *.test.js) $$(shell find $$*/public -type f) $$(shell find $$* -name 'yarn.lock' -o -name 'package.json' -not -path '*node_modules*') $$*/*.html  $$*/*.js
 	@echo -e $(call cyantext,Building $*)
 	$(NPM_PREFIX) $* install
 ifeq ($(AUTO_UPGRADE_DEPS),1)
@@ -119,6 +119,12 @@ plugin-install-remote-% : INSTALL_PREFIX=$(REMOTE_TEST_HOME)/.local/share/cockpi
 plugin-install-remote-% : INSTALL_SUFFIX=-test
 plugin-install-remote-% : SSH=ssh $(REMOTE_TEST_USER)@$(REMOTE_TEST_HOST)
 plugin-install-remote-% : REMOTE_TEST_HOME=$(shell ssh $(REMOTE_TEST_USER)@$(REMOTE_TEST_HOST) 'echo $$HOME')
+
+.SECONDEXPANSION:
+test: default $$(addprefix test-, $$(PLUGIN_SRCS))
+
+test-%:
+	$(NPM_PREFIX) $* test
 
 clean: FORCE
 	rm $(dir $(OUTPUTS)) -rf

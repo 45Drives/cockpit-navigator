@@ -1,6 +1,3 @@
-# IDE
-.vscode
-
 # deb packaging
 packaging/focal/cockpit-navigator
 packaging/focal/cockpit-navigator.substvars
