@@ -1,0 +1,225 @@
+<!doctype html>
+<!--
+	Cockpit Navigator - A File System Browser for Cockpit.
+	Copyright (C) 2021 Josh Boudreau <jboudreau@45drives.com>
+	Copyright (C) 2021 Sam Silver    <ssilver@45drives.com>
+
+	This file is part of Cockpit Navigator.
+	Cockpit Navigator is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	Cockpit Navigator is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+	You should have received a copy of the GNU General Public License
+	along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<html lang="en">
+<head>
+	<title>Navigator</title>
+	<meta charset="utf-8">
+	<base href=".">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<link href="../base1/cockpit.css" type="text/css" rel="stylesheet">
+	<link href="style.css" type="text/css" rel="stylesheet">
+	<link href="fontawesome/css/all.min.css" rel="stylesheet">
+	<script src="fontawesome/attribution.js"></script>
+	<script src="../base1/cockpit.js"></script>
+	<script src="../manifests.js"></script>
+	<script src="../*/po.js"></script>
+	<script src="main.js" type="module"></script>
+</head>
+<body>
+	<div class="nav-loader-container" id="nav-loader-container">
+		<div class="nav-loader-centerer">
+			<div class="nav-loader"></div>
+		</div>
+	</div>
+	<div class="flex-col outer-container">
+		<div class="flex-row nav-header">
+			<div class="nav-btn-group">
+				<button class="disable-while-loading pf-c-button pf-m-secondary" id="nav-back-btn" title="Back"><i class="fas fa-arrow-left"></i></button>
+				<div class="horizontal-spacer"></div>
+				<button class="disable-while-loading pf-c-button pf-m-secondary" id="nav-forward-btn" title="Forward"><i class="fas fa-arrow-right"></i></button>
+				<div class="horizontal-spacer"></div>
+				<button class="disable-while-loading pf-c-button pf-m-secondary" id="nav-up-dir-btn" title="Up"><i class="fas fa-arrow-up"></i></button>
+				<div class="horizontal-spacer"></div>
+				<button class="disable-while-loading pf-c-button pf-m-secondary" id="nav-refresh-btn" title="Refresh"><i class="fas fa-sync"></i></button>
+			</div>
+			<div class="horizontal-spacer"></div>
+			<input type="text" list="possible-paths-list" autocomplete="off" class="navigation-bar" id="pwd" title="Navigation Bar"></input>
+			<datalist id="possible-paths-list">
+				<select id="possible-paths">
+				</select>
+			</datalist>
+			<div class="horizontal-spacer"></div>
+			<input type="text" autocomplete="off" class="search-bar" id="search-bar" title="Prepend * to fuzzy search" placeholder="Search in Directory"></input>
+			<i class="fas fa-search"></i>
+			<div class="horizontal-spacer"></div>
+			<div class="nav-btn-group">
+				<button class="disable-while-loading pf-c-button pf-m-primary" id="nav-mkdir-btn" title="New Directory"><i class="fas fa-folder-plus"></i></button>
+				<div class="horizontal-spacer"></div>
+				<button class="disable-while-loading pf-c-button pf-m-primary" id="nav-touch-btn" title="New File"><i class="fas fa-file-medical"></i></button>
+				<div class="horizontal-spacer"></div>
+				<button class="disable-while-loading pf-c-button pf-m-primary" id="nav-ln-btn" title="New Symbolic Link"><i class="fas fa-link nav-icon-decorated"><i class="fas fa-plus nav-icon-decoration"></i></i></button>
+				<div class="horizontal-spacer"></div>
+				<button class="disable-while-loading pf-c-button pf-m-primary" id="nav-upload-btn" title="Upload File(s)"><i class="fas fa-upload"></i></button>
+			</div>
+		</div>
+		<div class="vertical-spacer"></div>
+		<div class="flex-row inner-container">
+			<div class="contents-view" id="nav-contents-view-holder">
+				<div class="contents-view contents-view-grid no-border" id="nav-contents-view">
+					<div class="contents-view-list-header nav-item">
+						<i class="nav-item-icon"></i>
+						<div class="nav-item-title" id="sort-name-btn">Name<i class="sort-arrow fas fa-chevron-up" id="sort-name-icon"></i></div>
+						<div class="nav-item-title" id="sort-mode-btn">Mode</div>
+						<div class="nav-item-title" id="sort-owner-btn">Owner<i class="sort-arrow fas" id="sort-owner-icon"></i></div>
+						<div class="nav-item-title" id="sort-group-btn">Group<i class="sort-arrow fas" id="sort-group-icon"></i></div>
+						<div class="nav-item-title" id="sort-size-btn">Size<i class="sort-arrow fas" id="sort-size-icon"></i></div>
+						<div class="nav-item-title" id="sort-modified-btn">Modified<i class="sort-arrow fas" id="sort-modified-icon"></i></div>
+						<div class="nav-item-title" id="sort-created-btn">Created<i class="sort-arrow fas" id="sort-created-icon"></i></div>
+					</div>
+				</div>
+				<div class="nav-notifications" id="nav-notifications">
+				</div>
+			</div>
+			<div class="edit-file-contents nav-hidden" id="nav-edit-contents-view">
+				<div class="editor-header" id="nav-edit-contents-header"></div>
+				<div class="vertical-spacer"></div>
+				<textarea id="nav-edit-contents-textarea" spellcheck="false"></textarea>
+				<div class="vertical-spacer"></div>
+				<div class="nav-btn-group">
+					<button class="disable-while-loading pf-c-button pf-m-danger editor-btn" id="nav-cancel-edit-contents-btn" title="Cancel"><i class="fas fa-times"></i></button>
+					<div class="horizontal-spacer"></div>
+					<button class="disable-while-loading pf-c-button pf-m-primary editor-btn" id="nav-continue-edit-contents-btn" title="Save"><i class="fas fa-save"></i></button>
+				</div>
+			</div>
+			<div class="horizontal-spacer"></div>
+			<div class="nav-info-column min-width-0 flex-col" id="nav-info-column">
+				<div class="flex-col flex-grow" id="nav-show-properties">
+					<div class="flex-row space-between">
+						<div class="nav-info-column-filename"></div>
+						<div class="nav-btn-group">
+							<button class="disable-while-loading pf-c-button pf-m-danger" id="nav-delete-btn" title="Delete"><i class="fas fa-trash-alt"></i></button>
+							<div class="horizontal-spacer"></div>
+							<button class="disable-while-loading pf-c-button pf-m-primary" id="nav-edit-properties-btn" title="Edit Properties"><i class="fas fa-sliders-h"></i></button>
+							<div class="horizontal-spacer"></div>
+							<button class="disable-while-loading pf-c-button pf-m-primary" id="nav-edit-contents-btn" title="Edit Contents"><i class="fas fa-edit"></i></button>
+						</div>
+					</div>
+					<div class="nav-info-column-properties" id="nav-info-column-properties"></div>
+				</div>
+				<div class="nav-hidden flex-col flex-grow" id="nav-edit-properties">
+					<div class="nav-info-column-filename"></div>
+					<div class="nav-property-pair">
+						<span class="nav-property-pair-key">Name</span>
+						<span class="nav-property-pair-value" id="nav-edit-filename"></span>
+					</div>
+					<div class="nav-property-pair">
+						<span class="nav-property-pair-key">Owner</span>
+						<input type="text" list="possible-owners-list" autocomplete="off" class="nav-property-pair-value" id="nav-edit-owner"></input>
+						<datalist id="possible-owners-list">
+							<select id="possible-owners">
+							</select>
+						</datalist>
+					</div>
+					<div class="nav-property-pair">
+						<span class="nav-property-pair-key">Group</span>
+						<input type="text" list="possible-groups-list" autocomplete="off" class="nav-property-pair-value" id="nav-edit-group"></input>
+						<datalist id="possible-groups-list">
+							<select id="possible-groups">
+							</select>
+						</datalist>
+					</div>
+					<div class="nav-property-pair">
+						<span class="nav-property-pair-key">Mode</span>
+						<span class="nav-property-pair-value" id="nav-mode-preview"></span>
+					</div>
+					<div class="grid-container">
+						<div></div>
+						<div class="grid-label">Read</div>
+						<div class="grid-label">Write</div>
+						<div class="grid-label">Execute</div>
+						<div class="grid-label grid-row-label">Owner</div>
+						<input type="checkbox" class="mode-checkbox" id="owner-read"></input>
+						<input type="checkbox" class="mode-checkbox" id="owner-write"></input>
+						<input type="checkbox" class="mode-checkbox" id="owner-exec"></input>
+						<div class="grid-label grid-row-label">Group</div>
+						<input type="checkbox" class="mode-checkbox" id="group-read"></input>
+						<input type="checkbox" class="mode-checkbox" id="group-write"></input>
+						<input type="checkbox" class="mode-checkbox" id="group-exec"></input>
+						<div class="grid-label grid-row-label">Other</div>
+						<input type="checkbox" class="mode-checkbox" id="other-read"></input>
+						<input type="checkbox" class="mode-checkbox" id="other-write"></input>
+						<input type="checkbox" class="mode-checkbox" id="other-exec"></input>
+					</div>
+					<div class="vertical-spacer"></div>
+					<div id="selected-files-list-header"></div>
+					<div class="flex-grow monospace-sm" id="selected-files-list"></div>
+					<div class="vertical-spacer"></div>
+					<div class="nav-btn-group">
+						<button class="disable-while-loading pf-c-button pf-m-danger" id="nav-cancel-edit-btn" title="Cancel"><i class="fas fa-times"></i></button>
+						<div class="horizontal-spacer"></div>
+						<button class="disable-while-loading pf-c-button pf-m-primary" id="nav-apply-edit-btn" title="Save Changes"><i class="fas fa-save"></i></button>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="flex-row nav-footer">
+			<div>
+				<span id="nav-num-dirs">-</span>, <span id="nav-num-files">-</span> (<span id="nav-num-bytes">-</span>)
+			</div>
+			<div class="flex-grow"></div>
+			<a href="https://www.45drives.com/?utm_source=Houston&utm_medium=UI&utm_campaign=OS-Link" target="_blank" title="Visit 45Drives.com">
+				<img src="branding/logo-light.svg" id="logo-45d"><span class="logo-45">45</span><span class="logo-drives">Drives</span>
+			</a>
+			<div class="flex-grow"></div>
+			<div id="nav-item-display-btn" class="clickable">
+				<i class="fas fa-list" id="nav-item-display-icon"></i>
+			</div>
+			<div class="horizontal-spacer"></div>
+			<div class="nav-toggle">
+				<div class="nav-btn-group">
+					<i class="fas fa-icons" id="nav-show-mimetype-icons-icon"></i>
+					<div class="horizontal-spacer-sm"></div>
+					<label class="switch" title="Show File Type Icons (Disable for faster load)">
+						<input type="checkbox" id="nav-show-mimetype-icons">
+						<span class="slider round"></span>
+					</label>
+				</div>
+			</div>
+			<div class="horizontal-spacer"></div>
+			<div class="nav-toggle">
+				<div class="nav-btn-group">
+					<i class="fas fa-low-vision" id="nav-show-hidden-icon"></i>
+					<div class="horizontal-spacer-sm"></div>
+					<label class="switch" title="Show Hidden Files">
+						<input type="checkbox" id="nav-show-hidden">
+						<span class="slider round"></span>
+					</label>
+				</div>
+			</div>
+			<div class="horizontal-spacer"></div>
+			<div class="nav-toggle">
+				<div class="nav-btn-group">
+					<i class="fas fa-sun" id="houston-theme-icon"></i>
+					<div class="horizontal-spacer-sm"></div>
+					<label class="switch" title="Toggle Dark/Light">
+						<input type="checkbox" id="toggle-theme">
+						<span class="slider round"></span>
+					</label>
+				</div>
+			</div>
+			<div class="horizontal-spacer"></div>
+			<div id="nav-info-btn" class="clickable">
+				<i class="far fa-question-circle" id="nav-info-icon"></i>
+			</div>
+		</div>
+	</div>
+</body>
+<div class="nav-context-menu flex-col" id="nav-context-menu">
+</div>
+</html>
