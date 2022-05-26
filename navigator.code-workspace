@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"name": "Git Repo Root",
+			"path": "."
+		},
+		{
+			"name": "Plugin Source",
+			"path": "navigator"
+		}
+	],
+	"settings": {
+		"jest.disabledWorkspaceFolders": ["Git Repo Root"]
+	}
+}
