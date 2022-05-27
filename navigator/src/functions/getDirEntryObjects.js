@@ -47,7 +47,7 @@ import { UNIT_SEPARATOR, RECORD_SEPARATOR } from "../constants";
  * @param {ByteFormatter} byteFormatter - Function to format bytes
  * @returns {Promise<DirectoryEntry[]>} Array of DirectoryEntry objects
  */
-export default async function getDirEntryObjects(dirListing, cwd, failCallback, byteFormatter = cockpit.format_bytes) {
+async function getDirEntryObjects(dirListing, cwd, failCallback, byteFormatter = cockpit.format_bytes) {
 	const fields = [
 		'%n', // path
 		'%f', // mode (raw hex)
@@ -125,3 +125,7 @@ function parseRawEntryStats(raw, cwd, failCallback, byteFormatter = cockpit.form
 			}
 		}).filter(entry => entry !== null)
 }
+
+export { parseRawEntryStats };
+
+export default getDirEntryObjects;
