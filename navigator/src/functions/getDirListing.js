@@ -14,7 +14,7 @@ import { useSpawn, errorString } from "@45drives/cockpit-helpers";
  * @param {getDirListingFailCallback} failCallback - Callback function for handling errors, receives {String} message
  * @returns {Promise<String[]>}
  */
-export default async function getDirListing(path, failCallback) {
+async function getDirListing(path, failCallback) {
 	return parseRawDirListing(
 		(
 			await useSpawn([
@@ -38,15 +38,33 @@ export default async function getDirListing(path, failCallback) {
  * @returns {String[]}
  */
 function parseRawDirListing(raw, failCallback) {
+	const decoder = new TextDecoder();
 	return raw.split('\n')
 		.filter(name => name)
 		.map(escaped => {
 			try {
-				return JSON.parse(escaped);
+				return JSON.parse(
+					escaped.replace(
+						/(\\\d{1,3})+/g,
+						octs => decoder.decode(
+							new Uint8Array(
+								octs
+									.split('\\')
+									.slice(1)
+									.map(oct => parseInt(oct, 8)
+								)
+							)
+						)
+					)
+				);
 			} catch (error) {
-				failCallback(`${errorString(error)}\ncaused by ${escaped}`);
+				failCallback?.(`${errorString(error)}\ncaused by ${escaped}`);
 				return null;
 			}
 		})
 		.filter(entry => entry !== null);
 }
+
+export { parseRawDirListing }
+
+export default getDirListing;
