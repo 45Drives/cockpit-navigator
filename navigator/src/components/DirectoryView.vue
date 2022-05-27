@@ -10,7 +10,7 @@
 		>
 			<template #thead>
 				<tr>
-					<th class="!pl-1 border-l-2 border-l-transparent">
+					<th class="!pl-1 border-l-2 border-l-transparent last:border-r-2 last:border-r-transparent">
 						<div class="flex flex-row flex-nowrap gap-1 items-center">
 							<div class="flex items-center justify-center w-6">
 								<LoadingSpinner v-if="processing" class="size-icon" />
@@ -141,9 +141,9 @@ export default {
 			owner: (a, b) => a.owner.localeCompare(b.owner),
 			group: (a, b) => a.group.localeCompare(b.group),
 			size: (a, b) => a.size - b.size,
-			ctime: (a, b) => a.ctime?.getTime() ?? 0 - b.ctime?.getTime() ?? 0,
-			mtime: (a, b) => a.mtime?.getTime() ?? 0 - b.mtime?.getTime() ?? 0,
-			atime: (a, b) => a.atime?.getTime() ?? 0 - b.atime?.getTime() ?? 0,
+			ctime: (a, b) => (a.ctime?.getTime() ?? 0) - (b.ctime?.getTime() ?? 0),
+			mtime: (a, b) => (a.mtime?.getTime() ?? 0) - (b.mtime?.getTime() ?? 0),
+			atime: (a, b) => (a.atime?.getTime() ?? 0) - (b.atime?.getTime() ?? 0),
 		}
 		const sortCallback = ref(() => 0);
 
