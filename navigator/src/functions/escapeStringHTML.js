@@ -14,7 +14,7 @@ const escapeStringHTML = (string) => replaceNonPrinting(string, c => wrapSpan(es
  */
 const escapeString = (string) => replaceNonPrinting(string, escapeCallback);
 
-const replaceNonPrinting = (string, callback) => string.replace(/[^ -~]/gi, callback);
+const replaceNonPrinting = (string, callback) => string.replace(/[\t\n\r]/gi, callback);
 
 const escapeCallback = c => JSON.stringify(c).replace(/^['"]|['"]$/g, '')
 
