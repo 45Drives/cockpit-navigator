@@ -1,30 +1,17 @@
 <template>
 	<template v-for="entry, index in visibleEntries" :key="entry.path">
-		<DirectoryEntry
-			:show="true"
-			:entry="entry"
-			:inheritedSortCallback="sortCallback"
-			:searchFilterRegExp="searchFilterRegExp"
-			@cd="(...args) => $emit('cd', ...args)"
+		<DirectoryEntry :show="true" :entry="entry" :inheritedSortCallback="sortCallback"
+			:searchFilterRegExp="searchFilterRegExp" @cd="(...args) => $emit('cd', ...args)"
 			@edit="(...args) => $emit('edit', ...args)"
 			@toggleSelected="modifiers => selection.toggle(entry, index, modifiers)"
-			@deselectAll="selection.deselectAllBackward()"
-			@sortEntries="sortEntries"
-			@updateStats="emitStats"
+			@deselectAll="selection.deselectAllBackward()" @sortEntries="sortEntries" @updateStats="emitStats"
 			@startProcessing="(...args) => $emit('startProcessing', ...args)"
-			@stopProcessing="(...args) => $emit('stopProcessing', ...args)"
-			ref="entryRefs"
-			:level="level"
-			:neighboursSelected="{ above: visibleEntries[index - 1]?.selected ?? false, below: visibleEntries[index + 1]?.selected ?? false }"
-		/>
+			@stopProcessing="(...args) => $emit('stopProcessing', ...args)" ref="entryRefs" :level="level"
+			:neighboursSelected="{ above: visibleEntries[index - 1]?.selected ?? false, below: visibleEntries[index + 1]?.selected ?? false }" />
 	</template>
-	<tr
-		v-if="show && visibleEntries.length === 0"
-	>
-		<td
-			:colspan="Object.values(settings?.directoryView?.cols ?? {}).reduce((sum, current) => current ? sum + 1 : sum, 1) ?? 100"
-			class="!pl-1 text-muted text-sm"
-		>
+	<tr v-if="show && visibleEntries.length === 0">
+		<td :colspan="Object.values(settings?.directoryView?.cols ?? {}).reduce((sum, current) => current ? sum + 1 : sum, 1) ?? 100"
+			class="!pl-1 text-muted text-sm">
 			<div class="inline-block" :style="{ width: `${24 * level}px` }"></div>
 			<div class="inline-block">No entries.</div>
 		</td>
@@ -148,6 +135,114 @@ export default {
 					emit('stopProcessing');
 			}
 		}
+		const host = undefined;
+
+		let fsListChannel = null;
+		let fsListJobQueue = [];
+		const fsListCallback = async (event, data) => {
+			const eventObj = JSON.parse(data);
+			const entryName = eventObj.path.replace(props.path, '').replace(/^\//, '');
+			let generateJob = null;
+			switch (eventObj.event) {
+				case 'created':
+					generateJob = (entryName) => async () => {
+						console.log(eventObj.event, entryName);
+						const [entry] = await getDirEntryObjects(
+							[entryName],
+							props.path,
+							(message) => notifications.value.constructNotification("Failed to parse file name", message, 'error')
+						);
+						if (!entry)
+							return; // temp file deleted too fast
+						if (entry.type === 'symbolic link')
+							await processLinks([entry.target]);
+						entries.value = [...entries.value, reactive(entry)].sort(sortCallbackComputed.value);
+					}
+					break;
+				case 'attribute-changed':
+				case 'changed':
+					generateJob = (entryName) => async () => {
+						console.log(eventObj.event, entryName);
+						const entry = entries.value.find(entry => entry.name === entryName);
+						const [newContent] = await getDirEntryObjects([entryName], props.path);
+						if (entry) {
+							const attrsChanged = ["name", "owner", "group", "size", "ctime", "mtime", "atime"].map(key => String(entry[key]) !== String(newContent[key])).includes(true);
+							Object.assign(entry, newContent);
+							if (attrsChanged) sortEntries();
+						}
+						else
+							console.error("Failed to find entry for update", entryName);
+					}
+					break;
+				case 'deleted':
+					generateJob = (entryName) => async () => {
+						console.log(eventObj.event, entryName);
+						entries.value = entries.value.filter(entry => entry.name !== entryName);
+					}
+					break;
+				case 'present':
+					return;
+				default:
+					console.warn(eventObj.event, entryName, "(not handled)");
+					return;
+			}
+			fsListJobQueue.push(generateJob(entryName));
+		}
+
+		const fsListJobRunner = async () => {
+			while (true) {
+				while (fsListJobQueue.length) {
+					try {
+						await fsListJobQueue.shift()();
+					} catch (error) {
+						console.error("fslist1 job error", error);
+					}
+				}
+				await new Promise(resolve => setTimeout(resolve, 100));
+			}
+		}
+		fsListJobRunner();
+
+		const setUpChannel = () => {
+			fsListChannel = cockpit.channel({
+				payload: "fslist1",
+				command: "open",
+				path: props.path,
+				watch: true,
+				superuser: 'try',
+				host
+			});
+
+			fsListChannel.onmessage = fsListCallback;
+		}
+		const takeDownChannel = () => {
+			fsListChannel?.close?.();
+		}
+
+		const processLinks = (linkTargets) => {
+			if (linkTargets.length === 0)
+				return null;
+			const callback = state => state.stdout
+				.trim()
+				.split(RECORD_SEPARATOR)
+				.filter(record => record)
+				.map((record, index) => {
+					if (record.includes(UNIT_SEPARATOR)) {
+						const [type, mode] = record.split(UNIT_SEPARATOR);
+						linkTargets[index].type = type;
+						linkTargets[index].mode = mode;
+						linkTargets[index].broken = false;
+					} else { // error
+						linkTargets[index].broken = true;
+					}
+				});
+			return new Promise((resolve, reject) =>
+				useSpawn(['stat', `--printf=%F${UNIT_SEPARATOR}%f${RECORD_SEPARATOR}`, ...linkTargets.map(target => target.path)], { superuser: 'try', err: 'out' }).promise()
+					.then(callback)
+					.catch(callback)
+					.finally(resolve)
+			)
+		}
 
 		const getEntries = async () => {
 			if (!props.path) {
@@ -155,30 +250,6 @@ export default {
 			}
 			selection.lastSelectedInd = null;
 			processingHandler.start();
-			const processLinks = (linkTargets) => {
-				if (linkTargets.length === 0)
-					return null;
-				const callback = state => state.stdout
-					.trim()
-					.split(RECORD_SEPARATOR)
-					.filter(record => record)
-					.map((record, index) => {
-						if (record.includes(UNIT_SEPARATOR)) {
-							const [type, mode] = record.split(UNIT_SEPARATOR);
-							linkTargets[index].type = type;
-							linkTargets[index].mode = mode;
-							linkTargets[index].broken = false;
-						} else { // error
-							linkTargets[index].broken = true;
-						}
-					});
-				return new Promise((resolve, reject) =>
-					useSpawn(['stat', `--printf=%F${UNIT_SEPARATOR}%f${RECORD_SEPARATOR}`, ...linkTargets.map(target => target.path)], { superuser: 'try', err: 'out' }).promise()
-						.then(callback)
-						.catch(callback)
-						.finally(resolve)
-				)
-			}
 			try {
 				const cwd = props.path;
 				const procs = [];
@@ -197,8 +268,7 @@ export default {
 					.then(() => {
 						if (props.path !== cwd)
 							return;
-						entries.value = [...tmpEntries];
-						sortEntries();
+						entries.value = [...tmpEntries.sort(sortCallbackComputed.value)].map(entry => reactive(entry));
 						emitStats();
 					})
 					.finally(() => processingHandler.stop());
@@ -237,6 +307,7 @@ export default {
 
 		onBeforeUnmount(() => {
 			processingHandler.resolveDangling();
+			takeDownChannel();
 		});
 
 		watch(() => props.sortCallback, sortEntries);
@@ -247,6 +318,8 @@ export default {
 		})
 
 		watch(() => props.path, (current, old) => {
+			takeDownChannel();
+			setUpChannel();
 			if (current === old)
 				return;
 			getEntries();
