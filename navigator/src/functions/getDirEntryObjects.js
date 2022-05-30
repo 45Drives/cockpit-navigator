@@ -1,44 +1,7 @@
 import { useSpawn, errorString } from "@45drives/cockpit-helpers";
 import { UNIT_SEPARATOR, RECORD_SEPARATOR } from "../constants";
 
-/**
-* Callback for handling errors during parsing of `dir` output lines
-* 
-* @callback getDirEntryObjectsFailCallback
-* @param {String} message - what went wrong
-*/
-
-/**
- * @callback ByteFormatter
- * @param {Number} number - Total number of bytes to format
- * @param {Number=} factor - either 1000 or 1024
- * @param {Object=} options - options
- * @returns {String|String[]}
- */
-
-/**
- * Object representing file system entry
- * 
- * @typedef {Object} DirectoryEntry
- * @property {String} name - File/directory name
- * @property {String} path - Full path to entry
- * @property {Number} mode - File mode (number)
- * @property {String} modeStr - Human readable file mode
- * @property {Number} size - File size in bytes
- * @property {String} sizeHuman - Human readable size
- * @property {String} owner - File owner
- * @property {String} group - File group
- * @property {Date} ctime - Creation time
- * @property {Date} mtime - Last Modified time
- * @property {Date} atime - Last Accessed time
- * @property {String} type - Type of inode returned by stat
- * @property {Object} target - Object for symlink target
- * @property {String} target.rawPath - Symlink target path directly grabbed from stat
- * @property {String} target.path - Resolved symlink target path
- * @property {Boolean} selected - Whether or not the user has selected this entry in the browser
- */
-
- async function processLinks(linkTargets, host) {
+async function processLinks(linkTargets, host) {
 	if (linkTargets.length === 0)
 		return;
 	(
@@ -72,7 +35,7 @@ import { UNIT_SEPARATOR, RECORD_SEPARATOR } from "../constants";
  * @param {String} host - Host to run stat on
  * @param {getDirEntryObjectsFailCallback} failCallback - Callback function for handling errors, receives {String} message
  * @param {ByteFormatter} byteFormatter - Function to format bytes
- * @returns {Promise<DirectoryEntry[]>} Array of DirectoryEntry objects
+ * @returns {Promise<DirectoryEntryObj[]>} Array of DirectoryEntryObj objects
  */
 async function getDirEntryObjects(dirListing, cwd, host, failCallback, byteFormatter = cockpit.format_bytes) {
 	const fields = [
@@ -112,7 +75,7 @@ async function getDirEntryObjects(dirListing, cwd, host, failCallback, byteForma
  * @param {String} cwd - Path to working directory to run stat in
  * @param {getDirEntryObjectsFailCallback} failCallback - Callback function for handling errors, receives {String} message
  * @param {ByteFormatter} byteFormatter - Function to format bytes
- * @returns {DirectoryEntry[]}
+ * @returns {DirectoryEntryObj[]}
  */
 function parseRawEntryStats(raw, cwd, failCallback, byteFormatter = cockpit.format_bytes) {
 	const UNIT_SEPARATOR = '\x1F'; // "Unit Separator"   - ASCII field delimiter
@@ -158,3 +121,40 @@ function parseRawEntryStats(raw, cwd, failCallback, byteFormatter = cockpit.form
 export { parseRawEntryStats };
 
 export default getDirEntryObjects;
+
+/**
+* Callback for handling errors during parsing of `dir` output lines
+* 
+* @callback getDirEntryObjectsFailCallback
+* @param {String} message - what went wrong
+*/
+
+/**
+ * @callback ByteFormatter
+ * @param {Number} number - Total number of bytes to format
+ * @param {Number=} factor - either 1000 or 1024
+ * @param {Object=} options - options
+ * @returns {String|String[]}
+ */
+
+/**
+ * Object representing file system entry
+ * 
+ * @typedef {Object} DirectoryEntryObj
+ * @property {String} name - File/directory name
+ * @property {String} path - Full path to entry
+ * @property {Number} mode - File mode (number)
+ * @property {String} modeStr - Human readable file mode
+ * @property {Number} size - File size in bytes
+ * @property {String} sizeHuman - Human readable size
+ * @property {String} owner - File owner
+ * @property {String} group - File group
+ * @property {Date} ctime - Creation time
+ * @property {Date} mtime - Last Modified time
+ * @property {Date} atime - Last Accessed time
+ * @property {String} type - Type of inode returned by stat
+ * @property {Object} target - Object for symlink target
+ * @property {String} target.rawPath - Symlink target path directly grabbed from stat
+ * @property {String} target.path - Resolved symlink target path
+ * @property {Boolean} selected - Whether or not the user has selected this entry in the browser
+ */
