@@ -26,6 +26,7 @@ import DirectoryEntry from './DirectoryEntry.vue';
 import getDirListing from '../functions/getDirListing';
 import getDirEntryObjects from '../functions/getDirEntryObjects';
 import { RECORD_SEPARATOR, UNIT_SEPARATOR } from '../constants';
+import FileSystemWatcher from '../functions/fileSystemWatcher';
 
 export default {
 	name: 'DirectoryEntryList',
@@ -135,89 +136,6 @@ export default {
 					emit('stopProcessing');
 			}
 		}
-		const host = undefined;
-
-		let fsListChannel = null;
-		let fsListJobQueue = [];
-		const fsListCallback = async (event, data) => {
-			const eventObj = JSON.parse(data);
-			const entryName = eventObj.path.replace(props.path, '').replace(/^\//, '');
-			let generateJob = null;
-			switch (eventObj.event) {
-				case 'created':
-					generateJob = (entryName) => async () => {
-						console.log(eventObj.event, entryName);
-						const [entry] = await getDirEntryObjects(
-							[entryName],
-							props.path,
-							(message) => notifications.value.constructNotification("Failed to parse file name", message, 'error')
-						);
-						if (!entry)
-							return; // temp file deleted too fast
-						if (entry.type === 'symbolic link')
-							await processLinks([entry.target]);
-						entries.value = [...entries.value, reactive(entry)].sort(sortCallbackComputed.value);
-					}
-					break;
-				case 'attribute-changed':
-				case 'changed':
-					generateJob = (entryName) => async () => {
-						console.log(eventObj.event, entryName);
-						const entry = entries.value.find(entry => entry.name === entryName);
-						const [newContent] = await getDirEntryObjects([entryName], props.path);
-						if (entry) {
-							const attrsChanged = ["name", "owner", "group", "size", "ctime", "mtime", "atime"].map(key => String(entry[key]) !== String(newContent[key])).includes(true);
-							Object.assign(entry, newContent);
-							if (attrsChanged) sortEntries();
-						}
-						else
-							console.error("Failed to find entry for update", entryName);
-					}
-					break;
-				case 'deleted':
-					generateJob = (entryName) => async () => {
-						console.log(eventObj.event, entryName);
-						entries.value = entries.value.filter(entry => entry.name !== entryName);
-					}
-					break;
-				case 'present':
-					return;
-				default:
-					console.warn(eventObj.event, entryName, "(not handled)");
-					return;
-			}
-			fsListJobQueue.push(generateJob(entryName));
-		}
-
-		const fsListJobRunner = async () => {
-			while (true) {
-				while (fsListJobQueue.length) {
-					try {
-						await fsListJobQueue.shift()();
-					} catch (error) {
-						console.error("fslist1 job error", error);
-					}
-				}
-				await new Promise(resolve => setTimeout(resolve, 100));
-			}
-		}
-		fsListJobRunner();
-
-		const setUpChannel = () => {
-			fsListChannel = cockpit.channel({
-				payload: "fslist1",
-				command: "open",
-				path: props.path,
-				watch: true,
-				superuser: 'try',
-				host
-			});
-
-			fsListChannel.onmessage = fsListCallback;
-		}
-		const takeDownChannel = () => {
-			fsListChannel?.close?.();
-		}
 
 		const processLinks = (linkTargets) => {
 			if (linkTargets.length === 0)
@@ -304,10 +222,54 @@ export default {
 		const entryFilterCallback = (entry) =>
 			(!/^\./.test(entry.name) || settings?.directoryView?.showHidden)
 			&& (props.searchFilterRegExp?.test(entry.name) ?? true);
+		
+
+		const host = undefined;
+
+		const fileSystemWatcher = FileSystemWatcher(props.path, { superuser: 'try', host, ignoreSelf: true });
+
+		fileSystemWatcher.onCreated = async (eventObj) => {
+			const entryName = eventObj.path.replace(props.path, '').replace(/^\//, '');
+			console.log(eventObj.event, entryName);
+			const [entry] = await getDirEntryObjects(
+				[entryName],
+				props.path,
+				(message) => notifications.value.constructNotification("Failed to parse file name", message, 'error')
+			);
+			if (!entry)
+				return; // temp file deleted too fast
+			if (entry.type === 'symbolic link')
+				await processLinks([entry.target]);
+			entries.value = [...entries.value, reactive(entry)].sort(sortCallbackComputed.value);
+		}
+
+		fileSystemWatcher.onChanged = async (eventObj) => {
+			const entryName = eventObj.path.replace(props.path, '').replace(/^\//, '');
+			console.log(eventObj.event, entryName);
+			const entry = entries.value.find(entry => entry.name === entryName);
+			const [newContent] = await getDirEntryObjects([entryName], props.path);
+			if (entry) {
+				const attrsChanged = ["name", "owner", "group", "size", "ctime", "mtime", "atime"].map(key => String(entry[key]) !== String(newContent[key])).includes(true);
+				Object.assign(entry, newContent);
+				if (attrsChanged) sortEntries();
+			}
+			else
+				console.error("Failed to find entry for update", entryName);
+		}
+
+		fileSystemWatcher.onAttributeChanged = fileSystemWatcher.onChanged;
+
+		fileSystemWatcher.onDeleted = async (eventObj) => {
+			const entryName = eventObj.path.replace(props.path, '').replace(/^\//, '');
+			console.log(eventObj.event, entryName);
+			entries.value = entries.value.filter(entry => entry.name !== entryName);
+		}
+
+		fileSystemWatcher.onError = (error) => notifications.value.constructNotification("File System Watcher Error", errorStringHTML(error), 'error');
 
 		onBeforeUnmount(() => {
 			processingHandler.resolveDangling();
-			takeDownChannel();
+			fileSystemWatcher.stop();
 		});
 
 		watch(() => props.sortCallback, sortEntries);
@@ -318,11 +280,9 @@ export default {
 		})
 
 		watch(() => props.path, (current, old) => {
-			takeDownChannel();
-			setUpChannel();
 			if (current === old)
 				return;
-			getEntries();
+			getEntries().then(() => fileSystemWatcher.path = current);
 		}, { immediate: true });
 
 		return {
