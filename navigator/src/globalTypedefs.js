@@ -16,3 +16,8 @@
  * @property {Boolean} searchInDirectory.ignoreCase - false: case sensitive, true: case insensitive
  * @property {Boolean} searchInDirectory.fullRegex - false: glob matching, true: full regex mode
  */
+
+/**
+ * @callback ErrorCallback
+ * @param {Error} error - The error to handle
+ */
