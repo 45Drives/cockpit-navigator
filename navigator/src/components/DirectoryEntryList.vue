@@ -209,7 +209,6 @@ export default {
 
 		fileSystemWatcher.onCreated = async (eventObj) => {
 			const entryName = eventObj.path.replace(props.path, '').replace(/^\//, '');
-			console.log(eventObj.event, entryName);
 			const [entry] = await getDirEntryObjects(
 				[entryName],
 				props.path,
@@ -222,7 +221,6 @@ export default {
 
 		fileSystemWatcher.onChanged = async (eventObj) => {
 			const entryName = eventObj.path.replace(props.path, '').replace(/^\//, '');
-			console.log(eventObj.event, entryName);
 			const entry = entries.value.find(entry => entry.name === entryName);
 			if (entry) {
 				const [newContent] = await getDirEntryObjects([entryName], props.path);
@@ -240,7 +238,6 @@ export default {
 
 		fileSystemWatcher.onDeleted = async (eventObj) => {
 			const entryName = eventObj.path.replace(props.path, '').replace(/^\//, '');
-			console.log(eventObj.event, entryName);
 			entries.value = entries.value.filter(entry => entry.name !== entryName);
 		}
 
