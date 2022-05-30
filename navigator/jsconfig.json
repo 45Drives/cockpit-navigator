@@ -3,5 +3,8 @@
         "include": [
             "jest"
         ]
+    },
+    "compilerOptions": {
+        "jsx": "preserve",
     }
 }
