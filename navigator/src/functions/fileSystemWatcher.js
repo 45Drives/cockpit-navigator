@@ -130,7 +130,9 @@ function FileSystemWatcher(path, options = {}, handlers = {}) {
 	return new Proxy(self, {
 		get: (target, prop) => target[prop],
 		set: (target, prop, value) => {
-			let restartChannel = ((prop === 'path' || prop === 'host') && target[prop] !== value);
+			if (target[prop] === value)
+				return true;
+			let restartChannel = (prop === 'path' || prop === 'host');
 
 			if (restartChannel) {
 				takeDownChannel();
