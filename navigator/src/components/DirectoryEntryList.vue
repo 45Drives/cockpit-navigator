@@ -217,8 +217,6 @@ export default {
 			);
 			if (!entry)
 				return; // temp file deleted too fast
-			if (entry.type === 'symbolic link')
-				await processLinks([entry.target]);
 			entries.value = [...entries.value, reactive(entry)].sort(sortCallbackComputed.value);
 		}
 
