@@ -2,7 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router';
 
 const routes = [
 	{
-		path: '/browse:path(/.*)?',
+		path: '/browse:host(/[^/:]+:)?:path(/.*)?',
 		name: 'browse',
 		component: () => import('../views/Browser.vue'),
 	},
