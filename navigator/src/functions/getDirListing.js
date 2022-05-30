@@ -14,7 +14,7 @@ import { useSpawn, errorString } from "@45drives/cockpit-helpers";
  * @param {getDirListingFailCallback} failCallback - Callback function for handling errors, receives {String} message
  * @returns {Promise<String[]>}
  */
-async function getDirListing(path, failCallback) {
+async function getDirListing(path, host, failCallback) {
 	return parseRawDirListing(
 		(
 			await useSpawn([
@@ -24,7 +24,7 @@ async function getDirListing(path, failCallback) {
 				'--quoting-style=c',
 				'-1',
 				path
-			], { superuser: 'try' }).promise()
+			], { superuser: 'try', host }).promise()
 		).stdout,
 		failCallback
 	);
