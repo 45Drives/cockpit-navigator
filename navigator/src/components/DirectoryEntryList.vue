@@ -1,6 +1,6 @@
 <template>
 	<template v-for="entry, index in visibleEntries" :key="entry.path">
-		<DirectoryEntry :show="true" :entry="entry" :inheritedSortCallback="sortCallback"
+		<DirectoryEntry :show="true" :host="host" :entry="entry" :inheritedSortCallback="sortCallback"
 			:searchFilterRegExp="searchFilterRegExp" @cd="(...args) => $emit('cd', ...args)"
 			@edit="(...args) => $emit('edit', ...args)"
 			@toggleSelected="modifiers => selection.toggle(entry, index, modifiers)"
@@ -30,8 +30,8 @@ import FileSystemWatcher from '../functions/fileSystemWatcher';
 export default {
 	name: 'DirectoryEntryList',
 	props: {
-		path: String,
 		host: String,
+		path: String,
 		searchFilterRegExp: RegExp,
 		show: {
 			type: Boolean,
@@ -202,16 +202,14 @@ export default {
 			(!/^\./.test(entry.name) || settings?.directoryView?.showHidden)
 			&& (props.searchFilterRegExp?.test(entry.name) ?? true);
 
-
-		const host = undefined;
-
-		const fileSystemWatcher = FileSystemWatcher(props.path, { superuser: 'try', host, ignoreSelf: true });
+		const fileSystemWatcher = FileSystemWatcher(props.path, { superuser: 'try', host: props.host, ignoreSelf: true });
 
 		fileSystemWatcher.onCreated = async (eventObj) => {
 			const entryName = eventObj.path.replace(props.path, '').replace(/^\//, '');
 			const [entry] = await getDirEntryObjects(
 				[entryName],
 				props.path,
+				props.host,
 				(message) => notifications.value.constructNotification("Failed to parse file name", message, 'error')
 			);
 			if (!entry)
@@ -223,7 +221,7 @@ export default {
 			const entryName = eventObj.path.replace(props.path, '').replace(/^\//, '');
 			const entry = entries.value.find(entry => entry.name === entryName);
 			if (entry) {
-				const [newContent] = await getDirEntryObjects([entryName], props.path);
+				const [newContent] = await getDirEntryObjects([entryName], props.path, props.host);
 				if (!newContent)
 					return; // temp file deleted too quickly
 				const attrsChanged = ["name", "owner", "group", "size", "ctime", "mtime", "atime"].map(key => String(entry[key]) !== String(newContent[key])).includes(true);
@@ -262,6 +260,12 @@ export default {
 				return;
 			getEntries().then(() => fileSystemWatcher.path = current);
 		}, { immediate: true });
+
+		watch(() => props.host, (current, old) => {
+			if (current === old)
+				return;
+			getEntries().then(() => fileSystemWatcher.host = current);
+		})
 
 		return {
 			settings,
