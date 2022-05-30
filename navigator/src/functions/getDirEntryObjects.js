@@ -62,7 +62,7 @@ async function getDirEntryObjects(dirListing, cwd, host, failCallback, byteForma
 				)
 					.promise()
 					.catch(state => state) // ignore errors
-			).stdout, cwd, failCallback, byteFormatter)
+			).stdout, cwd, host, failCallback, byteFormatter)
 		: [];
 	await processLinks(entries.filter(entry => entry.type === 'symbolic link').map(entry => entry.target));
 	return entries;
@@ -73,11 +73,12 @@ async function getDirEntryObjects(dirListing, cwd, host, failCallback, byteForma
  * 
  * @param {String} raw - Raw output of `stat` call from {@link getDirEntryObjects()}
  * @param {String} cwd - Path to working directory to run stat in
+ * @param {String} host - Host to run stat on
  * @param {getDirEntryObjectsFailCallback} failCallback - Callback function for handling errors, receives {String} message
  * @param {ByteFormatter} byteFormatter - Function to format bytes
  * @returns {DirectoryEntryObj[]}
  */
-function parseRawEntryStats(raw, cwd, failCallback, byteFormatter = cockpit.format_bytes) {
+function parseRawEntryStats(raw, cwd, host, failCallback, byteFormatter = cockpit.format_bytes) {
 	const UNIT_SEPARATOR = '\x1F'; // "Unit Separator"   - ASCII field delimiter
 	const RECORD_SEPARATOR = '\x1E'; // "Record Separator" - ASCII record delimiter
 	return raw.split(RECORD_SEPARATOR)
@@ -103,6 +104,7 @@ function parseRawEntryStats(raw, cwd, failCallback, byteFormatter = cockpit.form
 					type,
 					target: {},
 					selected: false,
+					host,
 				};
 				if (type === 'symbolic link') {
 					entry.target.rawPath = [
