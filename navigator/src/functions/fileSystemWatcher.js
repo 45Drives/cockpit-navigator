@@ -1,7 +1,7 @@
 import '../globalTypedefs';
 
 /**
- * Watch path or directory for changes. If path, changes are watch on all files in that directory.
+ * Watch path or directory for changes. If path, changes are watched on all files in that directory.
  * 
  * @param {String} path - Path to directory or file to watch
  * @param {FileSystemWatchOptions} options - Options for cockpit.channel
