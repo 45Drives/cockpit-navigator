@@ -21,3 +21,9 @@
  * @callback ErrorCallback
  * @param {Error} error - The error to handle
  */
+
+/**
+ * @template T
+ * @typedef {Object} Ref
+ * @property {T} value
+ */
