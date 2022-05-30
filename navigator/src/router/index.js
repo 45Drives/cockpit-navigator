@@ -2,12 +2,16 @@ import { createRouter, createWebHashHistory } from 'vue-router';
 
 const routes = [
 	{
-		path: '/browse:host(/[^/:]+:)?:path(/.*)?',
+		path: '/browse:host(/[^/:]+:?[0-9]*:)?:path(/.*)',
 		name: 'browse',
 		component: () => import('../views/Browser.vue'),
 	},
 	{
-		path: '/edit:path(/.+)',
+		path: '/browse:host(/[^/:]+:?[0-9]*:)?',
+		redirect: route => `${route.fullPath}/`
+	},
+	{
+		path: '/edit:host(/[^/:]+:?[0-9]*:)?:path(/.+)',
 		name: 'edit',
 		component: () => import('../views/Editor.vue'),
 	},

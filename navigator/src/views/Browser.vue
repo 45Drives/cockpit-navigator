@@ -2,62 +2,44 @@
 	<div class="grow overflow-hidden">
 		<div class="h-full flex flex-col items-stretch">
 			<div
-				class="grid grid-cols-[auto_1fr] grid-rows-[1fr 1fr] md:grid-cols-[auto_3fr_1fr] md:grid-row-[1fr] items-stretch divide-x divide-y divide-default"
-			>
+				class="grid grid-cols-[auto_1fr] grid-rows-[1fr 1fr] md:grid-cols-[auto_3fr_1fr] md:grid-row-[1fr] items-stretch divide-x divide-y divide-default">
 				<div class="button-group-row p-1 md:px-4 md:py-2 border border-default">
-					<button
-						class="p-2 rounded-lg hover:bg-accent relative"
-						:disabled="!pathHistory.backAllowed()"
-						@click="back()"
-						@mouseenter="backHistoryDropdown.mouseEnter"
-						@mouseleave="backHistoryDropdown.mouseLeave"
-					>
+					<button class="p-2 rounded-lg hover:bg-accent relative" :disabled="!pathHistory.backAllowed()"
+						@click="back()" @mouseenter="backHistoryDropdown.mouseEnter"
+						@mouseleave="backHistoryDropdown.mouseLeave">
 						<ArrowLeftIcon class="size-icon icon-default" />
-						<ChevronDownIcon
-							class="w-3 h-3 icon-default absolute bottom-1 right-1"
-							v-if="pathHistory.backAllowed()"
-						/>
-						<div
-							v-if="backHistoryDropdown.showDropdown"
-							class="absolute top-full left-0 flex flex-col items-stretch z-50 bg-default shadow-lg rounded-lg overflow-y-auto max-h-80"
-						>
-							<div
-								v-for="item, index in pathHistory.stack.slice(0, pathHistory.index).reverse()"
-								:key="index"
-								@click="pathHistory.index = pathHistory.index - index"
-								class="hover:text-white hover:bg-red-600 px-4 py-2 text-sm text-left whitespace-nowrap"
-							>{{ item }}</div>
+						<ChevronDownIcon class="w-3 h-3 icon-default absolute bottom-1 right-1"
+							v-if="pathHistory.backAllowed()" />
+						<div v-if="backHistoryDropdown.showDropdown"
+							class="absolute top-full left-0 flex flex-col items-stretch z-50 bg-default shadow-lg rounded-lg overflow-y-auto max-h-80">
+							<div v-for="item, index in pathHistory.stack.slice(0, pathHistory.index).reverse()"
+								:key="index" @click="pathHistory.index = pathHistory.index - index"
+								class="hover:text-white hover:bg-red-600 px-4 py-2 text-sm text-left whitespace-nowrap">
+								<span v-if="item.host !== pathHistory.current()?.host">{{ item.host ?? cockpit.transport.host }}:</span>{{
+										item.path
+								}}
+							</div>
 						</div>
 					</button>
-					<button
-						class="p-2 rounded-lg hover:bg-accent relative"
-						:disabled="!pathHistory.forwardAllowed()"
-						@click="forward()"
-						@mouseenter="forwardHistoryDropdown.mouseEnter"
-						@mouseleave="forwardHistoryDropdown.mouseLeave"
-					>
+					<button class="p-2 rounded-lg hover:bg-accent relative" :disabled="!pathHistory.forwardAllowed()"
+						@click="forward()" @mouseenter="forwardHistoryDropdown.mouseEnter"
+						@mouseleave="forwardHistoryDropdown.mouseLeave">
 						<ArrowRightIcon class="size-icon icon-default" />
-						<ChevronDownIcon
-							class="w-3 h-3 icon-default absolute bottom-1 right-1"
-							v-if="pathHistory.forwardAllowed()"
-						/>
-						<div
-							v-if="forwardHistoryDropdown.showDropdown"
-							class="absolute top-full left-0 flex flex-col items-stretch z-50 bg-default shadow-lg rounded-lg overflow-y-auto max-h-80"
-						>
-							<div
-								v-for="item, index in pathHistory.stack.slice(pathHistory.index + 1)"
-								:key="index"
+						<ChevronDownIcon class="w-3 h-3 icon-default absolute bottom-1 right-1"
+							v-if="pathHistory.forwardAllowed()" />
+						<div v-if="forwardHistoryDropdown.showDropdown"
+							class="absolute top-full left-0 flex flex-col items-stretch z-50 bg-default shadow-lg rounded-lg overflow-y-auto max-h-80">
+							<div v-for="item, index in pathHistory.stack.slice(pathHistory.index + 1)" :key="index"
 								@click="pathHistory.index = pathHistory.index + index"
-								class="hover:text-white hover:bg-red-600 px-4 py-2 text-sm text-left whitespace-nowrap"
-							>{{ item }}</div>
+								class="hover:text-white hover:bg-red-600 px-4 py-2 text-sm text-left whitespace-nowrap">
+								<span v-if="item.host !== pathHistory.current()?.host">{{ item.host ?? cockpit.transport.host }}:</span>{{
+										item.path
+								}}
+							</div>
 						</div>
 					</button>
-					<button
-						class="p-2 rounded-lg hover:bg-accent"
-						@click="up()"
-						:disabled="pathHistory.current() === '/'"
-					>
+					<button class="p-2 rounded-lg hover:bg-accent" @click="up()"
+						:disabled="pathHistory.current() === '/'">
 						<ArrowUpIcon class="size-icon icon-default" />
 					</button>
 					<button class="p-2 rounded-lg hover:bg-accent" @click="directoryViewRef.refresh()">
@@ -66,9 +48,9 @@
 				</div>
 
 				<div
-					class="p-1 md:px-4 md:py-2 col-start-1 col-end-3 row-start-2 row-end-3 md:col-start-auto md:col-end-auto md:row-start-auto md:row-end-auto"
-				>
-					<PathBreadCrumbs :path="pathHistory.current() ?? '/'" @cd="newPath => cd(newPath)" />
+					class="p-1 md:px-4 md:py-2 col-start-1 col-end-3 row-start-2 row-end-3 md:col-start-auto md:col-end-auto md:row-start-auto md:row-end-auto">
+					<PathBreadCrumbs :host="pathHistory.current()?.host" :path="pathHistory.current()?.path ?? '/'"
+						@cd="path => cd({ path })" />
 				</div>
 
 				<div class="p-1 md:px-4 md:py-2">
@@ -76,24 +58,16 @@
 						<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
 							<SearchIcon class="size-icon icon-default" aria-hidden="true" />
 						</div>
-						<input
-							type="text"
-							class="block input-textlike w-full pl-10"
-							v-model="searchFilterStr"
-							placeholder="Search in directory (foo*, b?r, *.jpg)"
-						/>
+						<input type="text" class="block input-textlike w-full pl-10" v-model="searchFilterStr"
+							placeholder="Search in directory (foo*, b?r, *.jpg)" />
 					</div>
 				</div>
 			</div>
 			<div class="grow overflow-hidden">
-				<DirectoryView
-					:path="pathHistory.current()"
-					:searchFilterRegExp="searchFilterRegExp"
-					@cd="newPath => cd(newPath)"
-					@edit="openEditor"
+				<DirectoryView :host="pathHistory.current()?.host" :path="pathHistory.current()?.path"
+					:searchFilterRegExp="searchFilterRegExp" @cd="path => cd({ path })" @edit="openEditor"
 					@updateStats="stats => $emit('updateFooterText', `${stats.files} file${stats.files === 1 ? '' : 's'}, ${stats.dirs} director${stats.dirs === 1 ? 'y' : 'ies'} (${cockpit.format_bytes(stats.size, 1000).replace(/(?<!B)$/, ' B')})`)"
-					ref="directoryViewRef"
-				/>
+					ref="directoryViewRef" />
 			</div>
 		</div>
 	</div>
@@ -147,24 +121,27 @@ export default {
 			}
 		});
 
-		const cd = (newPath) => {
-			router.push(`/browse${newPath}`);
+		const cd = ({ path, host }) => {
+			const newHost = host ?? (route.params.host ? pathHistory.current().host : undefined);
+			router.push(`/browse${newHost ? `/${newHost}:` : ''}${path}`);
 		};
 
 		const back = () => {
-			cd(pathHistory.back() ?? '/');
+			cd(pathHistory.back() ?? { path: '/' });
 		}
 
 		const forward = () => {
-			cd(pathHistory.forward() ?? '/');
+			cd(pathHistory.forward() ?? { path: '/' });
 		}
 
 		const up = () => {
-			cd((pathHistory.current() ?? "") + '/..');
+			const path = pathHistory.current() ?? { path: '/' };
+			path.path += '/..';
+			cd(path);
 		}
 
 		const openEditor = (path) => {
-			router.push(`/edit${path}`);
+			router.push(`/edit${route.params.host ? `/${pathHistory.current().host}:` : ''}${path}`);
 		}
 
 		const getSelected = () => directoryViewRef.value?.getSelected?.() ?? [];
@@ -179,15 +156,14 @@ export default {
 			);
 		}, { immediate: true });
 
-		watch(() => route.params.path, async (newPath, lastPath) => {
-			if (!lastPath) {
-				console.log("First watch execute", lastPath);
-			}
-			if (route.name !== 'browse' || newPath === lastPath)
+		watch([() => route.params.path, () => route.params.host], async () => {
+			if (route.name !== 'browse')
 				return;
-			localStorage.setItem(lastPathStorageKey, newPath);
-			if (pathHistory.current() !== newPath) {
-				pathHistory.push(newPath); // updates actual view
+			const host = route.params.host?.replace(/^\/|:$/g, '') || cockpit.transport.host;
+			console.log(route.params.host);
+			localStorage.setItem(lastPathStorageKey, route.params.path);
+			if (pathHistory.current()?.path !== route.params.path || pathHistory.current()?.host !== host) {
+				pathHistory.push({ path: route.params.path, host }); // updates actual view
 			}
 		}, { immediate: true });
 
