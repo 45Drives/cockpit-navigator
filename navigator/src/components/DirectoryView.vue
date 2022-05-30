@@ -85,6 +85,7 @@
 			</template>
 			<template #tbody>
 				<DirectoryEntryList
+					:host="host"
 					:path="path"
 					:sortCallback="sortCallback"
 					:searchFilterRegExp="searchFilterRegExp"
@@ -100,6 +101,7 @@
 		</Table>
 		<div v-else class="flex flex-wrap p-2 gap-2 bg-well h-full overflow-y-auto content-start">
 			<DirectoryEntryList
+				:host="host"
 				:path="path"
 				:sortCallback="sortCallback"
 				:searchFilterRegExp="searchFilterRegExp"
@@ -125,6 +127,7 @@ import DirectoryEntryList from './DirectoryEntryList.vue';
 
 export default {
 	props: {
+		host: String,
 		path: String,
 		searchFilterRegExp: RegExp,
 	},
