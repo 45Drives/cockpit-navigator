@@ -11,6 +11,10 @@ export const settingsInjectionKey = Symbol();
  */
 export const pathHistoryInjectionKey = Symbol();
 /**
+ * Clipboard array ref
+ */
+export const clipboardInjectionKey = Symbol();
+/**
  * localStorage lookup key for last path
  */
 export const lastPathStorageKey = "houstonNavigatorLastPathKey";

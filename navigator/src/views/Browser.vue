@@ -160,8 +160,6 @@ export default {
 			if (route.name !== 'browse')
 				return;
 			const host = route.params.host?.replace(/^\/|:$/g, '') || cockpit.transport.host;
-			console.log(route.params.host);
-			localStorage.setItem(lastPathStorageKey, route.params.path);
 			if (pathHistory.current()?.path !== route.params.path || pathHistory.current()?.host !== host) {
 				pathHistory.push({ path: route.params.path, host }); // updates actual view
 			}

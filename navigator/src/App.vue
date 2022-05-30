@@ -15,7 +15,7 @@ import { ref, reactive, provide, onBeforeMount } from "vue";
 import SettingsMenu from "./components/SettingsMenu.vue";
 import Notifications from './components/Notifications.vue';
 import { FIFO } from '@45drives/cockpit-helpers';
-import { settingsInjectionKey, notificationsInjectionKey, pathHistoryInjectionKey } from "./keys";
+import { settingsInjectionKey, notificationsInjectionKey, pathHistoryInjectionKey, clipboardInjectionKey } from "./keys";
 
 const props = defineProps({ notificationFIFO: FIFO });
 
@@ -48,6 +48,11 @@ const pathHistory = reactive({
 	forwardAllowed: () => pathHistory.index < pathHistory.stack.length - 1,
 });
 provide(pathHistoryInjectionKey, pathHistory);
+
+const clipboard = reactive({
+	content: [],
+});
+provide(clipboardInjectionKey, clipboard);
 providesValid.value = true;
 
 const routerViewFooterText = ref("");

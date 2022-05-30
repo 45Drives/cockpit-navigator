@@ -3,11 +3,11 @@
 		<tr
 			v-show="show || showEntries"
 			@dblclick.stop="doubleClickCallback"
-			@click.stop.prevent="$emit('toggleSelected', { ctrlKey: $event.ctrlKey, shiftKey: $event.shiftKey })"
+			@click.prevent.stop="$emit('toggleSelected', { ctrlKey: $event.ctrlKey, shiftKey: $event.shiftKey })"
 			:class="['hover:!bg-red-600/10 select-none']"
 		>
 			<td :class="['!pl-1', ...selectedClasses]">
-				<div :class="['flex items-center gap-1']">
+				<div :class="[entry.cut ? 'line-through' : '', 'flex items-center gap-1']">
 					<div :style="{ width: `${24 * level}px` }"></div>
 					<div class="relative w-6">
 						<component :is="icon" class="size-icon icon-default" />
@@ -79,7 +79,7 @@
 		v-else
 		v-show="show"
 		@dblclick.stop="doubleClickCallback"
-		@click.stop.prevent="$emit('toggleSelected', { ctrlKey: $event.ctrlKey, shiftKey: $event.shiftKey })"
+		@click.prevent.stop="$emit('toggleSelected', { ctrlKey: $event.ctrlKey, shiftKey: $event.shiftKey })"
 	>
 		<div :class="[...selectedClasses, 'flex flex-col items-center w-20 overflow-hidden select-none']">
 			<div class="relative w-20">
@@ -150,7 +150,7 @@ export default {
 			})
 		}
 
-		const getSelected = () => directoryViewRef.value?.getSelected?.() ?? [];
+		const getSelected = () => directoryViewRef.value.getSelected() ?? [];
 
 		const selectAll = () => {
 			directoryViewRef.value?.selection.selectAll();

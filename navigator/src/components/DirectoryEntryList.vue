@@ -21,7 +21,7 @@
 <script>
 import { ref, reactive, computed, inject, watch, onBeforeUnmount, onMounted } from 'vue';
 import { useSpawn, errorString, errorStringHTML, canonicalPath } from '@45drives/cockpit-helpers';
-import { notificationsInjectionKey, settingsInjectionKey } from '../keys';
+import { notificationsInjectionKey, settingsInjectionKey, clipboardInjectionKey } from '../keys';
 import DirectoryEntry from './DirectoryEntry.vue';
 import getDirListing from '../functions/getDirListing';
 import getDirEntryObjects from '../functions/getDirEntryObjects';
@@ -47,6 +47,7 @@ export default {
 	},
 	setup(props, { emit }) {
 		const settings = inject(settingsInjectionKey);
+		const clipboard = inject(clipboardInjectionKey);
 		/**
 		 * @type {Ref<DirectoryEntryObj[]>}
 		 */
@@ -162,7 +163,7 @@ export default {
 				);
 				if (props.path !== cwd)
 					return; // changed directory before could finish
-				entries.value = [...tmpEntries.sort(sortCallbackComputed.value)].map(entry => reactive(entry));
+				entries.value = [...tmpEntries.sort(sortCallbackComputed.value)].map(entry => reactive({...entry, cut: clipboard.content.find(a => a.path === entry.path && a.host === entry.host) ?? false}));
 			} catch (error) {
 				entries.value = [];
 				notifications.value.constructNotification("Error getting directory entries", errorStringHTML(error), 'error');

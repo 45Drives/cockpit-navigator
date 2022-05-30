@@ -37,7 +37,7 @@ const errorHandler = (error, title = "System Error") => {
 let lastValidRoutePath = null;
 router.beforeEach(async (to, from) => {
 	if (to.name === 'root')
-		return `/browse${localStorage.getItem(lastPathStorageKey) ?? '/'}`;
+		return localStorage.getItem(lastPathStorageKey) ?? '/browse/';
 	if (to.fullPath === lastValidRoutePath) {
 		return true; // ignore from updating window.location.hash
 	}
@@ -61,6 +61,7 @@ router.beforeEach(async (to, from) => {
 	}
 	lastValidRoutePath = to.fullPath; // protect double-update from next line
 	window.location.hash = '#' + to.fullPath; // needed to update URL in address bar
+	localStorage.setItem(lastPathStorageKey, to.fullPath);
 	return true;
 })
 

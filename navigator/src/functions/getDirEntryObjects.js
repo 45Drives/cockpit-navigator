@@ -105,6 +105,7 @@ function parseRawEntryStats(raw, cwd, host, failCallback, byteFormatter = cockpi
 					target: {},
 					selected: false,
 					host,
+					cut: false,
 				};
 				if (type === 'symbolic link') {
 					entry.target.rawPath = [
@@ -159,4 +160,6 @@ export default getDirEntryObjects;
  * @property {String} target.rawPath - Symlink target path directly grabbed from stat
  * @property {String} target.path - Resolved symlink target path
  * @property {Boolean} selected - Whether or not the user has selected this entry in the browser
+ * @property {String} host - host that owns entry
+ * @property {Boolean} cut - whether or not the file is going to be cut
  */
