@@ -216,7 +216,7 @@ export default {
 				(message) => notifications.value.constructNotification("Failed to parse file name", message, 'error')
 			);
 			if (!entry)
-				return; // temp file deleted too fast
+				return; // temp file deleted too quickly
 			entries.value = [...entries.value, reactive(entry)].sort(sortCallbackComputed.value);
 		}
 
@@ -224,8 +224,10 @@ export default {
 			const entryName = eventObj.path.replace(props.path, '').replace(/^\//, '');
 			console.log(eventObj.event, entryName);
 			const entry = entries.value.find(entry => entry.name === entryName);
-			const [newContent] = await getDirEntryObjects([entryName], props.path);
 			if (entry) {
+				const [newContent] = await getDirEntryObjects([entryName], props.path);
+				if (!newContent)
+					return; // temp file deleted too quickly
 				const attrsChanged = ["name", "owner", "group", "size", "ctime", "mtime", "atime"].map(key => String(entry[key]) !== String(newContent[key])).includes(true);
 				Object.assign(entry, newContent);
 				if (attrsChanged) sortEntries();
