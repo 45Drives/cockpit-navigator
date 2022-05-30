@@ -39,7 +39,7 @@ router.beforeEach(async (to, from) => {
 	if (to.name === 'root')
 		return `/browse${localStorage.getItem(lastPathStorageKey) ?? '/'}`;
 	if (to.fullPath === lastValidRoutePath) {
-		return true;
+		return true; // ignore from updating window.location.hash
 	}
 	if (to.name === 'browse') {
 		if (!to.params.path)
@@ -61,7 +61,7 @@ router.beforeEach(async (to, from) => {
 		}
 	}
 	lastValidRoutePath = to.fullPath; // protect double-update from next line
-	cockpit.location.go(to.fullPath); // needed to update URL in address bar
+	window.location.hash = '#' + to.fullPath; // needed to update URL in address bar
 	return true;
 })
 
