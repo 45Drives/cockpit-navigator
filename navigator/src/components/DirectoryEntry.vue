@@ -60,6 +60,7 @@
 			:show="show || showEntries"
 			:is="DirectoryEntryList"
 			v-if="directoryLike && showEntries"
+			:host="host"
 			:path="entry.path"
 			:isChild="true"
 			:sortCallback="inheritedSortCallback"
@@ -108,6 +109,7 @@ import { escapeStringHTML } from '../functions/escapeStringHTML';
 export default {
 	name: 'DirectoryEntry',
 	props: {
+		host: String,
 		entry: Object,
 		show: Boolean,
 		searchFilterRegExp: RegExp,
