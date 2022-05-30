@@ -25,7 +25,6 @@ import { notificationsInjectionKey, settingsInjectionKey } from '../keys';
 import DirectoryEntry from './DirectoryEntry.vue';
 import getDirListing from '../functions/getDirListing';
 import getDirEntryObjects from '../functions/getDirEntryObjects';
-import { RECORD_SEPARATOR, UNIT_SEPARATOR } from '../constants';
 import FileSystemWatcher from '../functions/fileSystemWatcher';
 
 export default {
@@ -48,7 +47,13 @@ export default {
 	},
 	setup(props, { emit }) {
 		const settings = inject(settingsInjectionKey);
+		/**
+		 * @type {Ref<DirectoryEntryObj[]>}
+		 */
 		const entries = ref([]);
+		/**
+		 * @type {Ref<DirectoryEntryObj[]>}
+		 */
 		const visibleEntries = ref([]);
 		const notifications = inject(notificationsInjectionKey);
 		const entryRefs = ref([]);
@@ -146,8 +151,6 @@ export default {
 			processingHandler.start();
 			try {
 				const cwd = props.path;
-				const procs = [];
-				procs.push(...entryRefs.value.filter(entryRef => entryRef.showEntries).map(entryRef => entryRef.getEntries()));
 				const entryNames = await getDirListing(cwd, props.host, (message) => notifications.value.constructNotification("Failed to parse file name", message, 'error'));
 				const tmpEntries = (
 					await getDirEntryObjects(
@@ -157,15 +160,9 @@ export default {
 						(message) => notifications.value.constructNotification("Failed to parse file name", message, 'error')
 					)
 				);
-				processingHandler.start();
-				return Promise.all(procs)
-					.then(() => {
-						if (props.path !== cwd)
-							return;
-						entries.value = [...tmpEntries.sort(sortCallbackComputed.value)].map(entry => reactive(entry));
-						emitStats();
-					})
-					.finally(() => processingHandler.stop());
+				if (props.path !== cwd)
+					return; // changed directory before could finish
+				entries.value = [...tmpEntries.sort(sortCallbackComputed.value)].map(entry => reactive(entry));
 			} catch (error) {
 				entries.value = [];
 				notifications.value.constructNotification("Error getting directory entries", errorStringHTML(error), 'error');
@@ -175,30 +172,36 @@ export default {
 			}
 		}
 
+		const refresh = async () => {
+			processingHandler.start();
+			await Promise.all([
+				getEntries(),
+				...entryRefs.value.filter(entryRef => entryRef.showEntries).map(entryRef => entryRef.refresh())
+			]);
+			processingHandler.stop();
+		}
+
 		const emitStats = () => {
-			emit('updateStats', entries.value.reduce((stats, entry) => {
+			emit('updateStats', visibleEntries.value.reduce((stats, entry) => {
 				if (entry.type === 'directory' || (entry.type === 'symbolic link' && entry.target?.type === 'directory'))
 					stats.dirs++;
 				else
 					stats.files++;
+				stats.size += entry.size;
 				return stats;
-			}, { files: 0, dirs: 0 }));
+			}, { files: 0, dirs: 0, size: 0 }));
 		}
 
 		const sortEntries = () => {
-			if (processingHandler.count) {
-				setTimeout(sortEntries, 100); // poll until nothing processing
-			} else {
-				processingHandler.start();
-				entries.value = [...entries.value].sort(sortCallbackComputed.value);
-				processingHandler.stop();
-			}
+			processingHandler.start();
+			entries.value = [...entries.value].sort(sortCallbackComputed.value);
+			processingHandler.stop();
 		}
 
 		const entryFilterCallback = (entry) =>
 			(!/^\./.test(entry.name) || settings?.directoryView?.showHidden)
 			&& (props.searchFilterRegExp?.test(entry.name) ?? true);
-		
+
 
 		const host = undefined;
 
@@ -255,6 +258,8 @@ export default {
 			visibleEntries.value = entries.value.filter(entryFilterCallback);
 		})
 
+		watch(visibleEntries, emitStats);
+
 		watch(() => props.path, (current, old) => {
 			if (current === old)
 				return;
@@ -268,6 +273,7 @@ export default {
 			entryRefs,
 			selection,
 			getEntries,
+			refresh,
 			emitStats,
 			sortEntries,
 			entryFilterCallback,

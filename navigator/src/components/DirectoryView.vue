@@ -147,8 +147,8 @@ export default {
 		}
 		const sortCallback = ref(() => 0);
 
-		const getEntries = () => {
-			return directoryEntryListRef.value?.getEntries?.();
+		const refresh = () => {
+			return directoryEntryListRef.value?.refresh?.();
 		}
 
 		const getSelected = () => directoryEntryListRef.value?.selection.getSelected?.() ?? [];
@@ -172,7 +172,7 @@ export default {
 			directoryEntryListRef,
 			sortCallbacks,
 			sortCallback,
-			getEntries,
+			refresh,
 			getSelected,
 			keyHandler,
 		}

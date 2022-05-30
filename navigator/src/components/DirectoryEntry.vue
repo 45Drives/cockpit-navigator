@@ -136,8 +136,8 @@ export default {
 			}
 		}
 
-		const getEntries = () => {
-			return directoryViewRef.value?.getEntries?.();
+		const refresh = () => {
+			return directoryViewRef.value?.refresh?.();
 		}
 
 		const toggleShowEntries = () => {
@@ -183,7 +183,7 @@ export default {
 			showEntries,
 			directoryViewRef,
 			doubleClickCallback,
-			getEntries,
+			refresh,
 			toggleShowEntries,
 			getSelected,
 			selectAll,

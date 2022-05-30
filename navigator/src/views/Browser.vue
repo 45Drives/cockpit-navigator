@@ -60,7 +60,7 @@
 					>
 						<ArrowUpIcon class="size-icon icon-default" />
 					</button>
-					<button class="p-2 rounded-lg hover:bg-accent" @click="directoryViewRef.getEntries()">
+					<button class="p-2 rounded-lg hover:bg-accent" @click="directoryViewRef.refresh()">
 						<RefreshIcon class="size-icon icon-default" />
 					</button>
 				</div>
@@ -91,7 +91,7 @@
 					:searchFilterRegExp="searchFilterRegExp"
 					@cd="newPath => cd(newPath)"
 					@edit="openEditor"
-					@updateStats="stats => $emit('updateFooterText', `${stats.files} file${stats.files === 1 ? '' : 's'}, ${stats.dirs} director${stats.dirs === 1 ? 'y' : 'ies'}`)"
+					@updateStats="stats => $emit('updateFooterText', `${stats.files} file${stats.files === 1 ? '' : 's'}, ${stats.dirs} director${stats.dirs === 1 ? 'y' : 'ies'} (${cockpit.format_bytes(stats.size, 1000).replace(/(?<!B)$/, ' B')})`)"
 					ref="directoryViewRef"
 				/>
 			</div>
