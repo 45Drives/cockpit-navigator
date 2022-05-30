@@ -38,16 +38,43 @@ import { UNIT_SEPARATOR, RECORD_SEPARATOR } from "../constants";
  * @property {Boolean} selected - Whether or not the user has selected this entry in the browser
  */
 
+ async function processLinks(linkTargets, host) {
+	if (linkTargets.length === 0)
+		return;
+	(
+		await useSpawn(
+			// Separate by newline so errors will slot in
+			['stat', `--printf=%F${UNIT_SEPARATOR}%f\n`, ...linkTargets.map(target => target.path)],
+			{ superuser: 'try', err: 'out', host: host } // stderr >&stdout for maintaining index order
+		).promise()
+			.catch(state => state) // ignore errors, error message will maintain index order
+	).stdout
+		.trim()
+		.split('\n')
+		.filter(record => record)
+		.map((record, index) => {
+			if (record.includes(UNIT_SEPARATOR)) {
+				const [type, mode] = record.split(UNIT_SEPARATOR);
+				linkTargets[index].type = type;
+				linkTargets[index].mode = mode;
+				linkTargets[index].broken = false;
+			} else { // error
+				linkTargets[index].broken = true;
+			}
+		});
+}
+
 /**
  * Get list of directory entry objects from list of directory entry names
  * 
  * @param {String[]} dirListing - List of entry names
  * @param {String} cwd - Working directory to run stat in
+ * @param {String} host - Host to run stat on
  * @param {getDirEntryObjectsFailCallback} failCallback - Callback function for handling errors, receives {String} message
  * @param {ByteFormatter} byteFormatter - Function to format bytes
  * @returns {Promise<DirectoryEntry[]>} Array of DirectoryEntry objects
  */
-async function getDirEntryObjects(dirListing, cwd, failCallback, byteFormatter = cockpit.format_bytes) {
+async function getDirEntryObjects(dirListing, cwd, host, failCallback, byteFormatter = cockpit.format_bytes) {
 	const fields = [
 		'%n', // path
 		'%f', // mode (raw hex)
@@ -61,19 +88,21 @@ async function getDirEntryObjects(dirListing, cwd, failCallback, byteFormatter =
 		'%F', // type
 		'%N', // quoted name with symlink
 	]
-	return dirListing.length
+	const entries = dirListing.length
 		? parseRawEntryStats(
 			(
 				await useSpawn([
 					'stat',
 					`--printf=${fields.join(UNIT_SEPARATOR)}${RECORD_SEPARATOR}`,
 					...dirListing
-				], { superuser: 'try', directory: cwd }
+				], { superuser: 'try', directory: cwd, host }
 				)
 					.promise()
 					.catch(state => state) // ignore errors
 			).stdout, cwd, failCallback, byteFormatter)
 		: [];
+	await processLinks(entries.filter(entry => entry.type === 'symbolic link').map(entry => entry.target));
+	return entries;
 }
 
 /**

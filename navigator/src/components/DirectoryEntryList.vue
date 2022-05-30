@@ -32,6 +32,7 @@ export default {
 	name: 'DirectoryEntryList',
 	props: {
 		path: String,
+		host: String,
 		searchFilterRegExp: RegExp,
 		show: {
 			type: Boolean,
@@ -137,31 +138,6 @@ export default {
 			}
 		}
 
-		const processLinks = (linkTargets) => {
-			if (linkTargets.length === 0)
-				return null;
-			const callback = state => state.stdout
-				.trim()
-				.split(RECORD_SEPARATOR)
-				.filter(record => record)
-				.map((record, index) => {
-					if (record.includes(UNIT_SEPARATOR)) {
-						const [type, mode] = record.split(UNIT_SEPARATOR);
-						linkTargets[index].type = type;
-						linkTargets[index].mode = mode;
-						linkTargets[index].broken = false;
-					} else { // error
-						linkTargets[index].broken = true;
-					}
-				});
-			return new Promise((resolve, reject) =>
-				useSpawn(['stat', `--printf=%F${UNIT_SEPARATOR}%f${RECORD_SEPARATOR}`, ...linkTargets.map(target => target.path)], { superuser: 'try', err: 'out' }).promise()
-					.then(callback)
-					.catch(callback)
-					.finally(resolve)
-			)
-		}
-
 		const getEntries = async () => {
 			if (!props.path) {
 				return;
@@ -172,15 +148,15 @@ export default {
 				const cwd = props.path;
 				const procs = [];
 				procs.push(...entryRefs.value.filter(entryRef => entryRef.showEntries).map(entryRef => entryRef.getEntries()));
-				const entryNames = await getDirListing(cwd, (message) => notifications.value.constructNotification("Failed to parse file name", message, 'error'));
+				const entryNames = await getDirListing(cwd, props.host, (message) => notifications.value.constructNotification("Failed to parse file name", message, 'error'));
 				const tmpEntries = (
 					await getDirEntryObjects(
 						entryNames,
 						cwd,
+						props.host,
 						(message) => notifications.value.constructNotification("Failed to parse file name", message, 'error')
 					)
 				);
-				procs.push(processLinks(tmpEntries.filter(entry => entry.type === 'symbolic link').map(entry => entry.target)));
 				processingHandler.start();
 				return Promise.all(procs)
 					.then(() => {
