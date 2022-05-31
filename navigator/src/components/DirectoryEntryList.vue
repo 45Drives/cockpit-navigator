@@ -151,12 +151,12 @@ export default {
 			processingHandler.start();
 			try {
 				const cwd = props.path;
-				// const entryNames = await getDirListing(cwd, props.host, (message) => notifications.value.constructNotification("Failed to parse file name", message, 'error'));
 				console.time('getEntries');
 				const tmpEntries = (
 					await getDirEntryObjects(
 						cwd,
 						props.host,
+						[],
 						(message) => notifications.value.constructNotification("Failed to parse file name", message, 'error')
 					)
 				);
@@ -208,9 +208,9 @@ export default {
 		fileSystemWatcher.onCreated = async (eventObj) => {
 			const entryName = eventObj.path.replace(props.path, '').replace(/^\//, '');
 			const [entry] = await getDirEntryObjects(
-				[entryName],
 				props.path,
 				props.host,
+				['-name', entryName],
 				(message) => notifications.value.constructNotification("Failed to parse file name", message, 'error')
 			);
 			if (!entry)
@@ -222,7 +222,12 @@ export default {
 			const entryName = eventObj.path.replace(props.path, '').replace(/^\//, '');
 			const entry = entries.value.find(entry => entry.name === entryName);
 			if (entry) {
-				const [newContent] = await getDirEntryObjects([entryName], props.path, props.host);
+				const [newContent] = await getDirEntryObjects(
+					props.path,
+					props.host,
+					['-name', entryName],
+					(message) => notifications.value.constructNotification("Failed to parse file name", message, 'error'),
+				);
 				if (!newContent)
 					return; // temp file deleted too quickly
 				const attrsChanged = ["name", "owner", "group", "size", "ctime", "mtime", "atime"].map(key => String(entry[key]) !== String(newContent[key])).includes(true);

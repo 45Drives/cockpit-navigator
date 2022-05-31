@@ -12,7 +12,7 @@ import { UNIT_SEPARATOR, RECORD_SEPARATOR } from "../constants";
  * @param {ByteFormatter} byteFormatter - Function to format bytes
  * @returns {Promise<DirectoryEntryObj[]>} Array of DirectoryEntryObj objects
  */
-async function getDirEntryObjects(cwd, host, failCallback, byteFormatter = cockpit.format_bytes) {
+async function getDirEntryObjects(cwd, host, extraFindArgs = [], failCallback = console.error, byteFormatter = cockpit.format_bytes) {
 	const fields = [
 		'%f', // name
 		'%p', // full path
@@ -29,7 +29,7 @@ async function getDirEntryObjects(cwd, host, failCallback, byteFormatter = cockp
 		'%l', // symlink target name or '' if not symlink
 	]
 	return parseRawEntryStats(
-		await getDirEntryStats(cwd, host, fields, [], false),
+		await getDirEntryStats(cwd, host, fields, extraFindArgs, false),
 		cwd,
 		host,
 		failCallback,

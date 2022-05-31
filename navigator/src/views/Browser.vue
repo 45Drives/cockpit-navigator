@@ -167,7 +167,7 @@ export default {
 			);
 		}, { immediate: true });
 
-		watch(route, async () => {
+		watch([() => route.params.path, () => route.params.host], async () => {
 			if (route.name !== 'browse')
 				return;
 			const host = route.params.host;
