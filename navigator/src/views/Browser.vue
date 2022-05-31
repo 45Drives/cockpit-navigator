@@ -15,9 +15,10 @@
 							<div v-for="item, index in pathHistory.stack.slice(0, pathHistory.index).reverse()"
 								:key="index" @click="pathHistory.index = pathHistory.index - index"
 								class="hover:text-white hover:bg-red-600 px-4 py-2 text-sm text-left whitespace-nowrap">
-								<span v-if="item.host !== pathHistory.current()?.host">{{ item.host ?? cockpit.transport.host }}:</span>{{
-										item.path
-								}}
+								<span v-if="item.host !== pathHistory.current()?.host">
+									{{ item.host ?? cockpit.transport.host }}:
+								</span>
+								{{ item.path }}
 							</div>
 						</div>
 					</button>
@@ -32,9 +33,10 @@
 							<div v-for="item, index in pathHistory.stack.slice(pathHistory.index + 1)" :key="index"
 								@click="pathHistory.index = pathHistory.index + index"
 								class="hover:text-white hover:bg-red-600 px-4 py-2 text-sm text-left whitespace-nowrap">
-								<span v-if="item.host !== pathHistory.current()?.host">{{ item.host ?? cockpit.transport.host }}:</span>{{
-										item.path
-								}}
+								<span v-if="item.host !== pathHistory.current()?.host">
+									{{ item.host ?? cockpit.transport.host }}:
+								</span>
+								{{ item.path }}
 							</div>
 						</div>
 					</button>
@@ -50,7 +52,7 @@
 				<div
 					class="p-1 md:px-4 md:py-2 col-start-1 col-end-3 row-start-2 row-end-3 md:col-start-auto md:col-end-auto md:row-start-auto md:row-end-auto">
 					<PathBreadCrumbs :host="pathHistory.current()?.host" :path="pathHistory.current()?.path ?? '/'"
-						@cd="path => cd({ path })" />
+						@cd="cd" />
 				</div>
 
 				<div class="p-1 md:px-4 md:py-2">
@@ -122,8 +124,9 @@ export default {
 		});
 
 		const cd = ({ path, host }) => {
-			const newHost = host ?? (route.params.host ? pathHistory.current().host : undefined);
-			router.push(`/browse${newHost ? `/${newHost}:` : ''}${path}`);
+			const newHost = host ?? (route.params.host ? pathHistory.current().host : "");
+			const newPath = path ?? (pathHistory.current().path);
+			router.push(`/browse${newHost ? `/${newHost}:` : ''}${newPath}`);
 		};
 
 		const back = () => {
