@@ -8,7 +8,7 @@ async function processLinks(linkTargets, host) {
 		await useSpawn(
 			// Separate by newline so errors will slot in
 			['stat', `--printf=%F${UNIT_SEPARATOR}%f\n`, ...linkTargets.map(target => target.path)],
-			{ superuser: 'try', err: 'out', host: host } // stderr >&stdout for maintaining index order
+			{ superuser: 'try', err: 'out', host } // stderr >&stdout for maintaining index order
 		).promise()
 			.catch(state => state) // ignore errors, error message will maintain index order
 	).stdout
@@ -64,7 +64,7 @@ async function getDirEntryObjects(dirListing, cwd, host, failCallback, byteForma
 					.catch(state => state) // ignore errors
 			).stdout, cwd, host, failCallback, byteFormatter)
 		: [];
-	await processLinks(entries.filter(entry => entry.type === 'symbolic link').map(entry => entry.target));
+	await processLinks(entries.filter(entry => entry.type === 'symbolic link').map(entry => entry.target), host);
 	return entries;
 }
 
