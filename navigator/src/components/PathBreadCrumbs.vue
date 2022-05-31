@@ -28,11 +28,11 @@
 </template>
 
 <script>
-import { ref, watch, nextTick, onMounted } from 'vue';
+import { ref, watch, nextTick, onMounted, computed } from 'vue';
 import { canonicalPath } from "@45drives/cockpit-helpers";
 import { ChevronRightIcon, ServerIcon } from '@heroicons/vue/solid';
 import { escapeString, escapeStringHTML } from '../functions/escapeStringHTML';
-import getDirListing from '../functions/getDirListing';
+import { getDirEntryStats } from '../functions/getDirEntryObjects';
 
 export default {
 	props: {
@@ -47,6 +47,12 @@ export default {
 		const pathSuggestions = ref([]);
 		const pathInputRef = ref();
 		const hostInputRef = ref();
+		const parentDir = computed(() =>
+			(/^(?!\/)/.test(pathInput.value)
+				? `${props.path}/${pathInput.value}`
+				: pathInput.value
+			).replace(/((?<!^)\/)*[^\/]*$/, '') // remove last segment of path, maintaining first '/'
+		);
 
 		const pathChangeCallback = () => {
 			if (/^(?!\/)/.test(pathInput.value))
@@ -56,17 +62,18 @@ export default {
 		}
 
 		const hostChangeCallback = () => {
-			emit('cd', { host: hostInput.value });
+			console.log("hostChangeCallback");
 			hostInput.value = hostInput.value || cockpit.transport.host;
+			emit('cd', { host: hostInput.value });
 		}
 
-		const getPathSuggestions = () => {
-			const parentDir = (
-				/^(?!\/)/.test(pathInput.value)
-					? `${props.path}/${pathInput.value}`
-					: pathInput.value
-			).replace(/((?<!^)\/)*[^\/]*$/, ''); // remove last segment of path, maintaining first '/'
-			
+		const getPathSuggestions = async (parentDir) => {
+			try {
+				pathSuggestions.value = (await getDirEntryStats(parentDir, props.host, ['%p'], ['-type', 'd'])).flat(1);
+			} catch (error) {
+				console.error(error);
+				pathSuggestions.value = [];
+			}
 		}
 
 		watch(() => props.path, () => {
@@ -79,7 +86,7 @@ export default {
 			hostInput.value = props.host;
 		}, { immediate: true });
 
-		watch(pathInput, getPathSuggestions, { immediate: true });
+		watch(parentDir, getPathSuggestions, { immediate: true });
 
 		onMounted(() => {
 			watch(typing, () => {
