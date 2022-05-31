@@ -1,17 +1,23 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
+import { lastPathStorageKey } from '../keys';
 
 const routes = [
 	{
-		path: '/browse:host(/[^/:]+:?[0-9]*:)?:path(/.*)',
+		path: '/browse',
+		redirect: () => `/browse/${cockpit.transport.host ?? 'localhost'}/`,
+	},
+	{
+		path: '/browse/:host([^/]+)',
+		redirect: route => `${route.fullPath}/`,
+	},
+	{
+		path: '/browse/:host([^/]+):path(/.*)',
+		strict: true,
 		name: 'browse',
 		component: () => import('../views/Browser.vue'),
 	},
 	{
-		path: '/browse:host(/[^/:]+:?[0-9]*:)?',
-		redirect: route => `${route.fullPath}/`
-	},
-	{
-		path: '/edit:host(/[^/:]+:?[0-9]*:)?:path(/.+)',
+		path: '/edit/:host:path(/.+)',
 		name: 'edit',
 		component: () => import('../views/Editor.vue'),
 	},
@@ -29,6 +35,7 @@ const routes = [
 	{
 		path: '/',
 		name: 'root',
+		redirect: () => localStorage.getItem(lastPathStorageKey) ?? `/browse/${cockpit.transport.host ?? 'localhost'}/`,
 	}
 ];
 

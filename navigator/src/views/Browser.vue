@@ -84,6 +84,14 @@ import PathBreadCrumbs from '../components/PathBreadCrumbs.vue';
 import { notificationsInjectionKey, pathHistoryInjectionKey, lastPathStorageKey, settingsInjectionKey } from '../keys';
 import { ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, RefreshIcon, ChevronDownIcon, SearchIcon } from '@heroicons/vue/solid';
 
+const encodePartial = (string) =>
+	encodeURIComponent(string)
+		.replace(/%40/g, '@')
+		.replace(/%3D/g, '=')
+		.replace(/%2B/g, '+')
+		.replace(/%2F/g, '/')
+		.replace(/%20/g, ' ');
+
 export default {
 	setup() {
 		const settings = inject(settingsInjectionKey);
@@ -124,9 +132,9 @@ export default {
 		});
 
 		const cd = ({ path, host }) => {
-			const newHost = host ?? (route.params.host ? pathHistory.current().host : "");
-			const newPath = path ?? (pathHistory.current().path);
-			router.push(`/browse${newHost ? `/${newHost}:` : ''}${newPath}`);
+			const newHost = host ?? (pathHistory.current().host);
+			const newPath = encodePartial(path ?? (pathHistory.current().path));
+			router.push(`/browse/${newHost}${newPath}`);
 		};
 
 		const back = () => {
@@ -144,7 +152,7 @@ export default {
 		}
 
 		const openEditor = (path) => {
-			router.push(`/edit${route.params.host ? `/${pathHistory.current().host}:` : ''}${path}`);
+			router.push(`/edit/${pathHistory.current().host}${encodePartial(path)}`);
 		}
 
 		const getSelected = () => directoryViewRef.value?.getSelected?.() ?? [];
@@ -159,12 +167,13 @@ export default {
 			);
 		}, { immediate: true });
 
-		watch([() => route.params.path, () => route.params.host], async () => {
+		watch(route, async () => {
 			if (route.name !== 'browse')
 				return;
-			const host = route.params.host?.replace(/^\/|:$/g, '') || cockpit.transport.host;
-			if (pathHistory.current()?.path !== route.params.path || pathHistory.current()?.host !== host) {
-				pathHistory.push({ path: route.params.path, host }); // updates actual view
+			const host = route.params.host;
+			const path = decodeURIComponent(route.params.path);
+			if (pathHistory.current()?.path !== path || pathHistory.current()?.host !== host) {
+				pathHistory.push({ path, host }); // updates actual view
 			}
 		}, { immediate: true });
 

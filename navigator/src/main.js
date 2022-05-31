@@ -36,17 +36,15 @@ const errorHandler = (error, title = "System Error") => {
 
 let lastValidRoutePath = null;
 router.beforeEach(async (to, from) => {
-	if (to.name === 'root')
-		return localStorage.getItem(lastPathStorageKey) ?? '/browse/';
 	if (to.fullPath === lastValidRoutePath) {
 		return true; // ignore from updating window.location.hash
 	}
-	const host = to.params.host.replace(/^\/|:$/g, '') || undefined;
+	const host = to.params.host || undefined;
 	if (to.name === 'browse') {
 		try {
 			let realPath = (await useSpawn(['realpath', '--canonicalize-existing', to.params.path], { superuser: 'try', host }).promise()).stdout.trim();
 			if (to.params.path !== realPath)
-				return `/browse${to.params.host}${realPath}`;
+				return `/browse/${to.params.host}${realPath}`;
 			try {
 				await useSpawn(['test', '-r', to.params.path, '-a', '-x', to.params.path], { superuser: 'try', host }).promise();
 			} catch {
@@ -58,10 +56,10 @@ router.beforeEach(async (to, from) => {
 			errorHandler(errorStringHTML(error), "Failed to open path");
 			return false;
 		}
+		localStorage.setItem(lastPathStorageKey, to.fullPath);
 	}
 	lastValidRoutePath = to.fullPath; // protect double-update from next line
 	window.location.hash = '#' + to.fullPath; // needed to update URL in address bar
-	localStorage.setItem(lastPathStorageKey, to.fullPath);
 	return true;
 })
 
