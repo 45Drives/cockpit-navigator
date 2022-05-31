@@ -9,7 +9,6 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { lastPathStorageKey } from '../keys';
 
 const props = defineProps({
 	message: {
@@ -32,10 +31,8 @@ const countdown = () => {
 	counter.value--;
 	if (counter.value > 0)
 		setTimeout(countdown, 1000);
-	else {
-		const lastLocation = localStorage.getItem(lastPathStorageKey) ?? '/';
-		router.push(`/browse${lastLocation}`);
-	}
+	else
+		router.push(`/browse/${cockpit.transport.host}/`);
 }
 setTimeout(countdown, 1000);
 
