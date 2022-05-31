@@ -41,12 +41,12 @@ router.beforeEach(async (to, from) => {
 	if (to.fullPath === lastValidRoutePath) {
 		return true; // ignore from updating window.location.hash
 	}
-	const host = to.params.host?.replace(/^\/|:$/g, '') ?? undefined;
+	const host = to.params.host.replace(/^\/|:$/g, '') || undefined;
 	if (to.name === 'browse') {
 		try {
 			let realPath = (await useSpawn(['realpath', '--canonicalize-existing', to.params.path], { superuser: 'try', host }).promise()).stdout.trim();
 			if (to.params.path !== realPath)
-				return `/browse${realPath}`;
+				return `/browse${to.params.host}${realPath}`;
 			try {
 				await useSpawn(['test', '-r', to.params.path, '-a', '-x', to.params.path], { superuser: 'try', host }).promise();
 			} catch {
