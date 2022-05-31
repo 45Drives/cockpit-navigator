@@ -12,7 +12,7 @@
 					<div class="relative w-6">
 						<component :is="icon" class="size-icon icon-default" />
 						<LinkIcon
-							v-if="entry.type === 'symbolic link'"
+							v-if="entry.type === 'l'"
 							class="w-2 h-2 absolute right-0 bottom-0 text-default"
 						/>
 					</div>
@@ -21,7 +21,7 @@
 						<ChevronUpIcon v-else class="size-icon icon-default" />
 					</button>
 					<div v-html="escapeStringHTML(entry.name)" :title="entry.name"></div>
-					<div v-if="entry.type === 'symbolic link'" class="inline-flex gap-1 items-center">
+					<div v-if="entry.type === 'l'" class="inline-flex gap-1 items-center">
 						<div class="inline relative">
 							<ArrowNarrowRightIcon class="text-default size-icon-sm inline" />
 							<XIcon
@@ -89,7 +89,7 @@
 					:title="`-> ${entry.target?.rawPath ?? '?'}`"
 				>
 					<LinkIcon
-						v-if="entry.type === 'symbolic link'"
+						v-if="entry.type === 'l'"
 						:class="[entry.target?.broken ? 'text-red-300 dark:text-red-800' : 'text-gray-100 dark:text-gray-900', 'w-4 h-auto']"
 					/>
 				</div>
@@ -161,7 +161,7 @@ export default {
 		}
 
 		watch(props.entry, () => {
-			if (props.entry.type === 'directory' || (props.entry.type === 'symbolic link' && props.entry.target?.type === 'directory')) {
+			if (props.entry.type === 'd' || (props.entry.type === 'l' && props.entry.target?.type === 'd')) {
 				icon.value = FolderIcon;
 				directoryLike.value = true;
 			} else {

@@ -1,97 +1,98 @@
 import { useSpawn, errorString } from "@45drives/cockpit-helpers";
 import { UNIT_SEPARATOR, RECORD_SEPARATOR } from "../constants";
 
-async function processLinks(linkTargets, host) {
-	if (linkTargets.length === 0)
-		return;
-	(
-		await useSpawn(
-			// Separate by newline so errors will slot in
-			['stat', `--printf=%F${UNIT_SEPARATOR}%f\n`, ...linkTargets.map(target => target.path)],
-			{ superuser: 'try', err: 'out', host } // stderr >&stdout for maintaining index order
-		).promise()
-			.catch(state => state) // ignore errors, error message will maintain index order
-	).stdout
-		.trim()
-		.split('\n')
-		.filter(record => record)
-		.map((record, index) => {
-			if (record.includes(UNIT_SEPARATOR)) {
-				const [type, mode] = record.split(UNIT_SEPARATOR);
-				linkTargets[index].type = type;
-				linkTargets[index].mode = mode;
-				linkTargets[index].broken = false;
-			} else { // error
-				linkTargets[index].broken = true;
-			}
-		});
-}
-
 /**
  * Get list of directory entry objects from list of directory entry names
  * 
- * @param {String[]} dirListing - List of entry names
- * @param {String} cwd - Working directory to run stat in
- * @param {String} host - Host to run stat on
+ * find -H path -maxdepth 1 -mindepth 1 -printf '%f:%m:%M:%s:%u:%g:%B@:%T@:%A@:%y:%Y:%l\n'
+ * 
+ * @param {String} cwd - Working directory to run find in
+ * @param {String} host - Host to run find on
  * @param {getDirEntryObjectsFailCallback} failCallback - Callback function for handling errors, receives {String} message
  * @param {ByteFormatter} byteFormatter - Function to format bytes
  * @returns {Promise<DirectoryEntryObj[]>} Array of DirectoryEntryObj objects
  */
-async function getDirEntryObjects(dirListing, cwd, host, failCallback, byteFormatter = cockpit.format_bytes) {
+async function getDirEntryObjects(cwd, host, failCallback, byteFormatter = cockpit.format_bytes) {
 	const fields = [
-		'%n', // path
-		'%f', // mode (raw hex)
-		'%A', // modeStr
+		'%f', // name
+		'%p', // full path
+		'%m', // mode (octal)
+		'%M', // modeStr
 		'%s', // size
-		'%U', // owner
-		'%G', // group
-		'%W', // ctime
-		'%Y', // mtime
-		'%X', // atime
-		'%F', // type
-		'%N', // quoted name with symlink
+		'%u', // owner
+		'%g', // group
+		'%B@', // ctime
+		'%T@', // mtime
+		'%A@', // atime
+		'%y', // type
+		'%Y', // symlink target type or type if not symlink
+		'%l', // symlink target name or '' if not symlink
 	]
-	const entries = dirListing.length
-		? parseRawEntryStats(
-			(
-				await useSpawn([
-					'stat',
-					`--printf=${fields.join(UNIT_SEPARATOR)}${RECORD_SEPARATOR}`,
-					...dirListing
-				], { superuser: 'try', directory: cwd, host }
-				)
-					.promise()
-					.catch(state => state) // ignore errors
-			).stdout, cwd, host, failCallback, byteFormatter)
-		: [];
-	await processLinks(entries.filter(entry => entry.type === 'symbolic link').map(entry => entry.target), host);
-	return entries;
+	return parseRawEntryStats(
+		await getDirEntryStats(cwd, host, fields, [], false),
+		cwd,
+		host,
+		failCallback,
+		byteFormatter
+	)
 }
 
 /**
- * Parse raw output of `stat` call from {@link getDirEntryObjects()}
  * 
- * @param {String} raw - Raw output of `stat` call from {@link getDirEntryObjects()}
- * @param {String} cwd - Path to working directory to run stat in
- * @param {String} host - Host to run stat on
+ * @param {String} cwd - Starting point for find
+ * @param {String} host - Host to run find on
+ * @param {String[]} outputFormat - -printf format fields array (man find(1))
+ * @param {String[]} extraFindArguments - extra tests and actions to run on files
+ * @param {Boolean} recursive - if false, -maxdepth is 1
+ * @returns {Promise<String[][]>} Array of resultant output
+ */
+async function getDirEntryStats(cwd, host, outputFormat, extraFindArguments = [], recursive = false) {
+	const UNIT_SEPARATOR_ESC = `\\${UNIT_SEPARATOR.charCodeAt(0).toString(8).padStart(3, '0')}`;
+	const RECORD_SEPARATOR_ESC = `\\${RECORD_SEPARATOR.charCodeAt(0).toString(8).padStart(3, '0')}`;
+	const argv = [
+		'find',
+		'-H',
+		cwd,
+		'-mindepth',
+		'1',
+	];
+	if (!recursive)
+		argv.push('-maxdepth', '1');
+	argv.push(...extraFindArguments);
+	if (outputFormat.length)
+		argv.push('-printf', `${outputFormat.join(UNIT_SEPARATOR_ESC)}${RECORD_SEPARATOR_ESC}`);
+	return new TextDecoder().decode(
+		( // make sure any possible nul bytes don't break cockpit's protocol by using binary
+			await useSpawn(
+				argv,
+				{ superuser: 'try', host, binary: true }
+			).promise()
+		).stdout
+	).split(RECORD_SEPARATOR)
+		.slice(0, -1) // remove last empty array element from split since all entries end with RECORD_SEPARATOR
+		.map(record => record.split(UNIT_SEPARATOR));
+}
+
+/**
+ * Parse raw output of `find` call from {@link getDirEntryObjects()}
+ * 
+ * @param {String[][]} records - Raw output of `find` call from {@link getDirEntryObjects()}
+ * @param {String} cwd - Path to working directory that find was ran in
+ * @param {String} host - Host that find was ran on
  * @param {getDirEntryObjectsFailCallback} failCallback - Callback function for handling errors, receives {String} message
  * @param {ByteFormatter} byteFormatter - Function to format bytes
  * @returns {DirectoryEntryObj[]}
  */
-function parseRawEntryStats(raw, cwd, host, failCallback, byteFormatter = cockpit.format_bytes) {
-	const UNIT_SEPARATOR = '\x1F'; // "Unit Separator"   - ASCII field delimiter
-	const RECORD_SEPARATOR = '\x1E'; // "Record Separator" - ASCII record delimiter
-	return raw.split(RECORD_SEPARATOR)
-		.filter(record => record) // remove empty lines
-		.map(record => {
+function parseRawEntryStats(records, cwd, host, failCallback, byteFormatter = cockpit.format_bytes) {
+	return records.map(fields => {
 			try {
-				let [name, mode, modeStr, size, owner, group, ctime, mtime, atime, type, symlinkStr] = record.split(UNIT_SEPARATOR);
+				let [name, path, mode, modeStr, size, owner, group, ctime, mtime, atime, type, symlinkTargetType, symlinkTargetName] = fields;
 				[size, ctime, mtime, atime] = [size, ctime, mtime, atime].map(num => parseInt(num));
 				[ctime, mtime, atime] = [ctime, mtime, atime].map(ts => ts ? new Date(ts * 1000) : null);
-				mode = parseInt(mode, 16);
-				const entry = {
+				mode = parseInt(mode, 8);
+				return {
 					name,
-					path: `${cwd}/${name}`.replace(/\/+/g, '/'),
+					path,
 					mode,
 					modeStr,
 					size,
@@ -102,26 +103,24 @@ function parseRawEntryStats(raw, cwd, host, failCallback, byteFormatter = cockpi
 					mtime,
 					atime,
 					type,
-					target: {},
+					target: {
+						type: symlinkTargetType,
+						rawPath: symlinkTargetName,
+						path: type === 'l' ? symlinkTargetName.replace(/^(?!\/)/, `${cwd}/`) : '',
+						broken: ['L', 'N', '?'].includes(symlinkTargetType), // L: loop N: nonexistent ?: error
+					},
 					selected: false,
 					host,
 					cut: false,
 				};
-				if (type === 'symbolic link') {
-					entry.target.rawPath = [
-						...symlinkStr.split(/\s*->\s*/)[1].trim().matchAll(/\$?'([^']+)'/g)
-					].map(group => JSON.parse(`"${group[1]}"`)).join('');
-					entry.target.path = entry.target.rawPath.replace(/^(?!\/)/, `${cwd}/`);
-				}
-				return entry;
 			} catch (error) {
-				failCallback(errorString(error) + `\ncaused by: ${record}`);
+				failCallback(errorString(error) + `\ncaused by: ${fields.toString()}`);
 				return null;
 			}
 		}).filter(entry => entry !== null)
 }
 
-export { parseRawEntryStats };
+export { getDirEntryObjects, getDirEntryStats, parseRawEntryStats };
 
 export default getDirEntryObjects;
 
@@ -155,10 +154,11 @@ export default getDirEntryObjects;
  * @property {Date} ctime - Creation time
  * @property {Date} mtime - Last Modified time
  * @property {Date} atime - Last Accessed time
- * @property {String} type - Type of inode returned by stat
+ * @property {String} type - Type of inode returned by find
  * @property {Object} target - Object for symlink target
- * @property {String} target.rawPath - Symlink target path directly grabbed from stat
+ * @property {String} target.rawPath - Symlink target path directly grabbed from find
  * @property {String} target.path - Resolved symlink target path
+ * @property {Boolean} target.broken - Whether or not the link is broken
  * @property {Boolean} selected - Whether or not the user has selected this entry in the browser
  * @property {String} host - host that owns entry
  * @property {Boolean} cut - whether or not the file is going to be cut

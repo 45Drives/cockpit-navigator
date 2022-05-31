@@ -23,7 +23,6 @@ import { ref, reactive, computed, inject, watch, onBeforeUnmount, onMounted } fr
 import { useSpawn, errorString, errorStringHTML, canonicalPath } from '@45drives/cockpit-helpers';
 import { notificationsInjectionKey, settingsInjectionKey, clipboardInjectionKey } from '../keys';
 import DirectoryEntry from './DirectoryEntry.vue';
-import getDirListing from '../functions/getDirListing';
 import getDirEntryObjects from '../functions/getDirEntryObjects';
 import FileSystemWatcher from '../functions/fileSystemWatcher';
 
@@ -61,13 +60,13 @@ export default {
 		const sortCallbackComputed = computed(() => {
 			return (a, b) => {
 				if (settings.directoryView?.separateDirs) {
-					const checkA = a.type === 'symbolic link' ? (a.target?.type ?? null) : a.type;
-					const checkB = b.type === 'symbolic link' ? (b.target?.type ?? null) : b.type;
+					const checkA = a.type === 'l' ? (a.target?.type ?? null) : a.type;
+					const checkB = b.type === 'l' ? (b.target?.type ?? null) : b.type;
 					if (checkA === null || checkB === null)
 						return 0;
-					if (checkA === 'directory' && checkB !== 'directory')
+					if (checkA === 'd' && checkB !== 'd')
 						return -1;
-					else if (checkA !== 'directory' && checkB === 'directory')
+					else if (checkA !== 'd' && checkB === 'd')
 						return 1;
 				}
 				return props.sortCallback(a, b);
@@ -152,10 +151,10 @@ export default {
 			processingHandler.start();
 			try {
 				const cwd = props.path;
-				const entryNames = await getDirListing(cwd, props.host, (message) => notifications.value.constructNotification("Failed to parse file name", message, 'error'));
+				// const entryNames = await getDirListing(cwd, props.host, (message) => notifications.value.constructNotification("Failed to parse file name", message, 'error'));
+				console.time('getEntries');
 				const tmpEntries = (
 					await getDirEntryObjects(
-						entryNames,
 						cwd,
 						props.host,
 						(message) => notifications.value.constructNotification("Failed to parse file name", message, 'error')
@@ -164,6 +163,7 @@ export default {
 				if (props.path !== cwd)
 					return; // changed directory before could finish
 				entries.value = [...tmpEntries.sort(sortCallbackComputed.value)].map(entry => reactive({...entry, cut: clipboard.content.find(a => a.path === entry.path && a.host === entry.host) ?? false}));
+				console.timeEnd('getEntries');
 			} catch (error) {
 				entries.value = [];
 				notifications.value.constructNotification("Error getting directory entries", errorStringHTML(error), 'error');
@@ -184,7 +184,7 @@ export default {
 
 		const emitStats = () => {
 			emit('updateStats', visibleEntries.value.reduce((stats, entry) => {
-				if (entry.type === 'directory' || (entry.type === 'symbolic link' && entry.target?.type === 'directory'))
+				if (entry.type === 'd' || (entry.type === 'l' && entry.target?.type === 'd'))
 					stats.dirs++;
 				else
 					stats.files++;

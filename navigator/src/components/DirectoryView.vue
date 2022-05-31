@@ -142,7 +142,7 @@ export default {
 						let destination;
 						if (selected.length === 1) {
 							destination = selected[0];
-							if (destination.type !== 'directory' && !(destination.type === 'symbolic link' && destination.target.type === 'directory')) {
+							if (destination.type !== 'd' && !(destination.type === 'l' && destination.target.type === 'd')) {
 								notifications.value.constructNotification("Paste Failed", 'Cannot paste to non-directory.', 'error');
 								return;
 							}
