@@ -1,41 +1,72 @@
 <template>
-	<div class="flex items-center cursor-text h-10" @click="typing = true">
-		<input v-if="typing" v-model="pathInput" type="text" class="block w-full input-textlike" @change="changeCallback" ref="inputRef" @focusout="typing = false" />
-		<div v-else class="inline-flex items-center gap-1">
-			<template v-for="segment, index in pathArr" :key="index">
-				<ChevronRightIcon v-if="index > 0" class="size-icon icon-default" />
-				<button
-					@click.prevent.stop="$emit('cd', `/${pathArr.slice(1, index + 1).join('/')}`)"
-					class="p-2 hover:bg-accent rounded-lg cursor-pointer"
-					v-html="escapeStringHTML(segment)"
-					:title="escapeString(`/${pathArr.slice(1, index + 1).join('/')}`)"
-				></button>
+	<div class="flex items-center gap-2">
+		<div class="inline relative">
+			<input type="text" class="input-textlike pr-10" v-model="hostInput" @change="hostChangeCallback"
+				ref="hostInputRef" />
+			<div class="absolute right-0 inset-y-0 pr-3 flex items-center pointer-events-none">
+				<ServerIcon class="size-icon icon-default" />
+			</div>
+		</div>
+		<div class="flex items-center cursor-text h-10 grow" @click="typing = true">
+			<template v-if="typing">
+				<input v-model="pathInput" type="text" list="pathInputSuggestions" class="block w-full input-textlike"
+					@change="pathChangeCallback" ref="pathInputRef" @focusout="typing = false" />
+				<datalist id="pathInputSuggestions">
+					<option v-for="path in pathSuggestions" :value="path" />
+				</datalist>
 			</template>
+			<div v-else class="inline-flex items-center gap-1">
+				<template v-for="segment, index in pathArr" :key="index">
+					<ChevronRightIcon v-if="index > 0" class="size-icon icon-default" />
+					<button @click.prevent.stop="$emit('cd', { path: `/${pathArr.slice(1, index + 1).join('/')}` })"
+						class="p-2 hover:bg-accent rounded-lg cursor-pointer" v-html="escapeStringHTML(segment)"
+						:title="escapeString(`/${pathArr.slice(1, index + 1).join('/')}`)"></button>
+				</template>
+			</div>
 		</div>
 	</div>
 </template>
 
 <script>
-import { ref, watch, nextTick } from 'vue';
+import { ref, watch, nextTick, onMounted } from 'vue';
 import { canonicalPath } from "@45drives/cockpit-helpers";
-import { ChevronRightIcon } from '@heroicons/vue/solid';
+import { ChevronRightIcon, ServerIcon } from '@heroicons/vue/solid';
 import { escapeString, escapeStringHTML } from '../functions/escapeStringHTML';
+import getDirListing from '../functions/getDirListing';
 
 export default {
 	props: {
 		path: String,
+		host: String,
 	},
 	setup(props, { emit }) {
 		const pathArr = ref([]);
 		const typing = ref(false);
 		const pathInput = ref("");
-		const inputRef = ref();
+		const hostInput = ref("");
+		const pathSuggestions = ref([]);
+		const pathInputRef = ref();
+		const hostInputRef = ref();
 
-		const changeCallback = () => {
+		const pathChangeCallback = () => {
 			if (/^(?!\/)/.test(pathInput.value))
 				pathInput.value = `${props.path}/${pathInput.value}`;
 			pathInput.value = canonicalPath(pathInput.value);
-			emit('cd', pathInput.value);
+			emit('cd', { path: pathInput.value });
+		}
+
+		const hostChangeCallback = () => {
+			emit('cd', { host: hostInput.value });
+			hostInput.value = hostInput.value || cockpit.transport.host;
+		}
+
+		const getPathSuggestions = () => {
+			const parentDir = (
+				/^(?!\/)/.test(pathInput.value)
+					? `${props.path}/${pathInput.value}`
+					: pathInput.value
+			).replace(/((?<!^)\/)*[^\/]*$/, ''); // remove last segment of path, maintaining first '/'
+			
 		}
 
 		watch(() => props.path, () => {
@@ -44,17 +75,34 @@ export default {
 			typing.value = false;
 		}, { immediate: true });
 
-		watch(typing, () => {
-			if (typing.value)
-				nextTick(() => inputRef.value.focus());
-		});
+		watch(() => props.host, () => {
+			hostInput.value = props.host;
+		}, { immediate: true });
+
+		watch(pathInput, getPathSuggestions, { immediate: true });
+
+		onMounted(() => {
+			watch(typing, () => {
+				if (typing.value)
+					nextTick(() => pathInputRef.value.focus());
+			});
+
+			watch(hostInput, () => {
+				const computedStyle = window.getComputedStyle(hostInputRef.value);
+				hostInputRef.value.style.width = `calc(${hostInput.value.length}ch + ${computedStyle.paddingRight} + ${computedStyle.paddingLeft} + 5px)`;
+			}, { immediate: true });
+		})
 
 		return {
 			pathArr,
 			typing,
 			pathInput,
-			inputRef,
-			changeCallback,
+			hostInput,
+			pathSuggestions,
+			pathInputRef,
+			hostInputRef,
+			pathChangeCallback,
+			hostChangeCallback,
 			canonicalPath,
 			escapeString,
 			escapeStringHTML,
@@ -62,6 +110,7 @@ export default {
 	},
 	components: {
 		ChevronRightIcon,
+		ServerIcon,
 	},
 	emits: [
 		'cd',
