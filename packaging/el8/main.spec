@@ -32,6 +32,8 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Mon Jun 06 2022 Joshua Boudreau <jboudreau@45drives.com> 0.5.8-2
+- Add file and coreutils dependencies.
 * Wed Dec 01 2021 Joshua Boudreau <jboudreau@45drives.com> 0.5.8-1
 - Fix non-root user file downloads.
 * Mon Nov 29 2021 Joshua Boudreau <jboudreau@45drives.com> 0.5.7-1

@@ -4,7 +4,7 @@
     "title": "Cockpit Navigator",
     "prerelease": false,
     "version": "0.5.8",
-    "buildVersion": "1",
+    "buildVersion": "2",
     "author": "Josh Boudreau <jboudreau@45drives.com>",
     "url": "https://github.com/45Drives/cockpit-navigator",
     "category": "utils",
@@ -60,7 +60,7 @@
     "changelog": {
         "urgency": "medium",
         "version": "0.5.8",
-        "buildVersion": "1",
+        "buildVersion": "2",
         "ignore": [],
         "date": null,
         "packager": "Josh Boudreau <jboudreau@45drives.com>",
