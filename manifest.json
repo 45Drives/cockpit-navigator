@@ -36,7 +36,8 @@
             "rsync",
             "zip",
             "file",
-            "coreutils"
+            "/bin/mkdir",
+            "/bin/rmdir"
         ]
     },
     "releases": [
