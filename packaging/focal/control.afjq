@@ -1,0 +1,14 @@
+Source: @@.name@@
+Section: @@.category@@
+Priority: @@.priority@@
+Maintainer: @@.author@@
+Build-Depends: debhelper-compat (= 12)
+  @@.buildDependencies.deb@@
+Standards-Version: 4.4.1
+Homepage: @@.url@@
+
+Package: @@.name@@
+Architecture: @@.architecture.deb@@
+Depends: @@.dependencies.deb@@
+Description: @@.description.short@@
+  @@.description.long@@
