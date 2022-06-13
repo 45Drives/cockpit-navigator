@@ -2,13 +2,12 @@
 	<template v-for="entry, index in visibleEntries" :key="entry.path">
 		<DirectoryEntry :show="true" :host="host" :entry="entry" :inheritedSortCallback="sortCallback"
 			:searchFilterRegExp="searchFilterRegExp" @cd="(...args) => $emit('cd', ...args)"
-			@edit="(...args) => $emit('edit', ...args)"
-			@toggleSelected="(...args) => $emit('toggleSelected', ...args)"
+			@edit="(...args) => $emit('edit', ...args)" @toggleSelected="(...args) => $emit('toggleSelected', ...args)"
 			@sortEntries="sortEntries" @updateStats="emitStats"
 			@startProcessing="(...args) => $emit('startProcessing', ...args)"
 			@stopProcessing="(...args) => $emit('stopProcessing', ...args)" ref="entryRefs" :level="level"
 			@setEntryProp="(prop, value) => entry[prop] = value"
-			:suppressBorders="{ top: visibleEntries[index - 1]?.selected && !(visibleEntries[index - 1]?.dirOpen), bottom: visibleEntries[index + 1]?.selected && !(entry.dirOpen), left: false, right: false }" />
+			:suppressBorders="getBorderSuppression(entry, index)" />
 	</template>
 	<tr v-if="show && visibleEntries.length === 0">
 		<td :colspan="Object.values(settings?.directoryView?.cols ?? {}).reduce((sum, current) => current ? sum + 1 : sum, 1) ?? 100"
@@ -44,6 +43,11 @@ export default {
 			default: (() => 0),
 		},
 		level: Number,
+		cols: {
+			type: Number,
+			required: false,
+			default: 1,
+		},
 	},
 	setup(props, { emit }) {
 		const settings = inject(settingsInjectionKey);
@@ -167,6 +171,15 @@ export default {
 			);
 		}
 
+		const getBorderSuppression = (entry, index) => {
+			return {
+				top: visibleEntries.value[index - props.cols]?.selected && !(visibleEntries.value[index - props.cols]?.dirOpen),
+				bottom: visibleEntries.value[index + props.cols]?.selected && !(entry.dirOpen),
+				left: settings.directoryView.view !== 'list' && (visibleEntries.value[index - 1]?.selected && (index) % props.cols !== 0),
+				right: settings.directoryView.view !== 'list' && (visibleEntries.value[index + 1]?.selected && (index + 1) % props.cols !== 0),
+			}
+		};
+
 		const fileSystemWatcher = FileSystemWatcher(props.path, { superuser: 'try', host: props.host, ignoreSelf: true });
 
 		fileSystemWatcher.onCreated = async (eventObj) => {
@@ -248,6 +261,7 @@ export default {
 			sortEntries,
 			entryFilterCallback,
 			gatherEntries,
+			getBorderSuppression,
 		}
 	},
 	components: {

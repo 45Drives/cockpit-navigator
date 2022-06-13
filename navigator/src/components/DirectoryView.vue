@@ -67,22 +67,22 @@
 						:searchFilterRegExp="searchFilterRegExp" @cd="(...args) => $emit('cd', ...args)"
 						@edit="(...args) => $emit('edit', ...args)" @toggleSelected="toggleSelected"
 						@updateStats="(...args) => $emit('updateStats', ...args)" @startProcessing="processing++"
-						@stopProcessing="processing--" ref="directoryEntryListRef" :level="0" />
+						@stopProcessing="processing--" ref="directoryEntryListRef" :level="0" :cols="1" />
 				</template>
 			</Table>
-			<div v-else class="flex flex-wrap p-2 bg-well h-full overflow-y-auto content-start">
+			<div v-else class="flex flex-wrap bg-well h-full overflow-y-auto content-start" ref="gridRef" @wheel="scrollHandler">
 				<DirectoryEntryList :host="host" :path="path" :sortCallback="sortCallback"
 					:searchFilterRegExp="searchFilterRegExp" @cd="(...args) => $emit('cd', ...args)"
 					@edit="(...args) => $emit('edit', ...args)" @toggleSelected="toggleSelected"
 					@updateStats="(...args) => $emit('updateStats', ...args)" @startProcessing="processing++"
-					@stopProcessing="processing--" ref="directoryEntryListRef" :level="0" />
+					@stopProcessing="processing--" ref="directoryEntryListRef" :level="0" :cols="cols" />
 			</div>
 		</DragSelectArea>
 	</div>
 </template>
 
 <script>
-import { ref, inject } from 'vue';
+import { ref, inject, watch, onMounted, computed, onBeforeUnmount } from 'vue';
 import Table from './Table.vue';
 import { clipboardInjectionKey, notificationsInjectionKey, settingsInjectionKey } from '../keys';
 import LoadingSpinner from './LoadingSpinner.vue';
@@ -105,6 +105,8 @@ export default {
 		const notifications = inject(notificationsInjectionKey);
 		const processing = ref(0);
 		const directoryEntryListRef = ref();
+		const gridRef = ref();
+		const cols = ref(1);
 
 		const sortCallbacks = {
 			name: (a, b) => a.name.localeCompare(b.name),
@@ -224,15 +226,46 @@ export default {
 			event.preventDefault();
 		}
 
+		const scrollHander = (event) => {
+			console.log(event);
+			if (event.ctrlKey) {
+				event.preventDefault();
+				event.stopPropagation();
+				console.log(event);
+			}
+		}
+
+		const getCols = () => {
+			const gridRect = gridRef.value?.getBoundingClientRect();
+			if (!gridRect)
+				return cols.value = 1;
+			const entryWidth = settings.directoryView?.gridEntrySize;
+			if (!entryWidth)
+				return cols.value = 1;
+			return cols.value = Math.floor(gridRect.width / entryWidth);
+		}
+
+		onMounted(() => {
+			getCols();
+			window.addEventListener('resize', getCols);
+		});
+
+		onBeforeUnmount(() => {
+			window.removeEventListener('resize', getCols);
+		});
+
 		return {
 			settings,
 			processing,
 			directoryEntryListRef,
+			cols,
+			gridRef,
 			sortCallbacks,
 			sortCallback,
 			refresh,
 			getSelected,
 			keyHandler,
+			scrollHander,
 			getSelected,
 			toggleSelected,
 			selectAll,

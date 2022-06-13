@@ -65,9 +65,10 @@
 		<div v-show="show" @dblclick="doubleClickCallback"
 		@click.prevent="$emit('toggleSelected', entry, $event)"
 		ref="selectIntersectElement"
-		:class="['hover:!bg-red-600/10 select-none dir-entry flex flex-col items-center w-20 overflow-hidden', entry.selected ? 'dir-entry-selected' : '']">
-			<div class="relative w-20">
-				<component :is="icon" class="icon-default w-20 h-auto" :class="{ 'text-gray-500/50': entry.cut }" />
+		class="hover:!bg-red-600/10 select-none dir-entry flex flex-col items-center overflow-hidden entry-width p-2"
+		:class="{ 'dir-entry-selected': entry.selected, '!border-t-0': suppressBorders.top, '!border-b-0': suppressBorders.bottom, '!border-l-0': suppressBorders.left, '!border-r-0': suppressBorders.right }">
+			<div class="relative w-full">
+				<component :is="icon" class="icon-default w-full h-auto" :class="{ 'text-gray-500/50': entry.cut }" />
 				<div :class="[directoryLike ? 'right-3 bottom-5' : 'right-5 bottom-3', 'inline absolute']"
 					:title="`-> ${entry.target?.rawPath ?? '?'}`">
 					<LinkIcon v-if="entry.type === 'l'"
@@ -213,12 +214,16 @@ tr.dir-entry>td {
 tr.dir-entry-selected>td {
 	@apply border-y first:border-l-red-600/50 last:border-red-600/50 bg-red-600/10;
 }
-/* 
+
 div.dir-entry {
 	@apply border-solid border border-transparent;
-} */
+}
 
 div.dir-entry-selected {
-	@apply  bg-red-600/10;
+	@apply border-red-600/50 bg-red-600/10;
+}
+
+div.entry-width {
+	width: v-bind('`${settings.directoryView?.gridEntrySize ?? 80}px`');
 }
 </style>

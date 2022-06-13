@@ -168,6 +168,7 @@ const defaultSettings = {
 			mtime: true,
 			atime: true,
 		},
+		gridEntrySize: 80,
 	},
 }
 
