@@ -83,7 +83,7 @@
 </template>
 
 <script>
-import { ref, inject, watch, onMounted, computed, onBeforeUnmount } from 'vue';
+import { ref, inject, watch, onMounted, computed, onBeforeUnmount, onUpdated } from 'vue';
 import Table from './Table.vue';
 import { clipboardInjectionKey, notificationsInjectionKey, settingsInjectionKey } from '../keys';
 import LoadingSpinner from './LoadingSpinner.vue';
@@ -247,13 +247,13 @@ export default {
 		}
 
 		const getCols = () => {
-			const gridRect = gridRef.value?.getBoundingClientRect();
-			if (!gridRect)
+			const gridWidth = gridRef.value?.clientWidth;
+			if (!gridWidth)
 				return cols.value = 1;
 			const entryWidth = settings.directoryView?.gridEntrySize;
 			if (!entryWidth)
 				return cols.value = 1;
-			return cols.value = Math.floor(gridRect.width / entryWidth);
+			return cols.value = Math.floor(gridWidth / entryWidth);
 		}
 
 		onMounted(() => {
@@ -261,6 +261,8 @@ export default {
 			watch(() => settings.directoryView.gridEntrySize, getCols);
 			window.addEventListener('resize', getCols);
 		});
+
+		onUpdated(getCols);
 
 		onBeforeUnmount(() => {
 			window.removeEventListener('resize', getCols);
