@@ -19,8 +19,8 @@
 </template>
 
 <script>
-import { ref, reactive, computed, inject, watch, onBeforeUnmount, onMounted } from 'vue';
-import { useSpawn, errorString, errorStringHTML, canonicalPath } from '@45drives/cockpit-helpers';
+import { ref, reactive, computed, inject, watch, onBeforeUnmount } from 'vue';
+import { errorStringHTML } from '@45drives/cockpit-helpers';
 import { notificationsInjectionKey, settingsInjectionKey, clipboardInjectionKey } from '../keys';
 import DirectoryEntry from './DirectoryEntry.vue';
 import getDirEntryObjects from '../functions/getDirEntryObjects';
