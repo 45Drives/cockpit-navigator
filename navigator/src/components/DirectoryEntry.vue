@@ -81,7 +81,7 @@
 </template>
 
 <script>
-import { ref, inject, watch, nextTick, onBeforeUnmount, onMounted, onActivated, onDeactivated } from 'vue';
+import { ref, inject, watch, nextTick, onBeforeUnmount, onMounted, onActivated, onDeactivated, onUpdated } from 'vue';
 import { DocumentIcon, FolderIcon, LinkIcon, DocumentRemoveIcon, ArrowNarrowRightIcon, XIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/vue/solid';
 import { settingsInjectionKey } from '../keys';
 import DirectoryEntryList from './DirectoryEntryList.vue';
@@ -118,8 +118,6 @@ export default {
 		const showEntries = ref(false);
 		const directoryEntryListRef = ref();
 		const selectIntersectElement = ref();
-
-		// const selectedClasses = ref([]);
 
 		if (props.entry.type === 'd' || (props.entry.type === 'l' && props.entry.target?.type === 'd')) {
 			icon.value = FolderIcon;
@@ -158,9 +156,11 @@ export default {
 		}
 
 		onMounted(() => {
-			watch(selectIntersectElement, () =>
-				emit('setEntryProp', 'DOMElement', selectIntersectElement.value), { immediate: true }
-			);
+			emit('setEntryProp', 'DOMElement', selectIntersectElement.value);
+		})
+
+		onUpdated(() => {
+			emit('setEntryProp', 'DOMElement', selectIntersectElement.value);
 		});
 
 		onBeforeUnmount(() => {
