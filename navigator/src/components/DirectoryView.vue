@@ -231,6 +231,8 @@ export default {
 				event.preventDefault();
 				event.stopPropagation();
 				console.log(event.deltaY);
+				if (!event.deltaY)
+					return;
 				const direction = -event.deltaY / Math.abs(event.deltaY);
 				const scale = Math.pow(1.1, direction);
 				const candidate = settings.directoryView.gridEntrySize * scale;
