@@ -1,5 +1,5 @@
 <template>
-	<div class="h-full" @keydown="keyHandler($event)" tabindex="-1">
+	<div class="h-full" @keydown="keyHandler($event)" tabindex="-1" :class="{'!cursor-wait': processing}">
 		<DragSelectArea class="h-full" @selectRectangle="selectRectangle" @mouseup.exact="deselectAll()">
 			<Table v-if="settings.directoryView?.view === 'list'" emptyText="No entries." noHeader stickyHeaders
 				noShrink noShrinkHeight="h-full">
