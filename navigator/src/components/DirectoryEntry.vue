@@ -66,7 +66,7 @@
 		@click.prevent="$emit('toggleSelected', entry, $event)"
 		ref="selectIntersectElement"
 		class="hover:!bg-red-600/10 select-none dir-entry flex flex-col items-center overflow-hidden entry-width p-2"
-		:class="{ 'dir-entry-selected': entry.selected, '!border-t-0': suppressBorders.top, '!border-b-0': suppressBorders.bottom, '!border-l-0': suppressBorders.left, '!border-r-0': suppressBorders.right }">
+		:class="{ 'dir-entry-selected': entry.selected, '!border-t-transparent': suppressBorders.top, '!border-b-transparent': suppressBorders.bottom, '!border-l-transparent': suppressBorders.left, '!border-r-transparent': suppressBorders.right }">
 			<div class="relative w-full">
 				<component :is="icon" class="icon-default w-full h-auto" :class="{ 'text-gray-500/50': entry.cut }" />
 				<div :class="[directoryLike ? 'right-[15%] bottom-[25%]' : 'right-[25%] bottom-[15%]', 'inline absolute w-[20%]']"
