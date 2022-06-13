@@ -163,11 +163,6 @@ export default {
 			emit('setEntryProp', 'DOMElement', selectIntersectElement.value);
 		});
 
-		onBeforeUnmount(() => {
-			emit('setEntryProp', 'dirOpen', false)
-			emit('setEntryProp', 'DOMElement', undefined), { immediate: true }
-		});
-
 		return {
 			settings,
 			icon,
