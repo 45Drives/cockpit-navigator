@@ -226,12 +226,15 @@ export default {
 			event.preventDefault();
 		}
 
-		const scrollHander = (event) => {
-			console.log(event);
+		const scrollHandler = (event) => {
 			if (event.ctrlKey) {
 				event.preventDefault();
 				event.stopPropagation();
-				console.log(event);
+				console.log(event.deltaY);
+				const direction = -event.deltaY / Math.abs(event.deltaY);
+				const scale = Math.pow(1.1, direction);
+				const candidate = settings.directoryView.gridEntrySize * scale;
+				settings.directoryView.gridEntrySize = Math.max(40, Math.min(candidate, gridRef.value?.getBoundingClientRect().width ?? candidate));
 			}
 		}
 
@@ -247,6 +250,7 @@ export default {
 
 		onMounted(() => {
 			getCols();
+			watch(() => settings.directoryView.gridEntrySize, getCols);
 			window.addEventListener('resize', getCols);
 		});
 
@@ -265,7 +269,7 @@ export default {
 			refresh,
 			getSelected,
 			keyHandler,
-			scrollHander,
+			scrollHandler,
 			getSelected,
 			toggleSelected,
 			selectAll,
