@@ -1,74 +1,83 @@
 <template>
-	<div class="h-full" @keydown.prevent.stop="keyHandler($event)" tabindex="-1">
-		<Table v-if="settings.directoryView?.view === 'list'" emptyText="No entries." noHeader stickyHeaders noShrink
-			noShrinkHeight="h-full">
-			<template #thead>
-				<tr>
-					<th class="!pl-1 border-l-2 border-l-transparent last:border-r-2 last:border-r-transparent">
-						<div class="flex flex-row flex-nowrap gap-1 items-center">
-							<div class="flex items-center justify-center w-6">
-								<LoadingSpinner v-if="processing" class="size-icon" />
+	<div class="h-full" @keydown="keyHandler($event)" tabindex="-1">
+		<DragSelectArea class="h-full" @selectRectangle="selectRectangle" @mouseup.exact="deselectAll()">
+			<Table v-if="settings.directoryView?.view === 'list'" emptyText="No entries." noHeader stickyHeaders
+				noShrink noShrinkHeight="h-full">
+				<template #thead>
+					<tr>
+						<th class="!pl-1 border-l-2 border-l-transparent last:border-r-2 last:border-r-transparent">
+							<div class="flex flex-row flex-nowrap gap-1 items-center">
+								<div class="flex items-center justify-center w-6">
+									<LoadingSpinner v-if="processing" class="size-icon" />
+								</div>
+								<div class="grow">Name</div>
+								<SortCallbackButton initialFuncIsMine v-model="sortCallback"
+									:compareFunc="sortCallbacks.name" />
 							</div>
-							<div class="grow">Name</div>
-							<SortCallbackButton initialFuncIsMine v-model="sortCallback"
-								:compareFunc="sortCallbacks.name" />
-						</div>
-					</th>
-					<th class="last:border-r-2 last:border-r-transparent" v-if="settings?.directoryView?.cols?.mode">
-						Mode</th>
-					<th class="last:border-r-2 last:border-r-transparent" v-if="settings?.directoryView?.cols?.owner">
-						<div class="flex flex-row flex-nowrap gap-2 items-center">
-							<div class="grow">Owner</div>
-							<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.owner" />
-						</div>
-					</th>
-					<th class="last:border-r-2 last:border-r-transparent" v-if="settings?.directoryView?.cols?.group">
-						<div class="flex flex-row flex-nowrap gap-2 items-center">
-							<div class="grow">Group</div>
-							<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.group" />
-						</div>
-					</th>
-					<th class="last:border-r-2 last:border-r-transparent" v-if="settings?.directoryView?.cols?.size">
-						<div class="flex flex-row flex-nowrap gap-2 items-center">
-							<div class="grow text-right">Size</div>
-							<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.size" />
-						</div>
-					</th>
-					<th class="last:border-r-2 last:border-r-transparent" v-if="settings?.directoryView?.cols?.ctime">
-						<div class="flex flex-row flex-nowrap gap-2 items-center">
-							<div class="grow">Created</div>
-							<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.ctime" />
-						</div>
-					</th>
-					<th class="last:border-r-2 last:border-r-transparent" v-if="settings?.directoryView?.cols?.mtime">
-						<div class="flex flex-row flex-nowrap gap-2 items-center">
-							<div class="grow">Modified</div>
-							<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.mtime" />
-						</div>
-					</th>
-					<th class="last:border-r-2 last:border-r-transparent" v-if="settings?.directoryView?.cols?.atime">
-						<div class="flex flex-row flex-nowrap gap-2 items-center">
-							<div class="grow">Accessed</div>
-							<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.atime" />
-						</div>
-					</th>
-				</tr>
-			</template>
-			<template #tbody>
+						</th>
+						<th class="last:border-r-2 last:border-r-transparent"
+							v-if="settings?.directoryView?.cols?.mode">
+							Mode</th>
+						<th class="last:border-r-2 last:border-r-transparent"
+							v-if="settings?.directoryView?.cols?.owner">
+							<div class="flex flex-row flex-nowrap gap-2 items-center">
+								<div class="grow">Owner</div>
+								<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.owner" />
+							</div>
+						</th>
+						<th class="last:border-r-2 last:border-r-transparent"
+							v-if="settings?.directoryView?.cols?.group">
+							<div class="flex flex-row flex-nowrap gap-2 items-center">
+								<div class="grow">Group</div>
+								<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.group" />
+							</div>
+						</th>
+						<th class="last:border-r-2 last:border-r-transparent"
+							v-if="settings?.directoryView?.cols?.size">
+							<div class="flex flex-row flex-nowrap gap-2 items-center">
+								<div class="grow text-right">Size</div>
+								<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.size" />
+							</div>
+						</th>
+						<th class="last:border-r-2 last:border-r-transparent"
+							v-if="settings?.directoryView?.cols?.ctime">
+							<div class="flex flex-row flex-nowrap gap-2 items-center">
+								<div class="grow">Created</div>
+								<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.ctime" />
+							</div>
+						</th>
+						<th class="last:border-r-2 last:border-r-transparent"
+							v-if="settings?.directoryView?.cols?.mtime">
+							<div class="flex flex-row flex-nowrap gap-2 items-center">
+								<div class="grow">Modified</div>
+								<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.mtime" />
+							</div>
+						</th>
+						<th class="last:border-r-2 last:border-r-transparent"
+							v-if="settings?.directoryView?.cols?.atime">
+							<div class="flex flex-row flex-nowrap gap-2 items-center">
+								<div class="grow">Accessed</div>
+								<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.atime" />
+							</div>
+						</th>
+					</tr>
+				</template>
+				<template #tbody>
+					<DirectoryEntryList :host="host" :path="path" :sortCallback="sortCallback"
+						:searchFilterRegExp="searchFilterRegExp" @cd="(...args) => $emit('cd', ...args)"
+						@edit="(...args) => $emit('edit', ...args)" @toggleSelected="toggleSelected"
+						@updateStats="(...args) => $emit('updateStats', ...args)" @startProcessing="processing++"
+						@stopProcessing="processing--" ref="directoryEntryListRef" :level="0" />
+				</template>
+			</Table>
+			<div v-else class="flex flex-wrap p-2 bg-well h-full overflow-y-auto content-start">
 				<DirectoryEntryList :host="host" :path="path" :sortCallback="sortCallback"
 					:searchFilterRegExp="searchFilterRegExp" @cd="(...args) => $emit('cd', ...args)"
-					@edit="(...args) => $emit('edit', ...args)"
+					@edit="(...args) => $emit('edit', ...args)" @toggleSelected="toggleSelected"
 					@updateStats="(...args) => $emit('updateStats', ...args)" @startProcessing="processing++"
 					@stopProcessing="processing--" ref="directoryEntryListRef" :level="0" />
-			</template>
-		</Table>
-		<div v-else class="flex flex-wrap p-2 gap-2 bg-well h-full overflow-y-auto content-start"
-			@click.prevent.stop="directoryEntryListRef.selection.deselectAllForward()">
-			<DirectoryEntryList :host="host" :path="path" :sortCallback="sortCallback"
-				:searchFilterRegExp="searchFilterRegExp" @cd="(...args) => $emit('cd', ...args)"
-				@edit="(...args) => $emit('edit', ...args)" @updateStats="(...args) => $emit('updateStats', ...args)"
-				@startProcessing="processing++" @stopProcessing="processing--" ref="directoryEntryListRef" :level="0" />
-		</div>
+			</div>
+		</DragSelectArea>
 	</div>
 </template>
 
@@ -79,6 +88,7 @@ import { clipboardInjectionKey, notificationsInjectionKey, settingsInjectionKey 
 import LoadingSpinner from './LoadingSpinner.vue';
 import SortCallbackButton from './SortCallbackButton.vue';
 import DirectoryEntryList from './DirectoryEntryList.vue';
+import DragSelectArea from './DragSelectArea.vue';
 
 export default {
 	props: {
@@ -111,29 +121,80 @@ export default {
 			return directoryEntryListRef.value?.refresh?.();
 		}
 
-		const getSelected = () => directoryEntryListRef.value.selection.getSelected() ?? [];
+		const getSelected = () => directoryEntryListRef.value?.gatherEntries().filter(entry => entry.selected) ?? [];
+
+		let lastSelectedEntry = null;
+		const toggleSelected = (entry, { ctrlKey, shiftKey }) => {
+			const entrySelectedValue = entry.selected;
+			if (!ctrlKey)
+				deselectAll();
+			if (shiftKey && lastSelectedEntry !== null) {
+				const entries = directoryEntryListRef.value?.gatherEntries();
+				let [startInd, endInd] = [entries.indexOf(lastSelectedEntry), entries.indexOf(entry)];
+				if (startInd != -1 && endInd != -1) {
+					if (endInd < startInd)
+						[startInd, endInd] = [endInd, startInd];
+					entries
+						.slice(startInd, endInd + 1)
+						.map(entry => entry.selected = true);
+					return;
+				}
+			}
+			entry.selected = ctrlKey ? !entrySelectedValue : true;
+			if (entry.selected)
+				lastSelectedEntry = entry;
+			else
+				lastSelectedEntry = null;
+		}
+
+		const selectAll = () => directoryEntryListRef.value?.gatherEntries().map(entry => entry.selected = true);
+
+		const deselectAll = () => directoryEntryListRef.value?.gatherEntries([], false).map(entry => entry.selected = false);
+
+		const selectRectangle = (rect, { ctrlKey, shiftKey }) => {
+			if (!(ctrlKey || shiftKey))
+				deselectAll();
+
+			directoryEntryListRef.value?.gatherEntries().map(entry => {
+				const entryRect = entry.DOMElement?.getBoundingClientRect();
+				if (
+					!entryRect
+					|| rect.x1 > entryRect.right || rect.x2 < entryRect.left
+					|| rect.y1 > entryRect.bottom || rect.y2 < entryRect.top
+				)
+					return;
+				entry.selected = ctrlKey ? !entry.selected : true;
+			});
+		}
 
 		/**
 		 * @param {KeyboardEvent} event
 		 */
 		const keyHandler = (event) => {
 			console.log("DirectoryView::keyHandler:", event);
-			if (event.key === 'Escape')
-				directoryEntryListRef.value?.selection.deselectAllForward();
+			if (event.key === 'Escape') {
+				if (getSelected().length === 0) {
+					clipboard.content.map(entry => entry.cut = false);
+					clipboard.content = [];
+				} else {
+					deselectAll();
+				}
+			}
 			if (event.ctrlKey) {
-				switch (event.key.toLowerCase()) {
+				const keypress = event.key.toLowerCase();
+				switch (keypress) {
 					case 'a':
-						directoryEntryListRef.value?.selection.selectAll();
+						selectAll();
 						break;
 					case 'h':
 						settings.directoryView.showHidden = !settings.directoryView.showHidden;
 						break;
 					case 'c':
-						clipboard.content = getSelected();
-						break;
 					case 'x':
+						const isCut = keypress === 'x';
+						clipboard.content.map(entry => entry.cut = false);
 						clipboard.content = getSelected().map(entry => {
-							entry.cut = true;
+							entry.cut = isCut;
 							return entry;
 						});
 						break;
@@ -144,20 +205,23 @@ export default {
 							destination = selected[0];
 							if (destination.type !== 'd' && !(destination.type === 'l' && destination.target.type === 'd')) {
 								notifications.value.constructNotification("Paste Failed", 'Cannot paste to non-directory.', 'error');
-								return;
+								break;
 							}
 						} else if (selected.length === 0) {
 							destination = { host: props.host, path: props.path };
 						} else {
 							notifications.value.constructNotification("Paste Failed", 'Cannot paste to multiple directories.', 'error');
-							return;
+							break;
 						}
 						console.log("paste", clipboard.content.map(entry => ({ host: entry.host, path: entry.path })), destination);
 						break;
 					default:
-						break;
+						return;
 				}
+			} else {
+				return;
 			}
+			event.preventDefault();
 		}
 
 		return {
@@ -169,6 +233,11 @@ export default {
 			refresh,
 			getSelected,
 			keyHandler,
+			getSelected,
+			toggleSelected,
+			selectAll,
+			deselectAll,
+			selectRectangle,
 		}
 	},
 	components: {
@@ -176,6 +245,7 @@ export default {
 		Table,
 		LoadingSpinner,
 		SortCallbackButton,
+		DragSelectArea,
 	},
 	emits: [
 		'cd',

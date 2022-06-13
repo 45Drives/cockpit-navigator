@@ -1,20 +1,15 @@
 <template>
 	<template v-if="settings.directoryView?.view === 'list'">
-		<tr
-			v-show="show || showEntries"
-			@dblclick.stop="doubleClickCallback"
-			@click.prevent.stop="$emit('toggleSelected', { ctrlKey: $event.ctrlKey, shiftKey: $event.shiftKey })"
-			:class="['hover:!bg-red-600/10 select-none']"
-		>
-			<td :class="['!pl-1', ...selectedClasses]">
+		<tr v-show="show || showEntries" @dblclick="doubleClickCallback"
+			@click.prevent="$emit('toggleSelected', entry, $event)"
+			:class="['hover:!bg-red-600/10 select-none dir-entry', entry.selected ? 'dir-entry-selected' : '']"
+			ref="selectIntersectElement">
+			<td class="!pl-1" :class="{ '!border-t-0': suppressBorders.top, '!border-b-0': suppressBorders.bottom }">
 				<div :class="[entry.cut ? 'line-through' : '', 'flex items-center gap-1']">
 					<div :style="{ width: `${24 * level}px` }"></div>
 					<div class="relative w-6">
-						<component :is="icon" class="size-icon icon-default" />
-						<LinkIcon
-							v-if="entry.type === 'l'"
-							class="w-2 h-2 absolute right-0 bottom-0 text-default"
-						/>
+						<component :is="icon" class="size-icon icon-default" :class="{ 'text-gray-500/50': entry.cut }" />
+						<LinkIcon v-if="entry.type === 'l'" class="w-2 h-2 absolute right-0 bottom-0 text-default" />
 					</div>
 					<button v-if="directoryLike" @click.stop="toggleShowEntries">
 						<ChevronDownIcon v-if="!showEntries" class="size-icon icon-default" />
@@ -24,83 +19,68 @@
 					<div v-if="entry.type === 'l'" class="inline-flex gap-1 items-center">
 						<div class="inline relative">
 							<ArrowNarrowRightIcon class="text-default size-icon-sm inline" />
-							<XIcon
-								v-if="entry.target?.broken"
-								class="icon-danger size-icon-sm absolute inset-x-0 bottom-0"
-							/>
+							<XIcon v-if="entry.target?.broken"
+								class="icon-danger size-icon-sm absolute inset-x-0 bottom-0" />
 						</div>
 						<div v-html="escapeStringHTML(entry.target?.rawPath ?? '')" :title="entry.target.rawPath"></div>
 					</div>
 				</div>
 			</td>
-			<td
-				v-if="settings?.directoryView?.cols?.mode"
-				:class="['font-mono', ...(selectedClasses)]"
-			>{{ entry.modeStr }}</td>
-			<td v-if="settings?.directoryView?.cols?.owner" :class="selectedClasses">{{ entry.owner }}</td>
-			<td v-if="settings?.directoryView?.cols?.group" :class="selectedClasses">{{ entry.group }}</td>
-			<td
-				v-if="settings?.directoryView?.cols?.size"
-				:class="['font-mono text-right', ...(selectedClasses)]"
-			>{{ entry.sizeHuman }}</td>
-			<td
-				v-if="settings?.directoryView?.cols?.ctime"
-				:class="selectedClasses"
-			>{{ entry.ctime?.toLocaleString() ?? '-' }}</td>
-			<td
-				v-if="settings?.directoryView?.cols?.mtime"
-				:class="selectedClasses"
-			>{{ entry.mtime?.toLocaleString() ?? '-' }}</td>
-			<td
-				v-if="settings?.directoryView?.cols?.atime"
-				:class="selectedClasses"
-			>{{ entry.atime?.toLocaleString() ?? '-' }}</td>
+			<td v-if="settings?.directoryView?.cols?.mode" class="font-mono"
+				:class="{ '!border-t-0': suppressBorders.top, '!border-b-0': suppressBorders.bottom }">{{ entry.modeStr
+				}}</td>
+			<td v-if="settings?.directoryView?.cols?.owner"
+				:class="{ '!border-t-0': suppressBorders.top, '!border-b-0': suppressBorders.bottom }">{{ entry.owner }}
+			</td>
+			<td v-if="settings?.directoryView?.cols?.group"
+				:class="{ '!border-t-0': suppressBorders.top, '!border-b-0': suppressBorders.bottom }">{{ entry.group }}
+			</td>
+			<td v-if="settings?.directoryView?.cols?.size" class="font-mono text-right"
+				:class="{ '!border-t-0': suppressBorders.top, '!border-b-0': suppressBorders.bottom }">{{
+						entry.sizeHuman
+				}}</td>
+			<td v-if="settings?.directoryView?.cols?.ctime"
+				:class="{ '!border-t-0': suppressBorders.top, '!border-b-0': suppressBorders.bottom }">{{
+						entry.ctime?.toLocaleString() ?? '-'
+				}}</td>
+			<td v-if="settings?.directoryView?.cols?.mtime"
+				:class="{ '!border-t-0': suppressBorders.top, '!border-b-0': suppressBorders.bottom }">{{
+						entry.mtime?.toLocaleString() ?? '-'
+				}}</td>
+			<td v-if="settings?.directoryView?.cols?.atime"
+				:class="{ '!border-t-0': suppressBorders.top, '!border-b-0': suppressBorders.bottom }">{{
+						entry.atime?.toLocaleString() ?? '-'
+				}}</td>
 		</tr>
-		<component
-			:show="show || showEntries"
-			:is="DirectoryEntryList"
-			v-if="directoryLike && showEntries"
-			:host="host"
-			:path="entry.path"
-			:isChild="true"
-			:sortCallback="inheritedSortCallback"
-			:searchFilterRegExp="searchFilterRegExp"
-			@cd="(...args) => $emit('cd', ...args)"
+		<component :show="show || showEntries" :is="DirectoryEntryList" v-if="directoryLike && showEntries" :host="host"
+			:path="entry.path" :isChild="true" :sortCallback="inheritedSortCallback"
+			:searchFilterRegExp="searchFilterRegExp" @cd="(...args) => $emit('cd', ...args)"
 			@edit="(...args) => $emit('edit', ...args)"
 			@startProcessing="(...args) => $emit('startProcessing', ...args)"
-			@stopProcessing="(...args) => $emit('stopProcessing', ...args)"
-			@cancelShowEntries="showEntries = false"
-			@deselectAll="$emit('deselectAll')"
-			ref="directoryViewRef"
-			:level="level + 1"
-		/>
+			@stopProcessing="(...args) => $emit('stopProcessing', ...args)" @cancelShowEntries="showEntries = false"
+			ref="directoryEntryListRef" :level="level + 1"
+			@toggleSelected="(...args) => $emit('toggleSelected', ...args)" />
 	</template>
-	<div
-		v-else
-		v-show="show"
-		@dblclick.stop="doubleClickCallback"
-		@click.prevent.stop="$emit('toggleSelected', { ctrlKey: $event.ctrlKey, shiftKey: $event.shiftKey })"
-	>
-		<div :class="[...selectedClasses, 'flex flex-col items-center w-20 overflow-hidden select-none']">
+	<template v-else>
+		<div v-show="show" @dblclick="doubleClickCallback"
+		@click.prevent="$emit('toggleSelected', entry, $event)"
+		ref="selectIntersectElement"
+		:class="['hover:!bg-red-600/10 select-none dir-entry flex flex-col items-center w-20 overflow-hidden', entry.selected ? 'dir-entry-selected' : '']">
 			<div class="relative w-20">
-				<component :is="icon" class="icon-default w-20 h-auto" />
-				<div
-					:class="[directoryLike ? 'right-3 bottom-5' : 'right-5 bottom-3', 'inline absolute']"
-					:title="`-> ${entry.target?.rawPath ?? '?'}`"
-				>
-					<LinkIcon
-						v-if="entry.type === 'l'"
-						:class="[entry.target?.broken ? 'text-red-300 dark:text-red-800' : 'text-gray-100 dark:text-gray-900', 'w-4 h-auto']"
-					/>
+				<component :is="icon" class="icon-default w-20 h-auto" :class="{ 'text-gray-500/50': entry.cut }" />
+				<div :class="[directoryLike ? 'right-3 bottom-5' : 'right-5 bottom-3', 'inline absolute']"
+					:title="`-> ${entry.target?.rawPath ?? '?'}`">
+					<LinkIcon v-if="entry.type === 'l'"
+						:class="[entry.target?.broken ? 'text-red-300 dark:text-red-800' : 'text-gray-100 dark:text-gray-900', 'w-4 h-auto']" />
 				</div>
 			</div>
-			<div class="text-center w-full" style="overflow-wrap: break-word;">{{ entry.name }}</div>
+			<div class="text-center w-full" :class="{ truncate: !entry.selected, 'line-through': entry.cut }" style="overflow-wrap: break-word;" v-html="escapeStringHTML(entry.name)" :title="entry.name"></div>
 		</div>
-	</div>
+	</template>
 </template>
 
 <script>
-import { ref, inject, watch, nextTick } from 'vue';
+import { ref, inject, watch, nextTick, onBeforeUnmount, onMounted, onActivated, onDeactivated } from 'vue';
 import { DocumentIcon, FolderIcon, LinkIcon, DocumentRemoveIcon, ArrowNarrowRightIcon, XIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/vue/solid';
 import { settingsInjectionKey } from '../keys';
 import DirectoryEntryList from './DirectoryEntryList.vue';
@@ -119,16 +99,34 @@ export default {
 			default: null,
 		},
 		level: Number,
-		neighboursSelected: Object,
+		suppressBorders: {
+			type: Object,
+			required: false,
+			default: {
+				top: false,
+				bottom: false,
+				left: false,
+				right: false,
+			}
+		},
 	},
 	setup(props, { emit }) {
 		const settings = inject(settingsInjectionKey);
 		const icon = ref(FolderIcon);
 		const directoryLike = ref(false);
 		const showEntries = ref(false);
-		const directoryViewRef = ref();
+		const directoryEntryListRef = ref();
+		const selectIntersectElement = ref();
 
-		const selectedClasses = ref([]);
+		// const selectedClasses = ref([]);
+
+		if (props.entry.type === 'd' || (props.entry.type === 'l' && props.entry.target?.type === 'd')) {
+			icon.value = FolderIcon;
+			directoryLike.value = true;
+		} else {
+			icon.value = DocumentIcon;
+			directoryLike.value = false;
+		}
 
 		const doubleClickCallback = () => {
 			if (directoryLike.value) {
@@ -139,60 +137,50 @@ export default {
 		}
 
 		const refresh = () => {
-			return directoryViewRef.value?.refresh?.();
+			return directoryEntryListRef.value?.refresh?.();
 		}
 
 		const toggleShowEntries = () => {
-			emit('startProcessing');
-			nextTick(() => {
-				showEntries.value = !showEntries.value;
-				nextTick(() => emit('stopProcessing'));
-			})
+			showEntries.value = !showEntries.value;
+			emit('setEntryProp', 'dirOpen', showEntries.value);
 		}
 
-		const getSelected = () => directoryViewRef.value.getSelected() ?? [];
-
-		const selectAll = () => {
-			directoryViewRef.value?.selection.selectAll();
+		/**
+		 * Recursive get all entries for browser
+		 * 
+		 * @param {DirectoryEntryObj[]} - Holds all entries
+		 * 
+		 * @returns {DirectoryEntryObj[]} - the accumulator
+		 */
+		const gatherEntries = (accumulator = [], onlyVisible = true) => {
+			return directoryEntryListRef.value?.gatherEntries(accumulator, onlyVisible) ?? accumulator;
 		}
 
-		const deselectAllForward = () => {
-			directoryViewRef.value?.selection.deselectAllForward();
-		}
+		onMounted(() => {
+			watch(selectIntersectElement, () =>
+				emit('setEntryProp', 'DOMElement', selectIntersectElement.value), { immediate: true }
+			);
+		});
 
-		watch(props.entry, () => {
-			if (props.entry.type === 'd' || (props.entry.type === 'l' && props.entry.target?.type === 'd')) {
-				icon.value = FolderIcon;
-				directoryLike.value = true;
-			} else {
-				icon.value = DocumentIcon;
-				directoryLike.value = false;
-			}
-		}, { immediate: true });
-
-		watch([() => props.neighboursSelected, () => props.entry.selected, () => settings.directoryView?.view], () => selectedClasses.value = [
-			'border-dashed border-red-600/50 first:border-l-2 last:border-r-2',
-			props.entry.selected ? 'bg-red-600/5 first:border-l-red-600/50 last:border-r-red-600/50' : 'first:border-l-transparent last:border-r-transparent',
-			props.entry.selected && (!props.neighboursSelected.above || settings.directoryView?.view !== 'list') ? 'border-t-2' : 'border-t-0',
-			props.entry.selected && (!props.neighboursSelected.below || settings.directoryView?.view !== 'list') ? 'border-b-2' : 'border-b-0',
-		], { immediate: true, deep: true });
+		onBeforeUnmount(() => {
+			emit('setEntryProp', 'dirOpen', false)
+			emit('setEntryProp', 'DOMElement', undefined), { immediate: true }
+		});
 
 		return {
 			settings,
 			icon,
 			directoryLike,
-			selectedClasses,
 			showEntries,
-			directoryViewRef,
+			directoryEntryListRef,
 			doubleClickCallback,
 			refresh,
 			toggleShowEntries,
-			getSelected,
-			selectAll,
-			deselectAllForward,
+			gatherEntries,
 			escapeStringHTML,
 			DirectoryEntryList,
 			nextTick,
+			selectIntersectElement,
 		}
 	},
 	components: {
@@ -212,7 +200,25 @@ export default {
 		'toggleSelected',
 		'startProcessing',
 		'stopProcessing',
-		'deselectAll',
+		'setEntryProp',
 	]
 }
 </script>
+
+<style scoped>
+tr.dir-entry>td {
+	@apply border-solid border-y-red-600/50 border-y-0 first:border-l last:border-r first:border-l-transparent last:border-r-transparent;
+}
+
+tr.dir-entry-selected>td {
+	@apply border-y first:border-l-red-600/50 last:border-red-600/50 bg-red-600/10;
+}
+/* 
+div.dir-entry {
+	@apply border-solid border border-transparent;
+} */
+
+div.dir-entry-selected {
+	@apply  bg-red-600/10;
+}
+</style>

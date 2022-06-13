@@ -3,11 +3,12 @@
 		<DirectoryEntry :show="true" :host="host" :entry="entry" :inheritedSortCallback="sortCallback"
 			:searchFilterRegExp="searchFilterRegExp" @cd="(...args) => $emit('cd', ...args)"
 			@edit="(...args) => $emit('edit', ...args)"
-			@toggleSelected="modifiers => selection.toggle(entry, index, modifiers)"
-			@deselectAll="selection.deselectAllBackward()" @sortEntries="sortEntries" @updateStats="emitStats"
+			@toggleSelected="(...args) => $emit('toggleSelected', ...args)"
+			@sortEntries="sortEntries" @updateStats="emitStats"
 			@startProcessing="(...args) => $emit('startProcessing', ...args)"
 			@stopProcessing="(...args) => $emit('stopProcessing', ...args)" ref="entryRefs" :level="level"
-			:neighboursSelected="{ above: visibleEntries[index - 1]?.selected ?? false, below: visibleEntries[index + 1]?.selected ?? false }" />
+			@setEntryProp="(prop, value) => entry[prop] = value"
+			:suppressBorders="{ top: visibleEntries[index - 1]?.selected && !(visibleEntries[index - 1]?.dirOpen), bottom: visibleEntries[index + 1]?.selected && !(entry.dirOpen), left: false, right: false }" />
 	</template>
 	<tr v-if="show && visibleEntries.length === 0">
 		<td :colspan="Object.values(settings?.directoryView?.cols ?? {}).reduce((sum, current) => current ? sum + 1 : sum, 1) ?? 100"
@@ -72,59 +73,6 @@ export default {
 				return props.sortCallback(a, b);
 			}
 		});
-		const selection = reactive({
-			lastSelectedInd: null,
-			toggle: (entry, index, modifiers) => {
-				const entrySelectedValue = entry.selected;
-				if (!modifiers.ctrlKey) {
-					const tmpLastSelectedInd = selection.lastSelectedInd;
-					selection.deselectAllBackward();
-					selection.lastSelectedInd = tmpLastSelectedInd;
-				}
-				if (modifiers.shiftKey && selection.lastSelectedInd !== null) {
-					let [startInd, endInd] = [selection.lastSelectedInd, index];
-					if (endInd < startInd)
-						[startInd, endInd] = [endInd, startInd];
-					visibleEntries.value
-						.slice(startInd, endInd + 1)
-						.map(entry => entry.selected = true);
-				} else {
-					entry.selected = modifiers.ctrlKey ? !entrySelectedValue : true;
-					if (entry.selected)
-						selection.lastSelectedInd = index;
-					else
-						selection.lastSelectedInd = null;
-				}
-			},
-			getSelected: () => [
-				...visibleEntries.value.filter(entry => entry.selected),
-				...entryRefs.value
-					.filter(entryRef => entryRef.showEntries)
-					.map(entryRef => entryRef.getSelected())
-					.flat(1),
-			],
-			clear: () => {
-				entries.value.map(entry => entry.selected = false);
-			},
-			selectAll: () => {
-				visibleEntries.value
-					.map(entry => entry.selected = true);
-				entryRefs.value
-					.map(entryRef => entryRef.selectAll());
-			},
-			deselectAllBackward: () => {
-				if (props.level > 0)
-					emit('deselectAll');
-				else
-					selection.deselectAllForward();
-			},
-			deselectAllForward: () => {
-				selection.clear();
-				selection.lastSelectedInd = null;
-				entryRefs.value
-					.map(entryRef => entryRef.deselectAllForward());
-			},
-		});
 		const processingHandler = {
 			count: 0,
 			start: () => {
@@ -147,7 +95,6 @@ export default {
 			if (!props.path) {
 				return;
 			}
-			selection.lastSelectedInd = null;
 			processingHandler.start();
 			try {
 				const cwd = props.path;
@@ -162,7 +109,7 @@ export default {
 				);
 				if (props.path !== cwd)
 					return; // changed directory before could finish
-				entries.value = [...tmpEntries.sort(sortCallbackComputed.value)].map(entry => reactive({...entry, cut: clipboard.content.find(a => a.path === entry.path && a.host === entry.host) ?? false}));
+				entries.value = [...tmpEntries.sort(sortCallbackComputed.value)].map(entry => reactive({ ...entry, cut: clipboard.content.find(a => a.path === entry.path && a.host === entry.host) ?? false }));
 				console.timeEnd('getEntries');
 			} catch (error) {
 				entries.value = [];
@@ -202,6 +149,23 @@ export default {
 		const entryFilterCallback = (entry) =>
 			(!/^\./.test(entry.name) || settings?.directoryView?.showHidden)
 			&& (props.searchFilterRegExp?.test(entry.name) ?? true);
+
+		/**
+		 * Recursive get all entries for browser
+		 * 
+		 * @param {DirectoryEntryObj[]} - Holds all entries
+		 * 
+		 * @returns {DirectoryEntryObj[]} - the accumulator
+		 */
+		const gatherEntries = (accumulator = [], onlyVisible = true) => {
+			const subset = onlyVisible ? visibleEntries.value : entries.value;
+			return accumulator.concat(
+				subset,
+				entryRefs.value
+					.filter(entryRef => entryRef.showEntries)
+					.map(entryRef => entryRef.gatherEntries(accumulator, onlyVisible)).flat(1)
+			);
+		}
 
 		const fileSystemWatcher = FileSystemWatcher(props.path, { superuser: 'try', host: props.host, ignoreSelf: true });
 
@@ -278,12 +242,12 @@ export default {
 			entries,
 			visibleEntries,
 			entryRefs,
-			selection,
 			getEntries,
 			refresh,
 			emitStats,
 			sortEntries,
 			entryFilterCallback,
+			gatherEntries,
 		}
 	},
 	components: {
