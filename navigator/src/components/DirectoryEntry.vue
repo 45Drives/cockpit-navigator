@@ -69,10 +69,10 @@
 		:class="{ 'dir-entry-selected': entry.selected, '!border-t-0': suppressBorders.top, '!border-b-0': suppressBorders.bottom, '!border-l-0': suppressBorders.left, '!border-r-0': suppressBorders.right }">
 			<div class="relative w-full">
 				<component :is="icon" class="icon-default w-full h-auto" :class="{ 'text-gray-500/50': entry.cut }" />
-				<div :class="[directoryLike ? 'right-3 bottom-5' : 'right-5 bottom-3', 'inline absolute']"
+				<div :class="[directoryLike ? 'right-[15%] bottom-[25%]' : 'right-[25%] bottom-[15%]', 'inline absolute w-[20%]']"
 					:title="`-> ${entry.target?.rawPath ?? '?'}`">
 					<LinkIcon v-if="entry.type === 'l'"
-						:class="[entry.target?.broken ? 'text-red-300 dark:text-red-800' : 'text-gray-100 dark:text-gray-900', 'w-4 h-auto']" />
+						:class="[entry.target?.broken ? 'text-red-300 dark:text-red-800' : 'text-gray-100 dark:text-gray-900']" />
 				</div>
 			</div>
 			<div class="text-center w-full" :class="{ truncate: !entry.selected, 'line-through': entry.cut }" style="overflow-wrap: break-word;" v-html="escapeStringHTML(entry.name)" :title="entry.name"></div>
