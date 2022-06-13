@@ -1,8 +1,25 @@
+<!--
+Copyright (C) 2022 Josh Boudreau <jboudreau@45drives.com>
+
+This file is part of Cockpit Navigator.
+
+Cockpit Navigator is free software: you can redistribute it and/or modify it under the terms
+of the GNU General Public License as published by the Free Software Foundation, either version 3
+of the License, or (at your option) any later version.
+
+Cockpit Navigator is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with Cockpit Navigator.
+If not, see <https://www.gnu.org/licenses/>. 
+-->
+
 <template>
-	<div class="shadow border border-default h-full">
+	<div class="shadow border border-default h-full overflow-hidden">
 		<div
 			v-if="!noHeader"
-			class="bg-accent py-3 px-4 lg:pl-8 lg:pr-6 text-sm font-semibold flex flex-row"
+			class="bg-accent py-3 px-4 lg:px-6 text-sm font-semibold flex flex-row"
 		>
 			<div class="grow">
 				<slot name="header">{{ headerText }}</slot>
@@ -80,7 +97,7 @@ table.houston-table thead.use-sticky tr th {
 
 table.houston-table th,
 table.houston-table td {
-	@apply py-2 px-4 lg:pl-8 lg:pr-6 whitespace-nowrap text-sm;
+	@apply py-2 px-4 lg:px-6 whitespace-nowrap text-sm;
 }
 
 table.houston-table th:not(.text-right):not(.text-center),
