@@ -3,7 +3,7 @@
 		<div class="h-full flex flex-col items-stretch">
 			<div
 				class="grid grid-cols-[auto_1fr] grid-rows-[1fr 1fr] md:grid-cols-[auto_3fr_1fr] md:grid-row-[1fr] items-stretch divide-x divide-y divide-default">
-				<div class="button-group-row p-1 md:px-4 md:py-2 border border-default">
+				<div class="button-group-row p-1 md:px-4 md:py-2">
 					<button class="p-2 rounded-lg hover:bg-accent relative" :disabled="!pathHistory.backAllowed()"
 						@click="back()" @mouseenter="backHistoryDropdown.mouseEnter"
 						@mouseleave="backHistoryDropdown.mouseLeave">
