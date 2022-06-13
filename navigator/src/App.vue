@@ -4,7 +4,9 @@
 		<div class="flex flex-row items-center px-4 py-2">
 			<div class="text-sm" v-html="routerViewFooterText"></div>
 			<div class="grow" />
-			<SettingsMenu />
+			<div id="footer-buttons" class="flex flex-row-reverse gap-buttons">
+				<SettingsMenu />
+			</div>
 		</div>
 	</div>
 	<Notifications :notificationFIFO="notificationFIFO" ref="notifications" />
@@ -20,6 +22,9 @@ import { settingsInjectionKey, notificationsInjectionKey, pathHistoryInjectionKe
 const props = defineProps({ notificationFIFO: FIFO });
 
 const providesValid = ref(false);
+
+const darkMode = ref(false);
+provide('darkModeInjectionKey', darkMode);
 
 const notifications = ref();
 provide(notificationsInjectionKey, notifications);

@@ -73,16 +73,30 @@
 			</div>
 		</div>
 	</div>
+	<Teleport to="#footer-buttons">
+		<IconToggle v-model="darkMode" v-slot="{ value }">
+			<MoonIcon v-if="value" class="size-icon icon-default" />
+			<SunIcon v-else class="size-icon icon-default" />
+		</IconToggle>
+		<IconToggle v-model="settings.directoryView.showHidden" v-slot="{ value }">
+			<EyeIcon v-if="value" class="size-icon icon-default" />
+			<EyeOffIcon v-else class="size-icon icon-default" />
+		</IconToggle>
+		<IconToggle v-model="settings.directoryView.view" trueValue="list" falseValue="grid" v-slot="{ value }">
+			<ViewListIcon v-if="value" class="size-icon icon-default" />
+			<ViewGridIcon v-else class="size-icon icon-default" />
+		</IconToggle>
+	</Teleport>
 </template>
 
 <script>
 import { inject, ref, reactive, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from "vue-router";
 import DirectoryView from "../components/DirectoryView.vue";
-import { useSpawn, errorString, errorStringHTML, canonicalPath } from '@45drives/cockpit-helpers';
 import PathBreadCrumbs from '../components/PathBreadCrumbs.vue';
 import { notificationsInjectionKey, pathHistoryInjectionKey, lastPathStorageKey, settingsInjectionKey } from '../keys';
-import { ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, RefreshIcon, ChevronDownIcon, SearchIcon } from '@heroicons/vue/solid';
+import { ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, RefreshIcon, ChevronDownIcon, SearchIcon, SunIcon, MoonIcon, EyeIcon, EyeOffIcon, ViewListIcon, ViewGridIcon } from '@heroicons/vue/solid';
+import IconToggle from '../components/IconToggle.vue';
 
 const encodePartial = (string) =>
 	encodeURIComponent(string)
@@ -94,6 +108,7 @@ const encodePartial = (string) =>
 
 export default {
 	setup() {
+		const darkMode = inject('darkModeInjectionKey');
 		const settings = inject(settingsInjectionKey);
 		const notifications = inject(notificationsInjectionKey);
 		const route = useRoute();
@@ -180,6 +195,8 @@ export default {
 		return {
 			cockpit,
 			console,
+			darkMode,
+			settings,
 			pathHistory,
 			directoryViewRef,
 			searchFilterStr,
@@ -203,6 +220,13 @@ export default {
 		RefreshIcon,
 		ChevronDownIcon,
 		SearchIcon,
+		IconToggle,
+		SunIcon,
+		MoonIcon,
+		EyeIcon,
+		EyeOffIcon,
+		ViewListIcon,
+		ViewGridIcon,
 	},
 	emits: [
 		'updateFooterText'
