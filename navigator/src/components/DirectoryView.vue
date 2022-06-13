@@ -70,7 +70,8 @@
 						@stopProcessing="processing--" ref="directoryEntryListRef" :level="0" :cols="1" />
 				</template>
 			</Table>
-			<div v-else class="flex flex-wrap bg-well h-full overflow-y-auto content-start" ref="gridRef" @wheel="scrollHandler">
+			<div v-else class="flex flex-wrap bg-well h-full overflow-y-auto content-start" ref="gridRef"
+				@wheel="scrollHandler">
 				<DirectoryEntryList :host="host" :path="path" :sortCallback="sortCallback"
 					:searchFilterRegExp="searchFilterRegExp" @cd="(...args) => $emit('cd', ...args)"
 					@edit="(...args) => $emit('edit', ...args)" @toggleSelected="toggleSelected"
@@ -176,8 +177,11 @@ export default {
 			console.log("DirectoryView::keyHandler:", event);
 			if (event.key === 'Escape') {
 				if (getSelected().length === 0) {
-					clipboard.content.map(entry => entry.cut = false);
-					clipboard.content = [];
+					if (clipboard.content.length) {
+						clipboard.content.map(entry => entry.cut = false);
+						clipboard.content = [];
+						notifications.value.constructNotification('Clipboard', 'Cleared clipboard.', 'info', 1000);
+					}
 				} else {
 					deselectAll();
 				}
@@ -190,6 +194,7 @@ export default {
 						break;
 					case 'h':
 						settings.directoryView.showHidden = !settings.directoryView.showHidden;
+						notifications.value.constructNotification('Directory View Settings Updated', `Hidden files/directories are now ${settings.directoryView.showHidden ? '' : 'in'}visible.`, 'info', 1000);
 						break;
 					case 'c':
 					case 'x':
@@ -199,6 +204,7 @@ export default {
 							entry.cut = isCut;
 							return entry;
 						});
+						notifications.value.constructNotification('Clipboard', `Copied ${clipboard.content.length} items to clipboard.`, 'info', 1000);
 						break;
 					case 'v':
 						const selected = getSelected();
