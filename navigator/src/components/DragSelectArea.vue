@@ -21,6 +21,8 @@ export default {
 		const dragging = ref(false);
 
 		const startDrag = (event) => {
+			if (event.button !== 0)
+				return;
 			dragging.value = true;
 			rect.x1 = rect.x2 = event.clientX;
 			rect.y1 = rect.y2 = event.clientY;
@@ -34,6 +36,8 @@ export default {
 		}
 
 		const endDrag = (event) => {
+			if (event.button !== 0)
+				return;
 			window.removeEventListener('mousemove', drag);
 			window.removeEventListener('mouseup', endDrag, true);
 			drag(event);
