@@ -1,7 +1,7 @@
 <template>
-	<div class="h-full" @keydown="keyHandler($event)" tabindex="-1" :class="{'!cursor-wait': processing}">
+	<div class="h-full" @keydown="keyHandler($event)" tabindex="-1" :class="{ '!cursor-wait': processing }">
 		<DragSelectArea class="h-full" @selectRectangle="selectRectangle" @mouseup.exact="deselectAll()">
-			<Table v-if="settings.directoryView?.view === 'list'" emptyText="No entries." noHeader stickyHeaders
+			<Table :key="host + path" v-if="settings.directoryView?.view === 'list'" emptyText="No entries." noHeader stickyHeaders
 				noShrink noShrinkHeight="h-full">
 				<template #thead>
 					<tr>
@@ -66,17 +66,52 @@
 					<DirectoryEntryList :host="host" :path="path" :sortCallback="sortCallback"
 						:searchFilterRegExp="searchFilterRegExp" @cd="(...args) => $emit('cd', ...args)"
 						@edit="(...args) => $emit('edit', ...args)" @toggleSelected="toggleSelected"
-						@updateStats="(...args) => $emit('updateStats', ...args)" @startProcessing="processing++"
-						@stopProcessing="processing--" ref="directoryEntryListRef" :level="0" :cols="1" />
+						@startProcessing="processing++" @stopProcessing="processing--"
+						@entryAction="(...args) => $emit('entryAction', ...args)" ref="directoryEntryListRef"
+						:level="0" :cols="1" :selectedCount="selectedCount" />
 				</template>
 			</Table>
-			<div v-else class="flex flex-wrap bg-well h-full overflow-y-auto content-start" ref="gridRef"
-				@wheel="scrollHandler">
-				<DirectoryEntryList :host="host" :path="path" :sortCallback="sortCallback"
-					:searchFilterRegExp="searchFilterRegExp" @cd="(...args) => $emit('cd', ...args)"
-					@edit="(...args) => $emit('edit', ...args)" @toggleSelected="toggleSelected"
-					@updateStats="(...args) => $emit('updateStats', ...args)" @startProcessing="processing++"
-					@stopProcessing="processing--" ref="directoryEntryListRef" :level="0" :cols="cols" />
+			<div v-else class="h-full">
+				<div class="flex flex-row justify-start items-center px-6 py-2 gap-4 text-sm border-t border-default">
+					<div class="flex flex-row flex-nowrap gap-2 items-center">
+						<div>Name</div>
+						<SortCallbackButton initialFuncIsMine v-model="sortCallback"
+							:compareFunc="sortCallbacks.name" />
+					</div>
+					<div class="flex flex-row flex-nowrap gap-2 items-center">
+						<div>Owner</div>
+						<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.owner" />
+					</div>
+					<div class="flex flex-row flex-nowrap gap-2 items-center">
+						<div>Group</div>
+						<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.group" />
+					</div>
+					<div class="flex flex-row flex-nowrap gap-2 items-center">
+						<div>Size</div>
+						<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.size" />
+					</div>
+					<div class="flex flex-row flex-nowrap gap-2 items-center">
+						<div>Created</div>
+						<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.ctime" />
+					</div>
+					<div class="flex flex-row flex-nowrap gap-2 items-center">
+						<div>Modified</div>
+						<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.mtime" />
+					</div>
+					<div class="flex flex-row flex-nowrap gap-2 items-center">
+						<div>Accessed</div>
+						<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.atime" />
+					</div>
+				</div>
+				<div :key="host + path" class="flex flex-wrap bg-well h-full overflow-y-auto content-start" ref="gridRef"
+					@wheel="scrollHandler">
+					<DirectoryEntryList :host="host" :path="path" :sortCallback="sortCallback"
+						:searchFilterRegExp="searchFilterRegExp" @cd="(...args) => $emit('cd', ...args)"
+						@edit="(...args) => $emit('edit', ...args)" @toggleSelected="toggleSelected"
+						@startProcessing="processing++" @stopProcessing="processing--"
+						@entryAction="(...args) => $emit('entryAction', ...args)" ref="directoryEntryListRef"
+						:level="0" :cols="cols" :selectedCount="selectedCount" />
+				</div>
 			</div>
 		</DragSelectArea>
 	</div>
@@ -108,6 +143,7 @@ export default {
 		const directoryEntryListRef = ref();
 		const gridRef = ref();
 		const cols = ref(1);
+		const selectedCount = ref(0);
 
 		const sortCallbacks = {
 			name: (a, b) => a.name.localeCompare(b.name),
@@ -126,33 +162,45 @@ export default {
 
 		const getSelected = () => directoryEntryListRef.value?.gatherEntries().filter(entry => entry.selected) ?? [];
 
+		const tallySelected = async () => selectedCount.value = getSelected().reduce((n) => n + 1, 0);
+
 		let lastSelectedEntry = null;
 		const toggleSelected = (entry, { ctrlKey, shiftKey }) => {
-			const entrySelectedValue = entry.selected;
-			if (!ctrlKey)
-				deselectAll();
-			if (shiftKey && lastSelectedEntry !== null) {
-				const entries = directoryEntryListRef.value?.gatherEntries();
-				let [startInd, endInd] = [entries.indexOf(lastSelectedEntry), entries.indexOf(entry)];
-				if (startInd != -1 && endInd != -1) {
-					if (endInd < startInd)
-						[startInd, endInd] = [endInd, startInd];
-					entries
-						.slice(startInd, endInd + 1)
-						.map(entry => entry.selected = true);
-					return;
+			try {
+				const entrySelectedValue = entry.selected;
+				if (!ctrlKey)
+					deselectAll();
+				if (shiftKey && lastSelectedEntry !== null) {
+					const entries = directoryEntryListRef.value?.gatherEntries();
+					let [startInd, endInd] = [entries.indexOf(lastSelectedEntry), entries.indexOf(entry)];
+					if (startInd != -1 && endInd != -1) {
+						if (endInd < startInd)
+							[startInd, endInd] = [endInd, startInd];
+						entries
+							.slice(startInd, endInd + 1)
+							.map(entry => entry.selected = true);
+						return;
+					}
 				}
+				entry.selected = ctrlKey ? !entrySelectedValue : true;
+				if (entry.selected)
+					lastSelectedEntry = entry;
+				else
+					lastSelectedEntry = null;
+			} finally {
+				tallySelected();
 			}
-			entry.selected = ctrlKey ? !entrySelectedValue : true;
-			if (entry.selected)
-				lastSelectedEntry = entry;
-			else
-				lastSelectedEntry = null;
 		}
 
-		const selectAll = () => directoryEntryListRef.value?.gatherEntries().map(entry => entry.selected = true);
+		const selectAll = () => {
+			directoryEntryListRef.value?.gatherEntries().map(entry => entry.selected = true);
+			tallySelected();
+		}
 
-		const deselectAll = () => directoryEntryListRef.value?.gatherEntries([], false).map(entry => entry.selected = false);
+		const deselectAll = () => {
+			directoryEntryListRef.value?.gatherEntries([], false).map(entry => entry.selected = false);
+			tallySelected();
+		}
 
 		const selectRectangle = (rect, { ctrlKey, shiftKey }) => {
 			if (!(ctrlKey || shiftKey))
@@ -180,7 +228,7 @@ export default {
 					if (clipboard.content.length) {
 						clipboard.content.map(entry => entry.cut = false);
 						clipboard.content = [];
-						notifications.value.constructNotification('Clipboard', 'Cleared clipboard.', 'info', 1000);
+						notifications.value.constructNotification('Clipboard', 'Cleared clipboard.', 'info', 2000);
 					}
 				} else {
 					deselectAll();
@@ -194,7 +242,7 @@ export default {
 						break;
 					case 'h':
 						settings.directoryView.showHidden = !settings.directoryView.showHidden;
-						notifications.value.constructNotification('Directory View Settings Updated', `Hidden files/directories are now ${settings.directoryView.showHidden ? '' : 'in'}visible.`, 'info', 1000);
+						notifications.value.constructNotification('Directory View Settings Updated', `Hidden files/directories are now ${settings.directoryView.showHidden ? '' : 'in'}visible.`, 'info', 2000);
 						break;
 					case 'c':
 					case 'x':
@@ -204,7 +252,7 @@ export default {
 							entry.cut = isCut;
 							return entry;
 						});
-						notifications.value.constructNotification('Clipboard', `Copied ${clipboard.content.length} items to clipboard.`, 'info', 1000);
+						notifications.value.constructNotification('Clipboard', `Copied ${clipboard.content.length} items to clipboard.`, 'info', 2000);
 						break;
 					case 'v':
 						const selected = getSelected();
@@ -273,6 +321,7 @@ export default {
 			processing,
 			directoryEntryListRef,
 			cols,
+			selectedCount,
 			gridRef,
 			sortCallbacks,
 			sortCallback,
@@ -297,7 +346,45 @@ export default {
 	emits: [
 		'cd',
 		'edit',
-		'updateStats',
+		'entryAction',
 	]
 }
 </script>
+
+<style>
+tr.dir-entry>td {
+	@apply border-solid border-y-red-600/50 border-y-0 first:border-l last:border-r first:border-l-transparent last:border-r-transparent;
+}
+
+tr.dir-entry-selected>td {
+	@apply border-y first:border-l-red-600/50 last:border-red-600/50 bg-red-600/10;
+}
+
+div.dir-entry {
+	@apply border-solid border border-transparent;
+}
+
+div.dir-entry-selected {
+	@apply border-red-600/50 bg-red-600/10;
+}
+
+tr.dir-entry-selected.suppress-border-t>td {
+	@apply !border-t-0;
+}
+
+tr.dir-entry-selected.suppress-border-b>td {
+	@apply !border-b-0;
+}
+
+tr.dir-entry-selected.suppress-border-l>td {
+	@apply !border-l-0;
+}
+
+tr.dir-entry-selected.suppress-border-r>td {
+	@apply !border-r-0;
+}
+
+div.dir-entry-width {
+	width: v-bind('`${settings.directoryView?.gridEntrySize ?? 80}px`');
+}
+</style>

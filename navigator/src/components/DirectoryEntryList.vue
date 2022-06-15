@@ -1,21 +1,29 @@
 <template>
-	<template v-for="entry, index in visibleEntries" :key="entry.path">
-		<DirectoryEntry :show="true" :host="host" :entry="entry" :inheritedSortCallback="sortCallback"
-			:searchFilterRegExp="searchFilterRegExp" @cd="(...args) => $emit('cd', ...args)"
-			@edit="(...args) => $emit('edit', ...args)" @toggleSelected="(...args) => $emit('toggleSelected', ...args)"
-			@sortEntries="sortEntries" @updateStats="emitStats"
-			@startProcessing="(...args) => $emit('startProcessing', ...args)"
-			@stopProcessing="(...args) => $emit('stopProcessing', ...args)" ref="entryRefs" :level="level"
-			@setEntryProp="(prop, value) => entry[prop] = value"
-			:suppressBorders="getBorderSuppression(entry, index)" />
-	</template>
-	<tr v-if="show && visibleEntries.length === 0">
+	<DirectoryEntry v-for="entry, index in visibleEntries" :key="entry.path" :host="host" :entry="entry"
+		:inheritedSortCallback="sortCallback" :searchFilterRegExp="searchFilterRegExp"
+		@cd="(...args) => $emit('cd', ...args)" @edit="(...args) => $emit('edit', ...args)"
+		@toggleSelected="(...args) => $emit('toggleSelected', ...args)" @sortEntries="sortEntries"
+		@startProcessing="(...args) => $emit('startProcessing', ...args)"
+		@stopProcessing="(...args) => $emit('stopProcessing', ...args)" ref="entryRefs" :level="level" :selectedCount="selectedCount"
+		@setEntryProp="(prop, value) => entry[prop] = value"
+		@entryAction="(...args) => $emit('entryAction', ...args)"
+		:suppressBorderT="visibleEntries[index - cols]?.selected && !(visibleEntries[index - cols]?.dirOpen)"
+		:suppressBorderB="visibleEntries[index + cols]?.selected && !(entry.dirOpen)"
+		:suppressBorderL="settings.directoryView.view !== 'list' && (visibleEntries[index - 1]?.selected && (index) % cols !== 0)"
+		:suppressBorderR="settings.directoryView.view !== 'list' && (visibleEntries[index + 1]?.selected && (index + 1) % cols !== 0)" />
+	<tr v-if="visibleEntries.length === 0">
 		<td :colspan="Object.values(settings?.directoryView?.cols ?? {}).reduce((sum, current) => current ? sum + 1 : sum, 1) ?? 100"
 			class="!pl-1 text-muted text-sm">
-			<div class="inline-block" :style="{ width: `${24 * level}px` }"></div>
+			<div class="w-6" v-for="i in Array(level).fill(0)" v-memo="[level]"></div>
 			<div class="inline-block">No entries.</div>
 		</td>
 	</tr>
+	<Teleport to="#footer-text" v-if="selectedCount === 0">
+		<div>
+			<span v-if="level > 0">{{ path.split('/').slice(-1 * (level+1)).join('/') }}:</span>
+			{{ stats }}
+		</div>
+	</Teleport>
 </template>
 
 <script>
@@ -32,11 +40,6 @@ export default {
 		host: String,
 		path: String,
 		searchFilterRegExp: RegExp,
-		show: {
-			type: Boolean,
-			required: false,
-			default: true,
-		},
 		sortCallback: {
 			type: Function,
 			required: false,
@@ -48,6 +51,7 @@ export default {
 			required: false,
 			default: 1,
 		},
+		selectedCount: Number,
 	},
 	setup(props, { emit }) {
 		const settings = inject(settingsInjectionKey);
@@ -62,6 +66,7 @@ export default {
 		const visibleEntries = ref([]);
 		const notifications = inject(notificationsInjectionKey);
 		const entryRefs = ref([]);
+		const stats = ref("");
 		const sortCallbackComputed = computed(() => {
 			return (a, b) => {
 				if (settings.directoryView?.separateDirs) {
@@ -102,7 +107,6 @@ export default {
 			processingHandler.start();
 			try {
 				const cwd = props.path;
-				console.time('getEntries');
 				const tmpEntries = (
 					await getDirEntryObjects(
 						cwd,
@@ -111,10 +115,12 @@ export default {
 						(message) => notifications.value.constructNotification("Failed to parse file name", message, 'error')
 					)
 				);
-				if (props.path !== cwd)
+				if (props.path !== cwd) {
 					return; // changed directory before could finish
-				entries.value = [...tmpEntries.sort(sortCallbackComputed.value)].map(entry => reactive({ ...entry, cut: clipboard.content.find(a => a.path === entry.path && a.host === entry.host) ?? false }));
-				console.timeEnd('getEntries');
+				}
+				const clipboardIds = clipboard.content.map(entry => entry.uniqueId);
+				tmpEntries.map(entry => entry.cut = clipboardIds.includes(entry.uniqueId));
+				entries.value = [...tmpEntries.sort(sortCallbackComputed.value)];
 			} catch (error) {
 				entries.value = [];
 				notifications.value.constructNotification("Error getting directory entries", errorStringHTML(error), 'error');
@@ -131,17 +137,6 @@ export default {
 				...entryRefs.value.filter(entryRef => entryRef.showEntries).map(entryRef => entryRef.refresh())
 			]);
 			processingHandler.stop();
-		}
-
-		const emitStats = () => {
-			emit('updateStats', visibleEntries.value.reduce((stats, entry) => {
-				if (entry.type === 'd' || (entry.type === 'l' && entry.target?.type === 'd'))
-					stats.dirs++;
-				else
-					stats.files++;
-				stats.size += entry.size;
-				return stats;
-			}, { files: 0, dirs: 0, size: 0 }));
 		}
 
 		const sortEntries = () => {
@@ -232,11 +227,18 @@ export default {
 		watch(() => props.sortCallback, sortEntries);
 		watch(() => settings.directoryView?.separateDirs, sortEntries);
 
-		watch([() => entries.value, () => settings?.directoryView?.showHidden, () => props.searchFilterRegExp], () => {
+		watch([entries, () => settings?.directoryView?.showHidden, () => props.searchFilterRegExp], () => {
 			visibleEntries.value = entries.value.filter(entryFilterCallback);
-		})
-
-		watch(visibleEntries, emitStats);
+			const _stats = visibleEntries.value.reduce((_stats, entry) => {
+				if (entry.type === 'd' || (entry.type === 'l' && entry.target?.type === 'd'))
+					_stats.dirs++;
+				else
+					_stats.files++;
+				_stats.size += entry.size;
+				return _stats;
+			}, { files: 0, dirs: 0, size: 0 });
+			stats.value = `${_stats.files} file${_stats.files === 1 ? '' : 's'}, ${_stats.dirs} director${_stats.dirs === 1 ? 'y' : 'ies'} (${cockpit.format_bytes(_stats.size, 1000).replace(/(?<!B)$/, ' B')})`;
+		});
 
 		watch(() => props.path, (current, old) => {
 			if (current === old)
@@ -251,13 +253,14 @@ export default {
 		})
 
 		return {
+			console,
 			settings,
 			entries,
 			visibleEntries,
 			entryRefs,
+			stats,
 			getEntries,
 			refresh,
-			emitStats,
 			sortEntries,
 			entryFilterCallback,
 			gatherEntries,
@@ -270,11 +273,11 @@ export default {
 	emits: [
 		'cd',
 		'edit',
-		'updateStats',
 		'startProcessing',
 		'stopProcessing',
 		'cancelShowEntries',
 		'deselectAll',
+		'entryAction',
 	]
 }
 </script>
