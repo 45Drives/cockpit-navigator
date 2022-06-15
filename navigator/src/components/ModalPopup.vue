@@ -21,7 +21,7 @@ If not, see <https://www.gnu.org/licenses/>.
 			leave="ease-in duration-500" leave-from="opacity-100" leave-to="opacity-0">
 			<div class="fixed z-10 inset-0 bg-neutral-500/75 dark:bg-black/50 transition-opacity" />
 		</TransitionChild>
-		<div class="fixed z-10 inset-0 overflow-hidden flex items-end sm:items-center justify-center px-4 pb-20 sm:p-0">
+		<div @click.self="$emit('close')" class="fixed z-10 inset-0 overflow-hidden flex items-end sm:items-center justify-center px-4 pb-20 sm:p-0">
 			<TransitionChild as="template" enter="ease-out duration-300"
 				enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-90"
 				enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-100"
@@ -36,18 +36,23 @@ If not, see <https://www.gnu.org/licenses/>.
 								<h3 class="text-header">{{ headerText }}</h3>
 							</slot>
 						</div>
-						<div class="card-body flex flex-row items-center">
+						<div class="card-body flex flex-row items-center gap-2">
 							<slot name="icon" />
-							<div class="grow ml-2 only:ml-0 overflow-x-auto">
+							<div class="grow overflow-x-auto">
 								<slot />
 							</div>
 						</div>
 						<div class="card-footer button-group-row justify-end">
-							<button v-if="!noCancel" type="button" class="btn btn-secondary" @click="$emit('cancel')">{{
-									cancelText
-							}}</button>
-							<button type="button" :class="['btn', applyDangerous ? 'btn-danger' : 'btn-primary']"
-								@click="$emit('apply')" :disabled="disableContinue">{{ applyText }}</button>
+							<slot name="footer">
+								<button v-if="!noCancel" type="button" class="btn btn-secondary"
+									@click="$emit('cancel'); $emit('close')">
+									{{ cancelText }}
+								</button>
+								<button type="button" :class="['btn', applyDangerous ? 'btn-danger' : 'btn-primary']"
+									@click="$emit('apply'); $emit('close')" :disabled="disableContinue">
+									{{ applyText }}
+								</button>
+							</slot>
 						</div>
 					</div>
 				</div>
@@ -89,6 +94,7 @@ export default {
 	emits: [
 		'apply',
 		'cancel',
+		'close',
 	]
 };
 </script>
