@@ -1,10 +1,12 @@
 import { useSpawn, errorString } from "@45drives/cockpit-helpers";
 import { UNIT_SEPARATOR, RECORD_SEPARATOR } from "../constants";
+import { szudzikPair } from "./szudzikPair";
+import { escapeStringHTML } from "./escapeStringHTML";
 
 /**
  * Get list of directory entry objects from list of directory entry names
  * 
- * find -H path -maxdepth 1 -mindepth 1 -printf '%f:%m:%M:%s:%u:%g:%B@:%T@:%A@:%y:%Y:%l\n'
+ * find -H path -maxdepth 1 -mindepth 1 -printf '%D:%i%f:%m:%M:%s:%u:%g:%B@:%T@:%A@:%y:%Y:%l\n'
  * 
  * @param {String} cwd - Working directory to run find in
  * @param {String} host - Host to run find on
@@ -14,6 +16,8 @@ import { UNIT_SEPARATOR, RECORD_SEPARATOR } from "../constants";
  */
 async function getDirEntryObjects(cwd, host, extraFindArgs = [], failCallback = console.error, byteFormatter = cockpit.format_bytes) {
 	const fields = [
+		'%D', // dev id
+		'%i', // inode
 		'%f', // name
 		'%p', // full path
 		'%m', // mode (octal)
@@ -85,39 +89,50 @@ async function getDirEntryStats(cwd, host, outputFormat, extraFindArguments = []
  */
 function parseRawEntryStats(records, cwd, host, failCallback, byteFormatter = cockpit.format_bytes) {
 	return records.map(fields => {
-			try {
-				let [name, path, mode, modeStr, size, owner, group, ctime, mtime, atime, type, symlinkTargetType, symlinkTargetName] = fields;
-				[size, ctime, mtime, atime] = [size, ctime, mtime, atime].map(num => parseInt(num));
-				[ctime, mtime, atime] = [ctime, mtime, atime].map(ts => ts ? new Date(ts * 1000) : null);
-				mode = parseInt(mode, 8);
-				return {
-					name,
-					path,
-					mode,
-					modeStr,
-					size,
-					sizeHuman: byteFormatter(size, 1000).replace(/(?<!B)$/, ' B'),
-					owner,
-					group,
-					ctime,
-					mtime,
-					atime,
-					type,
-					target: {
-						type: symlinkTargetType,
-						rawPath: symlinkTargetName,
-						path: type === 'l' ? symlinkTargetName.replace(/^(?!\/)/, `${cwd}/`) : '',
-						broken: ['L', 'N', '?'].includes(symlinkTargetType), // L: loop N: nonexistent ?: error
-					},
-					selected: false,
-					host,
-					cut: false,
-				};
-			} catch (error) {
-				failCallback(errorString(error) + `\ncaused by: ${fields.toString()}`);
-				return null;
-			}
-		}).filter(entry => entry !== null)
+		try {
+			let [devId, inode, name, path, mode, modeStr, size, owner, group, ctime, mtime, atime, type, symlinkTargetType, symlinkTargetName] = fields;
+			[size, ctime, mtime, atime] = [size, ctime, mtime, atime].map(num => parseInt(num));
+			[devId, inode] = [devId, inode].map(num => BigInt(num));
+			[ctime, mtime, atime] = [ctime, mtime, atime].map(ts => (ts && ts > 0) ? new Date(ts * 1000) : null);
+			let [ctimeStr, mtimeStr, atimeStr] = [ctime, mtime, atime].map(date => date?.toLocaleString() ?? '-');
+			let [nameHTML, symlinkTargetNameHTML] = [name, symlinkTargetName].map(escapeStringHTML);
+			mode = parseInt(mode, 8);
+			return {
+				uniqueId: szudzikPair(host, devId, inode),
+				devId,
+				inode,
+				name,
+				nameHTML,
+				path,
+				mode,
+				modeStr,
+				size,
+				sizeHuman: byteFormatter(size, 1000).replace(/(?<!B)$/, ' B'),
+				owner,
+				group,
+				ctime,
+				mtime,
+				atime,
+				ctimeStr,
+				mtimeStr,
+				atimeStr,
+				type,
+				target: {
+					type: symlinkTargetType,
+					rawPath: symlinkTargetName,
+					rawPathHTML: symlinkTargetNameHTML,
+					path: type === 'l' ? symlinkTargetName.replace(/^(?!\/)/, `${cwd}/`) : '',
+					broken: ['L', 'N', '?'].includes(symlinkTargetType), // L: loop N: nonexistent ?: error
+				},
+				selected: false,
+				host,
+				cut: false,
+			};
+		} catch (error) {
+			failCallback(errorString(error) + `\ncaused by: ${fields.toString()}`);
+			return null;
+		}
+	}).filter(entry => entry !== null)
 }
 
 export { getDirEntryObjects, getDirEntryStats, parseRawEntryStats };
@@ -143,6 +158,9 @@ export default getDirEntryObjects;
  * Object representing file system entry
  * 
  * @typedef {Object} DirectoryEntryObj
+ * @property {BigInt} uniqueId - Unique ID generated from pairing function on [devId, inode]
+ * @property {BigInt} devId - Device ID containing the file
+ * @property {BigInt} inode - The file's inode
  * @property {String} name - File/directory name
  * @property {String} path - Full path to entry
  * @property {Number} mode - File mode (number)
@@ -154,6 +172,9 @@ export default getDirEntryObjects;
  * @property {Date} ctime - Creation time
  * @property {Date} mtime - Last Modified time
  * @property {Date} atime - Last Accessed time
+ * @property {String} ctimeStr - Creation time string
+ * @property {String} mtimeStr - Last Modified time string
+ * @property {String} atimeStr - Last Accessed time string
  * @property {String} type - Type of inode returned by find
  * @property {Object} target - Object for symlink target
  * @property {String} target.rawPath - Symlink target path directly grabbed from find
