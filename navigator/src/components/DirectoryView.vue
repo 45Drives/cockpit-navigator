@@ -106,8 +106,8 @@
 				<div :key="host + path" class="flex flex-wrap bg-well h-full overflow-y-auto content-start" ref="gridRef"
 					@wheel="scrollHandler">
 					<DirectoryEntryList :host="host" :path="path" :sortCallback="sortCallback"
-						:searchFilterRegExp="searchFilterRegExp" @cd="(...args) => $emit('cd', ...args)"
-						@edit="(...args) => $emit('edit', ...args)" @toggleSelected="toggleSelected"
+						:searchFilterRegExp="searchFilterRegExp"
+						@toggleSelected="toggleSelected"
 						@startProcessing="processing++" @stopProcessing="processing--"
 						@entryAction="(...args) => $emit('entryAction', ...args)" ref="directoryEntryListRef"
 						:level="0" :cols="cols" :selectedCount="selectedCount" />
@@ -344,8 +344,6 @@ export default {
 		DragSelectArea,
 	},
 	emits: [
-		'cd',
-		'edit',
 		'entryAction',
 	]
 }

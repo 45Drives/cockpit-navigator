@@ -1,7 +1,6 @@
 <template>
 	<DirectoryEntry v-for="entry, index in visibleEntries" :key="entry.path" :host="host" :entry="entry"
 		:inheritedSortCallback="sortCallback" :searchFilterRegExp="searchFilterRegExp"
-		@cd="(...args) => $emit('cd', ...args)" @edit="(...args) => $emit('edit', ...args)"
 		@toggleSelected="(...args) => $emit('toggleSelected', ...args)" @sortEntries="sortEntries"
 		@startProcessing="(...args) => $emit('startProcessing', ...args)"
 		@stopProcessing="(...args) => $emit('stopProcessing', ...args)" ref="entryRefs" :level="level" :selectedCount="selectedCount"
@@ -271,8 +270,6 @@ export default {
 		DirectoryEntry,
 	},
 	emits: [
-		'cd',
-		'edit',
 		'startProcessing',
 		'stopProcessing',
 		'cancelShowEntries',

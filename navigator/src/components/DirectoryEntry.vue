@@ -54,7 +54,6 @@
 		</tr>
 		<component :is="DirectoryEntryList" v-if="directoryLike && showEntries" :host="host" :path="entry.path"
 			:isChild="true" :sortCallback="inheritedSortCallback" :searchFilterRegExp="searchFilterRegExp"
-			@cd="(...args) => $emit('cd', ...args)" @edit="(...args) => $emit('edit', ...args)"
 			@startProcessing="(...args) => $emit('startProcessing', ...args)"
 			@stopProcessing="(...args) => $emit('stopProcessing', ...args)" @cancelShowEntries="showEntries = false"
 			ref="directoryEntryListRef" :level="level + 1" :selectedCount="selectedCount"
@@ -129,7 +128,7 @@ export default {
 
 		const doubleClickCallback = () => {
 			if (directoryLike.value) {
-				emit('cd', props.entry.path);
+				emit('entryAction', 'cd', props.entry);
 			} else {
 				emit('entryAction', 'openPrompt', props.entry);
 			}
@@ -187,8 +186,6 @@ export default {
 		ChevronUpIcon,
 	},
 	emits: [
-		'cd',
-		'edit',
 		'toggleSelected',
 		'startProcessing',
 		'stopProcessing',
