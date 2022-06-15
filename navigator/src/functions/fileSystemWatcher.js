@@ -13,13 +13,15 @@ import '../globalTypedefs';
  * @property {FileSystemEventCallback} onAttributeChanged - callback for file AttributeChanged
  * @property {FileSystemEventCallback} onDoneHint - callback for file DoneHint
  * @property {FileSystemEventCallback} onError - Error callback, defaults to logging to console.error
+ * @param {Boolean} defer - if true, don't start watching until FileSystemWatchObj.start() called
  * @returns {FileSystemWatchObj} {@link FileSystemWatchObj}
  */
-function FileSystemWatcher(path, options = {}, handlers = {}) {
+function FileSystemWatcher(path, options = {}, handlers = {}, defer=false) {
 	let fsWatchChannel = null;
 	let fsWatchJobQueue = [];
 	let unhandledEventQueue = [];
 	let running = true;
+	let wakeRunner = () => null;
 	const self = {
 		host: options.host ?? null,
 		path,
@@ -77,6 +79,7 @@ function FileSystemWatcher(path, options = {}, handlers = {}) {
 				self.onError(error);
 				break;
 		}
+		wakeRunner();
 	}
 
 	/**
@@ -91,7 +94,10 @@ function FileSystemWatcher(path, options = {}, handlers = {}) {
 					self.onError(error);
 				}
 			}
-			await new Promise(resolve => setTimeout(resolve, 100));
+			await new Promise(resolve => {
+				wakeRunner = resolve;
+				setTimeout(wakeRunner, 1000); // spurious wakeup in case any missed
+			});
 		}
 	}
 
@@ -120,28 +126,36 @@ function FileSystemWatcher(path, options = {}, handlers = {}) {
 	}
 
 	self.stop = () => {
+		if (fsWatchChannel?.valid) takeDownChannel();
 		running = false;
-		takeDownChannel();
+		fsWatchJobQueue.length = 0;
+		unhandledEventQueue.length = 0;
+		wakeRunner();
 	};
 
-	fsWatchJobRunner(); // start runner
-	setUpChannel();
+	self.start = () => {
+		running = true;
+		fsWatchJobRunner(); // start runner
+		if (!fsWatchChannel?.valid) setUpChannel();
+	}
+
+	if (!defer) self.start();
 
 	return new Proxy(self, {
 		get: (target, prop) => target[prop],
 		set: (target, prop, value) => {
 			if (target[prop] === value)
 				return true;
-			let restartChannel = (prop === 'path' || prop === 'host');
+			const restartChannel = (prop === 'path' || prop === 'host');
 
 			if (restartChannel) {
-				takeDownChannel();
+				self.stop();
 			}
 
 			target[prop] = value;
 
 			if (restartChannel) {
-				setUpChannel();
+				self.start();
 			}
 
 			if (
