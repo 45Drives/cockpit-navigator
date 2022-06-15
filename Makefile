@@ -121,7 +121,7 @@ plugin-install-remote-% : SSH=ssh $(REMOTE_TEST_USER)@$(REMOTE_TEST_HOST)
 plugin-install-remote-% : REMOTE_TEST_HOME=$(shell ssh $(REMOTE_TEST_USER)@$(REMOTE_TEST_HOST) 'echo $$HOME')
 
 .SECONDEXPANSION:
-test: default $$(addprefix test-, $$(PLUGIN_SRCS))
+test: $$(addprefix test-, $$(PLUGIN_SRCS))
 
 test-%:
 	$(NPM_PREFIX) $* test
