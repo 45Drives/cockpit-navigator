@@ -1,10 +1,12 @@
 <template>
 	<div class="text-default bg-default h-full flex flex-col items-stretch">
-		<router-view v-if="providesValid" @updateFooterText="text => routerViewFooterText = text" />
-		<div class="flex flex-row items-center px-4 py-2">
-			<div class="text-sm" v-html="routerViewFooterText"></div>
-			<div class="grow" />
-			<div id="footer-buttons" class="flex flex-row-reverse gap-buttons">
+		<router-view v-if="providesValid" />
+		<div class="flex flex-row items-center px-4 py-2 gap-2">
+			<div id="footer-text" class="flex flex-row flex-wrap gap-x-4 gap-y-0 text-xs grow basis-0"></div>
+			<div class="grow-0">
+				45Drives
+			</div>
+			<div id="footer-buttons" class="flex flex-row-reverse gap-buttons grow basis-0">
 				<SettingsMenu />
 			</div>
 		</div>
@@ -59,7 +61,5 @@ const clipboard = reactive({
 });
 provide(clipboardInjectionKey, clipboard);
 providesValid.value = true;
-
-const routerViewFooterText = ref("");
 
 </script>
