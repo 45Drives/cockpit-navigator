@@ -1,6 +1,7 @@
 <template>
 	<template v-if="settings.directoryView?.view === 'list'">
-		<tr @dblclick="doubleClickCallback" @click.prevent="$emit('toggleSelected', entry, $event)"
+		<tr @dblclick="doubleClickCallback" @click.prevent="$emit('entryAction', 'toggleSelected', entry, $event)"
+			@mouseup.stop
 			:class="{'hover:!bg-red-600/10 select-none dir-entry': true, 'dir-entry-selected': entry.selected, 'suppress-border-t': suppressBorderT, 'suppress-border-b': suppressBorderB }"
 			ref="selectIntersectElement">
 			<td class="!pl-1" >
@@ -57,10 +58,9 @@
 			@startProcessing="(...args) => $emit('startProcessing', ...args)"
 			@stopProcessing="(...args) => $emit('stopProcessing', ...args)" @cancelShowEntries="showEntries = false"
 			ref="directoryEntryListRef" :level="level + 1" :selectedCount="selectedCount"
-			@toggleSelected="(...args) => $emit('toggleSelected', ...args)"
 			@entryAction="(...args) => $emit('entryAction', ...args)" />
 	</template>
-	<div v-else @dblclick="doubleClickCallback" @click.prevent="$emit('toggleSelected', entry, $event)"
+	<div v-else @dblclick="doubleClickCallback" @click.prevent="$emit('entryAction', 'toggleSelected', entry, $event)" @mouseup.stop
 		ref="selectIntersectElement"
 		class="hover:!bg-red-600/10 select-none dir-entry flex flex-col items-center overflow-hidden dir-entry-width p-2"
 		:class="{ 'dir-entry-selected': entry.selected, '!border-t-transparent': suppressBorderT, '!border-b-transparent': suppressBorderB, '!border-l-transparent': suppressBorderL, '!border-r-transparent': suppressBorderR }">
@@ -158,6 +158,10 @@ export default {
 			emit('setEntryProp', 'DOMElement', selectIntersectElement.value);
 		});
 
+		onUpdated(() => {
+			emit('setEntryProp', 'DOMElement', selectIntersectElement.value);
+		});
+
 		return {
 			settings,
 			icon,
@@ -186,7 +190,6 @@ export default {
 		ChevronUpIcon,
 	},
 	emits: [
-		'toggleSelected',
 		'startProcessing',
 		'stopProcessing',
 		'setEntryProp',

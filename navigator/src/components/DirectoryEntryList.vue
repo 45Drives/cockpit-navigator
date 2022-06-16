@@ -1,7 +1,7 @@
 <template>
 	<DirectoryEntry v-for="entry, index in visibleEntries" :key="entry.path" :host="host" :entry="entry"
 		:inheritedSortCallback="sortCallback" :searchFilterRegExp="searchFilterRegExp"
-		@toggleSelected="(...args) => $emit('toggleSelected', ...args)" @sortEntries="sortEntries"
+		@sortEntries="sortEntries"
 		@startProcessing="(...args) => $emit('startProcessing', ...args)"
 		@stopProcessing="(...args) => $emit('stopProcessing', ...args)" ref="entryRefs" :level="level" :selectedCount="selectedCount"
 		@setEntryProp="(prop, value) => entry[prop] = value"
@@ -19,14 +19,14 @@
 	</tr>
 	<Teleport to="#footer-text" v-if="selectedCount === 0">
 		<div>
-			<span v-if="level > 0">{{ path.split('/').slice(-1 * (level+1)).join('/') }}:</span>
+			<span v-if="level > 0">{{ path.split('/').slice(-1 * (level)).join('/') }}:</span>
 			{{ stats }}
 		</div>
 	</Teleport>
 </template>
 
 <script>
-import { ref, reactive, computed, inject, watch, onBeforeUnmount } from 'vue';
+import { ref, reactive, computed, inject, watch, onBeforeUnmount, onMounted, nextTick } from 'vue';
 import { errorStringHTML } from '@45drives/cockpit-helpers';
 import { notificationsInjectionKey, settingsInjectionKey, clipboardInjectionKey } from '../keys';
 import DirectoryEntry from './DirectoryEntry.vue';
@@ -117,8 +117,12 @@ export default {
 				if (props.path !== cwd) {
 					return; // changed directory before could finish
 				}
+				const selectedIds = gatherEntries([], false).filter(entry => entry.selected).map(entry => entry.uniqueId);
 				const clipboardIds = clipboard.content.map(entry => entry.uniqueId);
-				tmpEntries.map(entry => entry.cut = clipboardIds.includes(entry.uniqueId));
+				tmpEntries.map(entry => {
+					entry.selected = selectedIds.includes(entry.uniqueId);
+					entry.cut = clipboardIds.includes(entry.uniqueId);
+				});
 				entries.value = [...tmpEntries.sort(sortCallbackComputed.value)];
 			} catch (error) {
 				entries.value = [];
@@ -165,15 +169,6 @@ export default {
 			);
 		}
 
-		const getBorderSuppression = (entry, index) => {
-			return {
-				top: visibleEntries.value[index - props.cols]?.selected && !(visibleEntries.value[index - props.cols]?.dirOpen),
-				bottom: visibleEntries.value[index + props.cols]?.selected && !(entry.dirOpen),
-				left: settings.directoryView.view !== 'list' && (visibleEntries.value[index - 1]?.selected && (index) % props.cols !== 0),
-				right: settings.directoryView.view !== 'list' && (visibleEntries.value[index + 1]?.selected && (index + 1) % props.cols !== 0),
-			}
-		};
-
 		const fileSystemWatcher = FileSystemWatcher(props.path, { superuser: 'try', host: props.host, ignoreSelf: true });
 
 		fileSystemWatcher.onCreated = async (eventObj) => {
@@ -202,7 +197,7 @@ export default {
 				if (!newContent)
 					return; // temp file deleted too quickly
 				const attrsChanged = ["name", "owner", "group", "size", "ctime", "mtime", "atime"].map(key => String(entry[key]) !== String(newContent[key])).includes(true);
-				Object.assign(entry, newContent);
+				Object.assign(entry, newContent, { cut: entry.cut, selected: entry.selected });
 				if (attrsChanged) sortEntries();
 			}
 			else
@@ -237,6 +232,7 @@ export default {
 				return _stats;
 			}, { files: 0, dirs: 0, size: 0 });
 			stats.value = `${_stats.files} file${_stats.files === 1 ? '' : 's'}, ${_stats.dirs} director${_stats.dirs === 1 ? 'y' : 'ies'} (${cockpit.format_bytes(_stats.size, 1000).replace(/(?<!B)$/, ' B')})`;
+			nextTick(() => emit('tallySelected'));
 		});
 
 		watch(() => props.path, (current, old) => {
@@ -263,7 +259,6 @@ export default {
 			sortEntries,
 			entryFilterCallback,
 			gatherEntries,
-			getBorderSuppression,
 		}
 	},
 	components: {
@@ -275,6 +270,7 @@ export default {
 		'cancelShowEntries',
 		'deselectAll',
 		'entryAction',
+		'tallySelected',
 	]
 }
 </script>

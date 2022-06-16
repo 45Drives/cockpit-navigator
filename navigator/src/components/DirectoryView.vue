@@ -1,6 +1,6 @@
 <template>
 	<div class="h-full" @keydown="keyHandler($event)" tabindex="-1" :class="{ '!cursor-wait': processing }">
-		<DragSelectArea class="h-full" @selectRectangle="selectRectangle" @mouseup.exact="deselectAll()">
+		<DragSelectArea class="h-full" @selectRectangle="selectRectangle" @mouseup.exact="deselectAll">
 			<Table :key="host + path" v-if="settings.directoryView?.view === 'list'" emptyText="No entries." noHeader stickyHeaders
 				noShrink noShrinkHeight="h-full">
 				<template #thead>
@@ -65,9 +65,10 @@
 				<template #tbody>
 					<DirectoryEntryList :host="host" :path="path" :sortCallback="sortCallback"
 						:searchFilterRegExp="searchFilterRegExp" @cd="(...args) => $emit('cd', ...args)"
-						@edit="(...args) => $emit('edit', ...args)" @toggleSelected="toggleSelected"
+						@edit="(...args) => $emit('edit', ...args)"
 						@startProcessing="processing++" @stopProcessing="processing--"
-						@entryAction="(...args) => $emit('entryAction', ...args)" ref="directoryEntryListRef"
+						@entryAction="handleEntryAction" ref="directoryEntryListRef"
+						@tallySelected="tallySelected"
 						:level="0" :cols="1" :selectedCount="selectedCount" />
 				</template>
 			</Table>
@@ -107,18 +108,23 @@
 					@wheel="scrollHandler">
 					<DirectoryEntryList :host="host" :path="path" :sortCallback="sortCallback"
 						:searchFilterRegExp="searchFilterRegExp"
-						@toggleSelected="toggleSelected"
 						@startProcessing="processing++" @stopProcessing="processing--"
-						@entryAction="(...args) => $emit('entryAction', ...args)" ref="directoryEntryListRef"
+						@entryAction="handleEntryAction"
+						@tallySelected="tallySelected" ref="directoryEntryListRef"
 						:level="0" :cols="cols" :selectedCount="selectedCount" />
 				</div>
 			</div>
 		</DragSelectArea>
 	</div>
+	<Teleport to="#footer-text">
+		<div v-if="selectedCount > 1">
+			{{ selectedCount }} items selected
+		</div>
+	</Teleport>
 </template>
 
 <script>
-import { ref, inject, watch, onMounted, computed, onBeforeUnmount, onUpdated } from 'vue';
+import { ref, inject, watch, onMounted, computed, onBeforeUnmount, onUpdated, nextTick } from 'vue';
 import Table from './Table.vue';
 import { clipboardInjectionKey, notificationsInjectionKey, settingsInjectionKey } from '../keys';
 import LoadingSpinner from './LoadingSpinner.vue';
@@ -132,7 +138,7 @@ export default {
 		path: String,
 		searchFilterRegExp: RegExp,
 	},
-	setup(props) {
+	setup(props, { emit }) {
 		/**
 		 * @type {NavigatorSettings}
 		 */
@@ -162,7 +168,9 @@ export default {
 
 		const getSelected = () => directoryEntryListRef.value?.gatherEntries().filter(entry => entry.selected) ?? [];
 
-		const tallySelected = async () => selectedCount.value = getSelected().reduce((n) => n + 1, 0);
+		const tallySelected = () => {
+			selectedCount.value = getSelected().length;
+		}
 
 		let lastSelectedEntry = null;
 		const toggleSelected = (entry, { ctrlKey, shiftKey }) => {
@@ -193,13 +201,12 @@ export default {
 		}
 
 		const selectAll = () => {
-			directoryEntryListRef.value?.gatherEntries().map(entry => entry.selected = true);
-			tallySelected();
+			selectedCount.value = directoryEntryListRef.value?.gatherEntries().map(entry => entry.selected = true).length ?? 0;
 		}
 
-		const deselectAll = () => {
+		const deselectAll = (event) => {
 			directoryEntryListRef.value?.gatherEntries([], false).map(entry => entry.selected = false);
-			tallySelected();
+			selectedCount.value = 0;
 		}
 
 		const selectRectangle = (rect, { ctrlKey, shiftKey }) => {
@@ -216,6 +223,7 @@ export default {
 					return;
 				entry.selected = ctrlKey ? !entry.selected : true;
 			});
+			tallySelected();
 		}
 
 		/**
@@ -294,6 +302,17 @@ export default {
 			}
 		}
 
+		const handleEntryAction = (action, entry, event, ...args) => {
+			switch (action) {
+				case 'toggleSelected':
+					toggleSelected(entry, event);
+					break;
+				default:
+					emit('entryAction', action, entry, event, ...args);
+					break;
+			}
+		}
+
 		const getCols = () => {
 			const gridWidth = gridRef.value?.clientWidth;
 			if (!gridWidth)
@@ -334,6 +353,8 @@ export default {
 			selectAll,
 			deselectAll,
 			selectRectangle,
+			handleEntryAction,
+			tallySelected,
 		}
 	},
 	components: {
