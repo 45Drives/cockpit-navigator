@@ -33,7 +33,7 @@ async function getDirEntryObjects(cwd, host, extraFindArgs = [], failCallback = 
 		'%l', // symlink target name or '' if not symlink
 	]
 	return parseRawEntryStats(
-		await getDirEntryStats(cwd, host, fields, extraFindArgs, false),
+		await getDirEntryStats(cwd, host, fields, extraFindArgs, false, failCallback),
 		cwd,
 		host,
 		failCallback,
@@ -50,7 +50,7 @@ async function getDirEntryObjects(cwd, host, extraFindArgs = [], failCallback = 
  * @param {Boolean} recursive - if false, -maxdepth is 1
  * @returns {Promise<String[][]>} Array of resultant output
  */
-async function getDirEntryStats(cwd, host, outputFormat, extraFindArguments = [], recursive = false) {
+async function getDirEntryStats(cwd, host, outputFormat, extraFindArguments = [], recursive = false, failCallback = null) {
 	const UNIT_SEPARATOR_ESC = `\\${UNIT_SEPARATOR.charCodeAt(0).toString(8).padStart(3, '0')}`;
 	const RECORD_SEPARATOR_ESC = `\\${RECORD_SEPARATOR.charCodeAt(0).toString(8).padStart(3, '0')}`;
 	const argv = [
@@ -65,12 +65,20 @@ async function getDirEntryStats(cwd, host, outputFormat, extraFindArguments = []
 	argv.push(...extraFindArguments);
 	if (outputFormat.length)
 		argv.push('-printf', `${outputFormat.join(UNIT_SEPARATOR_ESC)}${RECORD_SEPARATOR_ESC}`);
+	// console.time('getDirEntryStats-useSpawn-' + cwd);
 	return new TextDecoder().decode(
 		( // make sure any possible nul bytes don't break cockpit's protocol by using binary
 			await useSpawn(
 				argv,
 				{ superuser: 'try', host, binary: true }
 			).promise()
+				// .then(state => {console.timeEnd('getDirEntryStats-useSpawn-' + cwd); return state})
+				.catch(state => {
+					if (failCallback) {
+						failCallback(state.stderr);
+						return state;
+					} else throw state;
+				})
 		).stdout
 	).split(RECORD_SEPARATOR)
 		.slice(0, -1) // remove last empty array element from split since all entries end with RECORD_SEPARATOR
