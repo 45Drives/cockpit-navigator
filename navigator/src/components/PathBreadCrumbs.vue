@@ -62,7 +62,6 @@ export default {
 		}
 
 		const hostChangeCallback = () => {
-			console.log("hostChangeCallback");
 			hostInput.value = hostInput.value || cockpit.transport.host;
 			emit('cd', { host: hostInput.value });
 		}
