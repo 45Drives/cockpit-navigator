@@ -26,7 +26,7 @@
 </template>
 
 <script>
-import { ref, reactive, computed, inject, watch, onBeforeUnmount, onMounted, nextTick } from 'vue';
+import { ref, reactive, computed, inject, watch, onBeforeUnmount, onMounted, nextTick, onUnmounted } from 'vue';
 import { errorStringHTML } from '@45drives/cockpit-helpers';
 import { notificationsInjectionKey, settingsInjectionKey, clipboardInjectionKey } from '../keys';
 import DirectoryEntry from './DirectoryEntry.vue';
@@ -104,6 +104,7 @@ export default {
 				return;
 			}
 			processingHandler.start();
+			// console.time('getEntries-' + props.path);
 			try {
 				const cwd = props.path;
 				const tmpEntries = (
@@ -111,7 +112,7 @@ export default {
 						cwd,
 						props.host,
 						[],
-						(message) => notifications.value.constructNotification("Failed to parse file name", message, 'error')
+						(message) => notifications.value.constructNotification("Error getting files", message, 'error')
 					)
 				);
 				if (props.path !== cwd) {
@@ -129,6 +130,7 @@ export default {
 				notifications.value.constructNotification("Error getting directory entries", errorStringHTML(error), 'error');
 				emit('cancelShowEntries');
 			} finally {
+				// console.timeEnd('getEntries-' + props.path);
 				processingHandler.stop();
 			}
 		}
@@ -216,13 +218,18 @@ export default {
 		onBeforeUnmount(() => {
 			processingHandler.resolveDangling();
 			fileSystemWatcher.stop();
+			// console.time('unmount-' + props.path);
 		});
+
+		// onUnmounted(() => console.timeEnd('unmount-' + props.path));
 
 		watch(() => props.sortCallback, sortEntries);
 		watch(() => settings.directoryView?.separateDirs, sortEntries);
 
 		watch([entries, () => settings?.directoryView?.showHidden, () => props.searchFilterRegExp], () => {
+			// console.time('updateVisibleEntries-' + props.path);
 			visibleEntries.value = entries.value.filter(entryFilterCallback);
+			// nextTick(() => console.timeEnd('updateVisibleEntries-' + props.path));
 			const _stats = visibleEntries.value.reduce((_stats, entry) => {
 				if (entry.type === 'd' || (entry.type === 'l' && entry.target?.type === 'd'))
 					_stats.dirs++;
