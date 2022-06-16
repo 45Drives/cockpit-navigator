@@ -1,10 +1,9 @@
 <template>
 	<template v-if="settings.directoryView?.view === 'list'">
-		<tr @dblclick="doubleClickCallback" @click.prevent="$emit('entryAction', 'toggleSelected', entry, $event)"
-			@mouseup.stop
-			:class="{'hover:!bg-red-600/10 select-none dir-entry': true, 'dir-entry-selected': entry.selected, 'suppress-border-t': suppressBorderT, 'suppress-border-b': suppressBorderB }"
+		<tr @dblclick="doubleClickCallback"
+			:class="{ 'select-none dir-entry': true, '!bg-red-600/10': hover, 'dir-entry-selected': entry.selected, 'suppress-border-t': suppressBorderT, 'suppress-border-b': suppressBorderB }"
 			ref="selectIntersectElement">
-			<td class="!pl-1" >
+			<td class="!pl-1 relative">
 				<div :class="[entry.cut ? 'line-through' : '', 'flex items-center gap-1']">
 					<div class="w-6" v-for="i in Array(level).fill(0)" v-memo="[level]"></div>
 					<div class="relative w-6">
@@ -12,7 +11,8 @@
 							:class="{ 'text-gray-500/50': entry.cut }" />
 						<LinkIcon v-if="entry.type === 'l'" class="w-2 h-2 absolute right-0 bottom-0 text-default" />
 					</div>
-					<button v-if="directoryLike" @click.stop="toggleShowEntries">
+					<button class="z-10" v-if="directoryLike" @click.stop="toggleShowEntries" @mouseenter="hover = true"
+						@mouseleave="hover = false">
 						<ChevronDownIcon v-if="!showEntries" class="size-icon icon-default" />
 						<ChevronUpIcon v-else class="size-icon icon-default" />
 					</button>
@@ -26,32 +26,28 @@
 						<div v-html="entry.target?.rawPathHTML ?? ''" :title="entry.target.rawPath"></div>
 					</div>
 				</div>
+				<div class="absolute left-0 top-0 bottom-0 w-full max-w-[50vw]" @mouseup.stop
+					@click.prevent="$emit('entryAction', 'toggleSelected', entry, $event)" @mouseenter="hover = true"
+					@mouseleave="hover = false" />
 			</td>
-			<td v-if="settings?.directoryView?.cols?.mode" class="font-mono"
-				>{{ entry.modeStr
-				}}</td>
-			<td v-if="settings?.directoryView?.cols?.owner"
-				>{{ entry.owner }}
+			<td v-if="settings?.directoryView?.cols?.mode" class="font-mono">{{ entry.modeStr
+			}}</td>
+			<td v-if="settings?.directoryView?.cols?.owner">{{ entry.owner }}
 			</td>
-			<td v-if="settings?.directoryView?.cols?.group"
-				>{{ entry.group }}
+			<td v-if="settings?.directoryView?.cols?.group">{{ entry.group }}
 			</td>
-			<td v-if="settings?.directoryView?.cols?.size" class="font-mono text-right"
-				>{{
-						entry.sizeHuman
-				}}</td>
-			<td v-if="settings?.directoryView?.cols?.ctime"
-				>{{
-						entry.ctimeStr
-				}}</td>
-			<td v-if="settings?.directoryView?.cols?.mtime"
-				>{{
-						entry.mtimeStr
-				}}</td>
-			<td v-if="settings?.directoryView?.cols?.atime"
-				>{{
-						entry.atimeStr
-				}}</td>
+			<td v-if="settings?.directoryView?.cols?.size" class="font-mono text-right">{{
+					entry.sizeHuman
+			}}</td>
+			<td v-if="settings?.directoryView?.cols?.ctime">{{
+					entry.ctimeStr
+			}}</td>
+			<td v-if="settings?.directoryView?.cols?.mtime">{{
+					entry.mtimeStr
+			}}</td>
+			<td v-if="settings?.directoryView?.cols?.atime">{{
+					entry.atimeStr
+			}}</td>
 		</tr>
 		<component :is="DirectoryEntryList" v-if="directoryLike && showEntries" :host="host" :path="entry.path"
 			:isChild="true" :sortCallback="inheritedSortCallback" :searchFilterRegExp="searchFilterRegExp"
@@ -60,8 +56,8 @@
 			ref="directoryEntryListRef" :level="level + 1" :selectedCount="selectedCount"
 			@entryAction="(...args) => $emit('entryAction', ...args)" />
 	</template>
-	<div v-else @dblclick="doubleClickCallback" @click.prevent="$emit('entryAction', 'toggleSelected', entry, $event)" @mouseup.stop
-		ref="selectIntersectElement"
+	<div v-else @dblclick="doubleClickCallback" @click.prevent="$emit('entryAction', 'toggleSelected', entry, $event)"
+		@mouseup.stop ref="selectIntersectElement"
 		class="hover:!bg-red-600/10 select-none dir-entry flex flex-col items-center overflow-hidden dir-entry-width p-2"
 		:class="{ 'dir-entry-selected': entry.selected, '!border-t-transparent': suppressBorderT, '!border-b-transparent': suppressBorderB, '!border-l-transparent': suppressBorderL, '!border-r-transparent': suppressBorderR }">
 		<div class="relative w-full">
@@ -72,13 +68,12 @@
 					:class="[entry.target?.broken ? 'text-red-300 dark:text-red-800' : 'text-gray-100 dark:text-gray-900']" />
 			</div>
 		</div>
-		<div class="text-center w-full break-words"
-			:class="{ truncate: !entry.selected, 'line-through': entry.cut }" v-html="escapeStringHTML(entry.name)"
-			:title="entry.name"></div>
+		<div class="text-center w-full break-words" :class="{ truncate: !entry.selected, 'line-through': entry.cut }"
+			v-html="escapeStringHTML(entry.name)" :title="entry.name"></div>
 	</div>
 	<Teleport to="#footer-text" v-if="entry.selected && selectedCount === 1">
 		<div>
-			<span v-if="level > 0">{{ entry.path.split('/').slice(-1 * (level+1)).join('/') }}:</span>
+			<span v-if="level > 0">{{ entry.path.split('/').slice(-1 * (level + 1)).join('/') }}:</span>
 			<span v-else>{{ entry.name }}:</span>
 			{{ entry.mode.toString(8) }}, {{ entry.owner }}:{{ entry.group }}, {{ entry.sizeHuman }}
 		</div>
@@ -117,6 +112,7 @@ export default {
 		const showEntries = ref(false);
 		const directoryEntryListRef = ref();
 		const selectIntersectElement = ref();
+		const hover = ref(false);
 
 		if (props.entry.type === 'd' || (props.entry.type === 'l' && props.entry.target?.type === 'd')) {
 			icon.value = FolderIcon;
@@ -176,6 +172,7 @@ export default {
 			DirectoryEntryList,
 			nextTick,
 			selectIntersectElement,
+			hover,
 		}
 	},
 	components: {
