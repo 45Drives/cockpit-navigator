@@ -166,7 +166,16 @@ export default {
 			return directoryEntryListRef.value?.refresh?.();
 		}
 
-		const getSelected = () => directoryEntryListRef.value?.gatherEntries().filter(entry => entry.selected) ?? [];
+		/**
+		 * Recursive get all entries for browser
+		 * 
+		 * @param {DirectoryEntryObj[]} - Holds all entries
+		 * 
+		 * @returns {DirectoryEntryObj[]} - the accumulator
+		 */
+		const gatherEntries = (accumulator = [], onlyVisible = true) => directoryEntryListRef.value?.gatherEntries(accumulator, onlyVisible) ?? [];
+
+		const getSelected = () => gatherEntries().filter(entry => entry.selected);
 
 		const tallySelected = () => {
 			selectedCount.value = getSelected().length;
@@ -179,7 +188,7 @@ export default {
 				if (!ctrlKey)
 					deselectAll();
 				if (shiftKey && lastSelectedEntry !== null) {
-					const entries = directoryEntryListRef.value?.gatherEntries();
+					const entries = gatherEntries();
 					let [startInd, endInd] = [entries.indexOf(lastSelectedEntry), entries.indexOf(entry)];
 					if (startInd != -1 && endInd != -1) {
 						if (endInd < startInd)
@@ -201,11 +210,11 @@ export default {
 		}
 
 		const selectAll = () => {
-			selectedCount.value = directoryEntryListRef.value?.gatherEntries().map(entry => entry.selected = true).length ?? 0;
+			selectedCount.value = gatherEntries().map(entry => entry.selected = true).length ?? 0;
 		}
 
 		const deselectAll = (event) => {
-			directoryEntryListRef.value?.gatherEntries([], false).map(entry => entry.selected = false);
+			gatherEntries([], false).map(entry => entry.selected = false);
 			selectedCount.value = 0;
 		}
 
@@ -213,7 +222,7 @@ export default {
 			if (!(ctrlKey || shiftKey))
 				deselectAll();
 
-			directoryEntryListRef.value?.gatherEntries().map(entry => {
+			gatherEntries().map(entry => {
 				const entryRect = entry.DOMElement?.getBoundingClientRect();
 				if (
 					!entryRect
@@ -230,11 +239,11 @@ export default {
 		 * @param {KeyboardEvent} event
 		 */
 		const keyHandler = (event) => {
-			console.log("DirectoryView::keyHandler:", event);
+			const unCutEntries = () => gatherEntries([], false).map(entry => entry.cut = false);
 			if (event.key === 'Escape') {
 				if (getSelected().length === 0) {
 					if (clipboard.content.length) {
-						clipboard.content.map(entry => entry.cut = false);
+						unCutEntries();
 						clipboard.content = [];
 						notifications.value.constructNotification('Clipboard', 'Cleared clipboard.', 'info', 2000);
 					}
@@ -255,12 +264,27 @@ export default {
 					case 'c':
 					case 'x':
 						const isCut = keypress === 'x';
-						clipboard.content.map(entry => entry.cut = false);
-						clipboard.content = getSelected().map(entry => {
+						if (!event.shiftKey)
+							unCutEntries();
+						const newContent = getSelected().map(entry => {
 							entry.cut = isCut;
-							return entry;
+							return {
+								uniqueId: entry.uniqueId,
+								host: entry.host,
+								path: entry.path,
+								name: entry.name,
+								cut: isCut,
+								clipboardRelativePath: entry.path.slice(props.path.length).replace(/^\//, '')
+							};
 						});
-						notifications.value.constructNotification('Clipboard', `Copied ${clipboard.content.length} items to clipboard.`, 'info', 2000);
+						if (event.shiftKey)
+							clipboard.content = [ ...newContent, ...clipboard.content ].filter((a, index, arr) => arr.findIndex(b => b.uniqueId === a.uniqueId) === index);
+						else
+							clipboard.content = newContent;
+						const message = event.shiftKey
+							? `Added ${newContent.length} items to clipboard.\n(${clipboard.content.length} items total)`
+							: `Copied ${newContent.length} items to clipboard.`;
+						notifications.value.constructNotification('Clipboard', message, 'info', 2000);
 						break;
 					case 'v':
 						const selected = getSelected();
@@ -277,7 +301,7 @@ export default {
 							notifications.value.constructNotification("Paste Failed", 'Cannot paste to multiple directories.', 'error');
 							break;
 						}
-						console.log("paste", clipboard.content.map(entry => ({ host: entry.host, path: entry.path })), destination);
+						console.log("paste", clipboard.content, destination);
 						break;
 					default:
 						return;

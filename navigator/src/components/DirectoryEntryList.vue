@@ -119,7 +119,7 @@ export default {
 					return; // changed directory before could finish
 				}
 				const selectedIds = gatherEntries([], false).filter(entry => entry.selected).map(entry => entry.uniqueId);
-				const clipboardIds = clipboard.content.map(entry => entry.uniqueId);
+				const clipboardIds = clipboard.content.map(item => item.uniqueId);
 				tmpEntries.map(entry => {
 					entry.selected = selectedIds.includes(entry.uniqueId);
 					entry.cut = clipboardIds.includes(entry.uniqueId);
