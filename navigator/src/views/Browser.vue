@@ -190,9 +190,7 @@ export default {
 		}
 
 		const up = () => {
-			const path = pathHistory.current() ?? { path: '/' };
-			path.path += '/..';
-			cd(path);
+			cd({path: pathHistory.current().path + '/..'});
 		}
 
 		const openEditor = (path) => {
@@ -201,7 +199,7 @@ export default {
 
 		const getSelected = () => directoryViewRef.value?.getSelected?.() ?? [];
 
-		const handleEntryAction = (action, entry) => {
+		const handleEntryAction = (action, entry, event) => {
 			switch (action) {
 				case 'cd':
 					cd({path: entry.path});
