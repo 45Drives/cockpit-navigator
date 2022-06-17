@@ -5,7 +5,8 @@
 		@startProcessing="(...args) => $emit('startProcessing', ...args)"
 		@stopProcessing="(...args) => $emit('stopProcessing', ...args)" ref="entryRefs" :level="level" :selectedCount="selectedCount"
 		@setEntryProp="(prop, value) => entry[prop] = value"
-		@entryAction="(...args) => $emit('entryAction', ...args)"
+		@browserAction="(...args) => $emit('browserAction', ...args)"
+		@directoryViewAction="(...args) => $emit('directoryViewAction', ...args)"
 		:suppressBorderT="visibleEntries[index - cols]?.selected && !(visibleEntries[index - cols]?.dirOpen)"
 		:suppressBorderB="visibleEntries[index + cols]?.selected && !(entry.dirOpen)"
 		:suppressBorderL="settings.directoryView.view !== 'list' && (visibleEntries[index - 1]?.selected && (index) % cols !== 0)"
@@ -69,13 +70,9 @@ export default {
 		const sortCallbackComputed = computed(() => {
 			return (a, b) => {
 				if (settings.directoryView?.separateDirs) {
-					const checkA = a.type === 'l' ? (a.target?.type ?? null) : a.type;
-					const checkB = b.type === 'l' ? (b.target?.type ?? null) : b.type;
-					if (checkA === null || checkB === null)
-						return 0;
-					if (checkA === 'd' && checkB !== 'd')
+					if (a.resolvedType === 'd' && b.resolvedType !== 'd')
 						return -1;
-					else if (checkA !== 'd' && checkB === 'd')
+					else if (a.resolvedType !== 'd' && b.resolvedType === 'd')
 						return 1;
 				}
 				return props.sortCallback(a, b);
@@ -231,7 +228,7 @@ export default {
 			visibleEntries.value = entries.value.filter(entryFilterCallback);
 			// nextTick(() => console.timeEnd('updateVisibleEntries-' + props.path));
 			const _stats = visibleEntries.value.reduce((_stats, entry) => {
-				if (entry.type === 'd' || (entry.type === 'l' && entry.target?.type === 'd'))
+				if (entry.resolvedType === 'd')
 					_stats.dirs++;
 				else
 					_stats.files++;
@@ -276,7 +273,8 @@ export default {
 		'stopProcessing',
 		'cancelShowEntries',
 		'deselectAll',
-		'entryAction',
+		'browserAction',
+		'directoryViewAction',
 		'tallySelected',
 	]
 }

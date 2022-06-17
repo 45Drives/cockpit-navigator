@@ -68,21 +68,21 @@
 			<div class="grow overflow-hidden">
 				<DirectoryView :host="pathHistory.current()?.host" :path="pathHistory.current()?.path"
 					:searchFilterRegExp="searchFilterRegExp" @cd="path => cd({ path })" @edit="openEditor"
-					@entryAction="handleEntryAction"
+					@browserAction="handleAction"
 					ref="directoryViewRef" />
 			</div>
 		</div>
 	</div>
-	<ModalPopup :showModal="openPrompt.show" :headerText="openPrompt.entry?.name ?? 'NULL'" @close="() => openPrompt.close()">
+	<ModalPopup :showModal="openFilePromptModal.show" :headerText="openFilePromptModal.entry?.name ?? 'NULL'" @close="() => openFilePromptModal.close()">
 		What would you like to do with this file?
 		<template #footer>
-			<button type="button" class="btn btn-secondary" @click="() => openPrompt.close()">
+			<button type="button" class="btn btn-secondary" @click="() => openFilePromptModal.close()">
 				Cancel
 			</button>
-			<button type="button" class="btn btn-primary" @click="() => openEditor(openPrompt.entry.path)">
+			<button type="button" class="btn btn-primary" @click="() => openFilePromptModal.action('edit') ">
 				Open for editing
 			</button>
-			<button type="button" class="btn btn-primary">
+			<button type="button" class="btn btn-primary" @click="() => openFilePromptModal.action('download') ">
 				Download
 			</button>
 		</template>
@@ -112,6 +112,7 @@ import { notificationsInjectionKey, pathHistoryInjectionKey, lastPathStorageKey,
 import { ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, RefreshIcon, ChevronDownIcon, SearchIcon, SunIcon, MoonIcon, EyeIcon, EyeOffIcon, ViewListIcon, ViewGridIcon } from '@heroicons/vue/solid';
 import IconToggle from '../components/IconToggle.vue';
 import ModalPopup from '../components/ModalPopup.vue';
+import { fileDownload } from '@45drives/cockpit-helpers';
 
 const encodePartial = (string) =>
 	encodeURIComponent(string)
@@ -160,19 +161,23 @@ export default {
 				forwardHistoryDropdown.showDropdown = false;
 			}
 		});
-		const openPrompt = reactive({
+		const openFilePromptModal = reactive({
 			show: false,
 			entry: null,
 			resetTimeoutHandle: null,
 			open: (entry) => {
-				clearTimeout(openPrompt.resetTimeoutHandle);
-				openPrompt.entry = entry;
-				openPrompt.show = true;
+				clearTimeout(openFilePromptModal.resetTimeoutHandle);
+				openFilePromptModal.entry = entry;
+				openFilePromptModal.show = true;
 			},
 			close: () => {
-				openPrompt.show = false;
-				openPrompt.resetTimeoutHandle = setTimeout(() => openPrompt.resetTimeoutHandle = openPrompt.entry = null, 500);
+				openFilePromptModal.show = false;
+				openFilePromptModal.resetTimeoutHandle = setTimeout(() => openFilePromptModal.resetTimeoutHandle = openFilePromptModal.entry = null, 500);
 			},
+			action: (action) => {
+				handleAction(action, openFilePromptModal.entry);
+				openFilePromptModal.close();
+			}
 		});
 
 		const cd = ({ path, host }) => {
@@ -193,25 +198,39 @@ export default {
 			cd({path: pathHistory.current().path + '/..'});
 		}
 
-		const openEditor = (path) => {
-			router.push(`/edit/${pathHistory.current().host}${encodePartial(path)}`);
+		const openEditor = ({ path, host }) => {
+			const newHost = host ?? (pathHistory.current().host);
+			const newPath = encodePartial(path ?? (pathHistory.current().path));
+			router.push(`/edit/${newHost}${newPath}`);
+		}
+
+		const download = ({ path, name, host }) => {
+			fileDownload(path, name, host);
+			console.log('download', `${host}:${path}`);
+		}
+
+		const openFilePrompt = (entry) => {
+			openFilePromptModal.open(entry);
 		}
 
 		const getSelected = () => directoryViewRef.value?.getSelected?.() ?? [];
 
-		const handleEntryAction = (action, entry, event) => {
+		const handleAction = (action, ...args) => {
 			switch (action) {
 				case 'cd':
-					cd({path: entry.path});
+					cd(...args);
 					break;
 				case 'edit':
-					openEditor({path: entry.path})
+					openEditor(...args);
 					break;
-				case 'openPrompt':
-					openPrompt.open(entry);
+				case 'openFilePrompt':
+					openFilePrompt(...args);
+					break;
+				case 'download':
+					download(...args);
 					break;
 				default:
-					console.error('Unknown entryAction:', action, entry);
+					console.error('Unknown browserAction:', action, args);
 					break;
 			}
 		}
@@ -247,14 +266,16 @@ export default {
 			searchFilterRegExp,
 			backHistoryDropdown,
 			forwardHistoryDropdown,
-			openPrompt,
+			openFilePromptModal,
 			cd,
 			back,
 			forward,
 			up,
 			openEditor,
+			download,
+			openFilePrompt,
 			getSelected,
-			handleEntryAction,
+			handleAction,
 		}
 	},
 	components: {

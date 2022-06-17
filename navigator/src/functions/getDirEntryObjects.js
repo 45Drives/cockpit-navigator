@@ -1,12 +1,12 @@
 import { useSpawn, errorString } from "@45drives/cockpit-helpers";
 import { UNIT_SEPARATOR, RECORD_SEPARATOR } from "../constants";
-import { szudzikPair } from "./szudzikPair";
+import { szudzikPair, hashString } from "./szudzikPair";
 import { escapeStringHTML } from "./escapeStringHTML";
 
 /**
  * Get list of directory entry objects from list of directory entry names
  * 
- * find -H path -maxdepth 1 -mindepth 1 -printf '%D:%i%f:%m:%M:%s:%u:%g:%B@:%T@:%A@:%y:%Y:%l\n'
+ * find -H path -maxdepth 1 -mindepth 1 -printf '%D:%i%f:%p:%m:%M:%s:%u:%g:%B@:%T@:%A@:%y:%Y:%l\n'
  * 
  * @param {String} cwd - Working directory to run find in
  * @param {String} host - Host to run find on
@@ -25,7 +25,7 @@ async function getDirEntryObjects(cwd, host, extraFindArgs = [], failCallback = 
 		'%s', // size
 		'%u', // owner
 		'%g', // group
-		'%B@', // ctime
+		'%B@', // btime
 		'%T@', // mtime
 		'%A@', // atime
 		'%y', // type
@@ -96,17 +96,31 @@ async function getDirEntryStats(cwd, host, outputFormat, extraFindArguments = []
  * @returns {DirectoryEntryObj[]}
  */
 function parseRawEntryStats(records, cwd, host, failCallback, byteFormatter = cockpit.format_bytes) {
+	const typeHumanLUT = {
+		f: 'regular file',
+		d: 'directory',
+		l: 'symbolic link',
+		c: 'character device',
+		b: 'block device',
+		p: 'FIFO (named pipe)',
+		s: 'socket',
+		U: 'unknown file type',
+		L: 'broken link (loop)',
+		N: 'broken link (non-existent)',
+		D: 'door (Solaris)', // probably don't need this, but why not right?
+	}
+	const hostHash = hashString(host);
 	return records.map(fields => {
 		try {
-			let [devId, inode, name, path, mode, modeStr, size, owner, group, ctime, mtime, atime, type, symlinkTargetType, symlinkTargetName] = fields;
-			[size, ctime, mtime, atime] = [size, ctime, mtime, atime].map(num => parseInt(num));
+			let [devId, inode, name, path, mode, modeStr, size, owner, group, btime, mtime, atime, type, symlinkTargetType, symlinkTargetName] = fields;
+			[size, btime, mtime, atime] = [size, btime, mtime, atime].map(num => parseInt(num));
 			[devId, inode] = [devId, inode].map(num => BigInt(num));
-			[ctime, mtime, atime] = [ctime, mtime, atime].map(ts => (ts && ts > 0) ? new Date(ts * 1000) : null);
-			let [ctimeStr, mtimeStr, atimeStr] = [ctime, mtime, atime].map(date => date?.toLocaleString() ?? '-');
+			[btime, mtime, atime] = [btime, mtime, atime].map(ts => (ts && ts > 0) ? new Date(ts * 1000) : null);
+			let [btimeStr, mtimeStr, atimeStr] = [btime, mtime, atime].map(date => date?.toLocaleString() ?? '-');
 			let [nameHTML, symlinkTargetNameHTML] = [name, symlinkTargetName].map(escapeStringHTML);
 			mode = parseInt(mode, 8);
 			return {
-				uniqueId: szudzikPair(host, devId, inode),
+				uniqueId: szudzikPair(hostHash, devId, inode),
 				devId,
 				inode,
 				name,
@@ -118,20 +132,21 @@ function parseRawEntryStats(records, cwd, host, failCallback, byteFormatter = co
 				sizeHuman: byteFormatter(size, 1000).replace(/(?<!B)$/, ' B'),
 				owner,
 				group,
-				ctime,
+				btime,
 				mtime,
 				atime,
-				ctimeStr,
+				btimeStr,
 				mtimeStr,
 				atimeStr,
 				type,
-				target: {
-					type: symlinkTargetType,
-					rawPath: symlinkTargetName,
-					rawPathHTML: symlinkTargetNameHTML,
-					path: type === 'l' ? symlinkTargetName.replace(/^(?!\/)/, `${cwd}/`) : '',
-					broken: ['L', 'N', '?'].includes(symlinkTargetType), // L: loop N: nonexistent ?: error
-				},
+				typeHuman: typeHumanLUT[type],
+				linkType: symlinkTargetType || null,
+				linkRawPath: symlinkTargetName || null,
+				linkRawPathHTML: symlinkTargetNameHTML || null,
+				linkBroken: ['L', 'N', '?'].includes(symlinkTargetType),
+				resolvedPath: type === 'l' ? symlinkTargetName.replace(/^(?!\/)/, `${cwd}/`) : path,
+				resolvedType: symlinkTargetType || type,
+				resolvedTypeHuman: typeHumanLUT[symlinkTargetType || type],
 				selected: false,
 				host,
 				cut: false,
@@ -177,17 +192,21 @@ export default getDirEntryObjects;
  * @property {String} sizeHuman - Human readable size
  * @property {String} owner - File owner
  * @property {String} group - File group
- * @property {Date} ctime - Creation time
+ * @property {Date} btime - Creation time
  * @property {Date} mtime - Last Modified time
  * @property {Date} atime - Last Accessed time
- * @property {String} ctimeStr - Creation time string
+ * @property {String} btimeStr - Creation time string
  * @property {String} mtimeStr - Last Modified time string
  * @property {String} atimeStr - Last Accessed time string
- * @property {String} type - Type of inode returned by find
- * @property {Object} target - Object for symlink target
- * @property {String} target.rawPath - Symlink target path directly grabbed from find
- * @property {String} target.path - Resolved symlink target path
- * @property {Boolean} target.broken - Whether or not the link is broken
+ * @property {String} type - Type of inode returned by find, single character from mode string
+ * @property {String} typeHuman - Type of inode returned by find, human readable string
+ * @property {String|null} linkType - Type of inode link is pointing to or null if not link
+ * @property {String|null} linkRawPath -  Target of link or null if not link
+ * @property {String|null} linkRawPathHTML - HTML formatted target of link or null if not link
+ * @property {Boolean} linkBroken - True if is symlink and broken, otherwise false
+ * @property {String} resolvedPath - Path to file or path to target if symlink
+ * @property {String} resolvedType - Type of file or type of target if symlink, single character from mode string
+ * @property {String} resolvedTypeHuman - Type of file or type of target if symlink, human readable string
  * @property {Boolean} selected - Whether or not the user has selected this entry in the browser
  * @property {String} host - host that owns entry
  * @property {Boolean} cut - whether or not the file is going to be cut

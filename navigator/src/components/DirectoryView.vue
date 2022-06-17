@@ -64,10 +64,10 @@
 				</template>
 				<template #tbody>
 					<DirectoryEntryList :host="host" :path="path" :sortCallback="sortCallback"
-						:searchFilterRegExp="searchFilterRegExp" @cd="(...args) => $emit('cd', ...args)"
-						@edit="(...args) => $emit('edit', ...args)"
+						:searchFilterRegExp="searchFilterRegExp"
 						@startProcessing="processing++" @stopProcessing="processing--"
-						@entryAction="handleEntryAction" ref="directoryEntryListRef"
+						@browserAction="(...args) => $emit('browserAction', ...args)"
+						@directoryViewAction="handleAction" ref="directoryEntryListRef"
 						@tallySelected="tallySelected"
 						:level="0" :cols="1" :selectedCount="selectedCount" />
 				</template>
@@ -109,7 +109,8 @@
 					<DirectoryEntryList :host="host" :path="path" :sortCallback="sortCallback"
 						:searchFilterRegExp="searchFilterRegExp"
 						@startProcessing="processing++" @stopProcessing="processing--"
-						@entryAction="handleEntryAction"
+						@browserAction="(...args) => $emit('browserAction', ...args)"
+						@directoryViewAction="handleAction"
 						@tallySelected="tallySelected" ref="directoryEntryListRef"
 						:level="0" :cols="cols" :selectedCount="selectedCount" />
 				</div>
@@ -291,7 +292,7 @@ export default {
 						let destination;
 						if (selected.length === 1) {
 							destination = selected[0];
-							if (destination.type !== 'd' && !(destination.type === 'l' && destination.target.type === 'd')) {
+							if (destination.resolvedType !== 'd') {
 								notifications.value.constructNotification("Paste Failed", 'Cannot paste to non-directory.', 'error');
 								break;
 							}
@@ -326,13 +327,13 @@ export default {
 			}
 		}
 
-		const handleEntryAction = (action, entry, event, ...args) => {
+		const handleAction = (action, ...args) => {
 			switch (action) {
 				case 'toggleSelected':
-					toggleSelected(entry, event);
+					toggleSelected(...args);
 					break;
 				default:
-					emit('entryAction', action, entry, event, ...args);
+					console.error('Unknown directoryViewAction:', action, args);
 					break;
 			}
 		}
@@ -377,7 +378,7 @@ export default {
 			selectAll,
 			deselectAll,
 			selectRectangle,
-			handleEntryAction,
+			handleAction,
 			tallySelected,
 		}
 	},
@@ -389,7 +390,7 @@ export default {
 		DragSelectArea,
 	},
 	emits: [
-		'entryAction',
+		'browserAction',
 	]
 }
 </script>
