@@ -33,7 +33,7 @@ If not, see <https://www.gnu.org/licenses/>.
 					<div class="card flex flex-col items-stretch overflow-hidden">
 						<div class="card-header">
 							<slot name="header">
-								<h3 class="text-header">{{ headerText }}</h3>
+								<h3 class="text-header" v-html="headerText" />
 							</slot>
 						</div>
 						<div class="card-body flex flex-row items-center gap-2">
