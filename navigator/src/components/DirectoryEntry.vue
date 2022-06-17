@@ -1,8 +1,7 @@
 <template>
 	<template v-if="settings.directoryView?.view === 'list'">
-		<tr @dblclick="doubleClickCallback"
-			:class="{ 'select-none dir-entry': true, '!bg-red-600/10': hover, 'dir-entry-selected': entry.selected, 'suppress-border-t': suppressBorderT, 'suppress-border-b': suppressBorderB }"
-			ref="selectIntersectElement">
+		<tr
+			:class="{ 'select-none dir-entry': true, '!bg-red-600/10': hover && !entry.selected, '!bg-red-600/20': hover && entry.selected, 'dir-entry-selected': entry.selected, 'suppress-border-t': suppressBorderT, 'suppress-border-b': suppressBorderB }">
 			<td class="!pl-1 relative">
 				<div :class="[entry.cut ? 'line-through' : '', 'flex items-center gap-1']">
 					<div class="w-6" v-for="i in Array(level).fill(0)" v-memo="[level]"></div>
@@ -27,8 +26,9 @@
 					</div>
 				</div>
 				<div class="absolute left-0 top-0 bottom-0 w-full max-w-[50vw]" @mouseup.stop
-					@click.prevent="$emit('entryAction', 'toggleSelected', entry, $event)" @mouseenter="hover = true"
-					@mouseleave="hover = false" />
+					@click.prevent="$emit('entryAction', 'toggleSelected', entry, $event)"
+					@dblclick="doubleClickCallback" @mouseenter="hover = true" @mouseleave="hover = false"
+					ref="selectIntersectElement" />
 			</td>
 			<td v-if="settings?.directoryView?.cols?.mode" class="font-mono">{{ entry.modeStr
 			}}</td>
@@ -56,20 +56,22 @@
 			ref="directoryEntryListRef" :level="level + 1" :selectedCount="selectedCount"
 			@entryAction="(...args) => $emit('entryAction', ...args)" />
 	</template>
-	<div v-else @dblclick="doubleClickCallback" @click.prevent="$emit('entryAction', 'toggleSelected', entry, $event)"
-		@mouseup.stop ref="selectIntersectElement"
-		class="hover:!bg-red-600/10 select-none dir-entry flex flex-col items-center overflow-hidden dir-entry-width p-2"
-		:class="{ 'dir-entry-selected': entry.selected, '!border-t-transparent': suppressBorderT, '!border-b-transparent': suppressBorderB, '!border-l-transparent': suppressBorderL, '!border-r-transparent': suppressBorderR }">
-		<div class="relative w-full">
-			<component :is="icon" class="icon-default w-full h-auto" :class="{ 'text-gray-500/50': entry.cut }" />
-			<div :class="[directoryLike ? 'right-[15%] bottom-[25%]' : 'right-[25%] bottom-[15%]', 'inline absolute w-[20%]']"
-				:title="`-> ${entry.target?.rawPath ?? '?'}`">
-				<LinkIcon v-if="entry.type === 'l'"
-					:class="[entry.target?.broken ? 'text-red-300 dark:text-red-800' : 'text-gray-100 dark:text-gray-900']" />
+	<div v-else class="select-none dir-entry flex flex-col items-center overflow-hidden dir-entry-width p-2"
+		:class="{ '!bg-red-600/10': hover && !entry.selected, '!bg-red-600/20': hover && entry.selected, 'dir-entry-selected': entry.selected, '!border-t-transparent': suppressBorderT, '!border-b-transparent': suppressBorderB, '!border-l-transparent': suppressBorderL, '!border-r-transparent': suppressBorderR }">
+		<div class="w-full" @dblclick="doubleClickCallback" @click.prevent="$emit('entryAction', 'toggleSelected', entry, $event)"
+			@mouseup.stop @mouseenter="hover = true" @mouseleave="hover = false" ref="selectIntersectElement">
+			<div class="relative w-full">
+				<component :is="icon" class="icon-default w-full h-auto" :class="{ 'text-gray-500/50': entry.cut }" />
+				<div :class="[directoryLike ? 'right-[15%] bottom-[25%]' : 'right-[25%] bottom-[15%]', 'inline absolute w-[20%]']"
+					:title="`-> ${entry.target?.rawPath ?? '?'}`">
+					<LinkIcon v-if="entry.type === 'l'"
+						:class="[entry.target?.broken ? 'text-red-300 dark:text-red-800' : 'text-gray-100 dark:text-gray-900']" />
+				</div>
 			</div>
+			<div class="text-center w-full text-sm break-words"
+				:class="{ 'multiline-ellipsis': entry.selected && selectedCount > 1, 'truncate': !entry.selected, 'line-through': entry.cut }"
+				v-html="entry.nameHTML" :title="entry.name"></div>
 		</div>
-		<div class="text-center w-full break-words" :class="{ truncate: !entry.selected, 'line-through': entry.cut }"
-			v-html="escapeStringHTML(entry.name)" :title="entry.name"></div>
 	</div>
 	<Teleport to="#footer-text" v-if="entry.selected && selectedCount === 1">
 		<div>

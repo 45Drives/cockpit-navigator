@@ -72,8 +72,8 @@
 						:level="0" :cols="1" :selectedCount="selectedCount" />
 				</template>
 			</Table>
-			<div v-else class="h-full">
-				<div class="flex flex-row justify-start items-center px-6 py-2 gap-4 text-sm border-t border-default">
+			<div v-else class="h-full flex flex-col items-stretch">
+				<div class="grow-0 flex flex-row justify-start items-center px-6 py-2 gap-4 text-sm border-t border-default">
 					<div class="flex flex-row flex-nowrap gap-2 items-center">
 						<div>Name</div>
 						<SortCallbackButton initialFuncIsMine v-model="sortCallback"
@@ -104,7 +104,7 @@
 						<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.atime" />
 					</div>
 				</div>
-				<div :key="host + path" class="flex flex-wrap bg-well h-full overflow-y-auto content-start" ref="gridRef"
+				<div :key="host + path" class="grow flex flex-wrap bg-well overflow-y-auto content-start" ref="gridRef"
 					@wheel="scrollHandler">
 					<DirectoryEntryList :host="host" :path="path" :sortCallback="sortCallback"
 						:searchFilterRegExp="searchFilterRegExp"
@@ -429,5 +429,12 @@ tr.dir-entry-selected.suppress-border-r>td {
 
 div.dir-entry-width {
 	width: v-bind('`${settings.directoryView?.gridEntrySize ?? 80}px`');
+}
+
+div.dir-entry div.multiline-ellipsis {
+	overflow: hidden;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
 }
 </style>
