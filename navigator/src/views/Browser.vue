@@ -68,25 +68,31 @@
 			<div class="grow overflow-hidden">
 				<DirectoryView :host="pathHistory.current()?.host" :path="pathHistory.current()?.path"
 					:searchFilterRegExp="searchFilterRegExp" @cd="path => cd({ path })" @edit="openEditor"
-					@browserAction="handleAction"
-					ref="directoryViewRef" />
+					@browserAction="handleAction" ref="directoryViewRef" />
 			</div>
 		</div>
 	</div>
-	<ModalPopup :showModal="openFilePromptModal.show" :headerText="openFilePromptModal.entry?.name ?? 'NULL'" @close="() => openFilePromptModal.close()">
-		What would you like to do with this file?
+	<ModalPopup :showModal="openFilePromptModal.show" :headerText="openFilePromptModal.entry?.name ?? 'NULL'"
+		@close="() => openFilePromptModal.close()" autoWidth>
+		What would you like to do with this {{ openFilePromptModal.entry?.resolvedTypeHuman }}?
 		<template #footer>
 			<button type="button" class="btn btn-secondary" @click="() => openFilePromptModal.close()">
 				Cancel
 			</button>
-			<button type="button" class="btn btn-primary" @click="() => openFilePromptModal.action('edit') ">
+			<button type="button" class="btn btn-primary" @click="() => openFilePromptModal.action('editPermissions')">
+				Edit permissions
+			</button>
+			<button v-if="openFilePromptModal.entry?.resolvedType === 'f'" type="button" class="btn btn-primary"
+				@click="() => openFilePromptModal.action('edit')">
 				Open for editing
 			</button>
-			<button type="button" class="btn btn-primary" @click="() => openFilePromptModal.action('download') ">
+			<button v-if="openFilePromptModal.entry?.resolvedType === 'f'" type="button" class="btn btn-primary"
+				@click="() => openFilePromptModal.action('download')">
 				Download
 			</button>
 		</template>
 	</ModalPopup>
+	<FilePermissions :show="filePermissions.show" @hide="filePermissions.close" :entry="filePermissions.entry" />
 	<Teleport to="#footer-buttons">
 		<IconToggle v-model="darkMode" v-slot="{ value }">
 			<MoonIcon v-if="value" class="size-icon icon-default" />
@@ -113,6 +119,7 @@ import { ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, RefreshIcon, ChevronDownIco
 import IconToggle from '../components/IconToggle.vue';
 import ModalPopup from '../components/ModalPopup.vue';
 import { fileDownload } from '@45drives/cockpit-helpers';
+import FilePermissions from '../components/FilePermissions.vue';
 
 const encodePartial = (string) =>
 	encodeURIComponent(string)
@@ -179,6 +186,20 @@ export default {
 				openFilePromptModal.close();
 			}
 		});
+		const filePermissions = reactive({
+			show: false,
+			entry: null,
+			resetTimeoutHandle: null,
+			open: (entry) => {
+				clearTimeout(filePermissions.resetTimeoutHandle);
+				filePermissions.entry = entry;
+				filePermissions.show = true;
+			},
+			close: () => {
+				filePermissions.show = false;
+				filePermissions.resetTimeoutHandle = setTimeout(() => filePermissions.resetTimeoutHandle = filePermissions.entry = null, 500);
+			},
+		});
 
 		const cd = ({ path, host }) => {
 			const newHost = host ?? (pathHistory.current().host);
@@ -195,7 +216,7 @@ export default {
 		}
 
 		const up = () => {
-			cd({path: pathHistory.current().path + '/..'});
+			cd({ path: pathHistory.current().path + '/..' });
 		}
 
 		const openEditor = ({ path, host }) => {
@@ -213,6 +234,10 @@ export default {
 			openFilePromptModal.open(entry);
 		}
 
+		const openFilePermissions = (entry) => {
+			filePermissions.open(entry);
+		}
+
 		const getSelected = () => directoryViewRef.value?.getSelected?.() ?? [];
 
 		const handleAction = (action, ...args) => {
@@ -222,6 +247,9 @@ export default {
 					break;
 				case 'edit':
 					openEditor(...args);
+					break;
+				case 'editPermissions':
+					openFilePermissions(...args);
 					break;
 				case 'openFilePrompt':
 					openFilePrompt(...args);
@@ -267,6 +295,7 @@ export default {
 			backHistoryDropdown,
 			forwardHistoryDropdown,
 			openFilePromptModal,
+			filePermissions,
 			cd,
 			back,
 			forward,
@@ -274,6 +303,7 @@ export default {
 			openEditor,
 			download,
 			openFilePrompt,
+			openFilePermissions,
 			getSelected,
 			handleAction,
 		}
@@ -295,6 +325,7 @@ export default {
 		ViewListIcon,
 		ViewGridIcon,
 		ModalPopup,
+		FilePermissions,
 	},
 }
 </script>

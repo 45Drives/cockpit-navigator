@@ -80,7 +80,7 @@
 			<span v-if="level > 0">{{ entry.path.split('/').slice(-1 * (level + 1)).join('/') }}:</span>
 			<span v-else>{{ entry.name }}:</span>
 			{{ entry.mode.toString(8) }}, {{ entry.owner }}:{{ entry.group }}, {{ entry.sizeHuman }},
-			modified: {{ entry.mtime }}
+			modified: {{ entry.mtimeStr }}
 		</div>
 	</Teleport>
 </template>
@@ -121,10 +121,8 @@ export default {
 		const doubleClickCallback = () => {
 			if (props.entry.resolvedType === 'd') {
 				emit('browserAction', 'cd', props.entry);
-			} else if (props.entry.resolvedType === 'f') {
-				emit('browserAction', 'openFilePrompt', props.entry);
 			} else {
-				notifications.value.constructNotification('Cannot open or download file', `${props.entry.nameHTML} is a ${props.entry.resolvedTypeHuman}`, 'denied');
+				emit('browserAction', 'openFilePrompt', props.entry);
 			}
 		}
 
