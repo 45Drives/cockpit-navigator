@@ -61,8 +61,8 @@
 							</div>
 							<div
 								class="rounded-lg hover:bg-accent cursor-pointer flex flex-row gap-1 items-center px-2"
-								v-if="settings.directoryView.cols.ctime"
-								@click="settings.directoryView.cols.ctime = !settings.directoryView.cols.ctime"
+								v-if="settings.directoryView.cols.btime"
+								@click="settings.directoryView.cols.btime = !settings.directoryView.cols.btime"
 							>
 								Created
 								<ChevronRightIcon class="size-icon-sm icon-default" />
@@ -116,8 +116,8 @@
 							</div>
 							<div
 								class="rounded-lg hover:bg-accent cursor-pointer flex flex-row gap-1 items-center px-2 justify-end"
-								v-if="!settings.directoryView.cols.ctime"
-								@click="settings.directoryView.cols.ctime = !settings.directoryView.cols.ctime"
+								v-if="!settings.directoryView.cols.btime"
+								@click="settings.directoryView.cols.btime = !settings.directoryView.cols.btime"
 							>
 								<ChevronLeftIcon class="size-icon-sm icon-default" />Created
 							</div>
@@ -164,7 +164,7 @@ const defaultSettings = {
 			owner: true,
 			group: true,
 			size: true,
-			ctime: true,
+			btime: true,
 			mtime: true,
 			atime: true,
 		},

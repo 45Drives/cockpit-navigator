@@ -9,7 +9,7 @@
  * @property {Boolean} directoryView.cols.owner - Show the owner column
  * @property {Boolean} directoryView.cols.group - Show the group column
  * @property {Boolean} directoryView.cols.size - Show the size column
- * @property {Boolean} directoryView.cols.ctime - Show the creation time column
+ * @property {Boolean} directoryView.cols.btime - Show the creation time column
  * @property {Boolean} directoryView.cols.mtime - Show the modification time column
  * @property {Boolean} directoryView.cols.atime - Show the access time column
  * @property {Object} searchInDirectory - Settings for filtering directory entries

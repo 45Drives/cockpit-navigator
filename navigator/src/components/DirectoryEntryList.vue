@@ -198,7 +198,7 @@ export default {
 				);
 				if (!newContent)
 					return; // temp file deleted too quickly
-				const attrsChanged = ["name", "owner", "group", "size", "ctime", "mtime", "atime"].map(key => String(entry[key]) !== String(newContent[key])).includes(true);
+				const attrsChanged = ["name", "owner", "group", "size", "btime", "mtime", "atime"].map(key => String(entry[key]) !== String(newContent[key])).includes(true);
 				Object.assign(entry, newContent, { cut: entry.cut, selected: entry.selected });
 				if (attrsChanged) sortEntries();
 			}

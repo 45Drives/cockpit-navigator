@@ -40,10 +40,10 @@
 							</div>
 						</th>
 						<th class="last:border-r-2 last:border-r-transparent"
-							v-if="settings?.directoryView?.cols?.ctime">
+							v-if="settings?.directoryView?.cols?.btime">
 							<div class="flex flex-row flex-nowrap gap-2 items-center">
 								<div class="grow">Created</div>
-								<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.ctime" />
+								<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.btime" />
 							</div>
 						</th>
 						<th class="last:border-r-2 last:border-r-transparent"
@@ -93,7 +93,7 @@
 					</div>
 					<div class="flex flex-row flex-nowrap gap-2 items-center">
 						<div>Created</div>
-						<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.ctime" />
+						<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.btime" />
 					</div>
 					<div class="flex flex-row flex-nowrap gap-2 items-center">
 						<div>Modified</div>
@@ -156,7 +156,7 @@ export default {
 			owner: (a, b) => a.owner.localeCompare(b.owner),
 			group: (a, b) => a.group.localeCompare(b.group),
 			size: (a, b) => a.size - b.size,
-			ctime: (a, b) => (a.ctime?.getTime() ?? 0) - (b.ctime?.getTime() ?? 0),
+			btime: (a, b) => (a.btime?.getTime() ?? 0) - (b.btime?.getTime() ?? 0),
 			mtime: (a, b) => (a.mtime?.getTime() ?? 0) - (b.mtime?.getTime() ?? 0),
 			atime: (a, b) => (a.atime?.getTime() ?? 0) - (b.atime?.getTime() ?? 0),
 		}
