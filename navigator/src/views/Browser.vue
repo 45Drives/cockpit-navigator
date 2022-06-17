@@ -93,6 +93,7 @@
 		</template>
 	</ModalPopup>
 	<FilePermissions :show="filePermissions.show" @hide="filePermissions.close" :entry="filePermissions.entry" />
+	<ContextMenu @browserAction="handleAction" :show="contextMenu.show" @hide="contextMenu.close" :entry="contextMenu.entry" :event="contextMenu.event" />
 	<Teleport to="#footer-buttons">
 		<IconToggle v-model="darkMode" v-slot="{ value }">
 			<MoonIcon v-if="value" class="size-icon icon-default" />
@@ -120,6 +121,7 @@ import IconToggle from '../components/IconToggle.vue';
 import ModalPopup from '../components/ModalPopup.vue';
 import { fileDownload } from '@45drives/cockpit-helpers';
 import FilePermissions from '../components/FilePermissions.vue';
+import ContextMenu from '../components/ContextMenu.vue';
 
 const encodePartial = (string) =>
 	encodeURIComponent(string)
@@ -200,6 +202,25 @@ export default {
 				filePermissions.resetTimeoutHandle = setTimeout(() => filePermissions.resetTimeoutHandle = filePermissions.entry = null, 500);
 			},
 		});
+		const contextMenu = reactive({
+			show: false,
+			entry: null,
+			event: null,
+			resetTimeoutHandle: null,
+			open: (entry, event) => {
+				clearTimeout(contextMenu.resetTimeoutHandle);
+				contextMenu.entry = entry;
+				contextMenu.event = event;
+				contextMenu.show = true;
+			},
+			close: () => {
+				contextMenu.show = false;
+				contextMenu.resetTimeoutHandle = setTimeout(() => {
+					contextMenu.resetTimeoutHandle = contextMenu.entry = null;
+					contextMenu.resetTimeoutHandle = contextMenu.event = null;
+				}, 500);
+			},
+		});
 
 		const cd = ({ path, host }) => {
 			const newHost = host ?? (pathHistory.current().host);
@@ -230,14 +251,6 @@ export default {
 			console.log('download', `${host}:${path}`);
 		}
 
-		const openFilePrompt = (entry) => {
-			openFilePromptModal.open(entry);
-		}
-
-		const openFilePermissions = (entry) => {
-			filePermissions.open(entry);
-		}
-
 		const getSelected = () => directoryViewRef.value?.getSelected?.() ?? [];
 
 		const handleAction = (action, ...args) => {
@@ -249,13 +262,25 @@ export default {
 					openEditor(...args);
 					break;
 				case 'editPermissions':
-					openFilePermissions(...args);
+					filePermissions.open(...args);
 					break;
 				case 'openFilePrompt':
-					openFilePrompt(...args);
+					openFilePromptModal.open(...args);
 					break;
 				case 'download':
 					download(...args);
+					break;
+				case 'contextMenu':
+					contextMenu.open(...args);
+					break;
+				case 'back':
+					back();
+					break;
+				case 'forward':
+					forward();
+					break;
+				case 'up':
+					up();
 					break;
 				default:
 					console.error('Unknown browserAction:', action, args);
@@ -296,14 +321,13 @@ export default {
 			forwardHistoryDropdown,
 			openFilePromptModal,
 			filePermissions,
+			contextMenu,
 			cd,
 			back,
 			forward,
 			up,
 			openEditor,
 			download,
-			openFilePrompt,
-			openFilePermissions,
 			getSelected,
 			handleAction,
 		}
@@ -326,6 +350,7 @@ export default {
 		ViewGridIcon,
 		ModalPopup,
 		FilePermissions,
+		ContextMenu,
 	},
 }
 </script>

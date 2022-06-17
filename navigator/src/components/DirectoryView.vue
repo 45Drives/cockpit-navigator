@@ -1,6 +1,6 @@
 <template>
 	<div class="h-full" @keydown="keyHandler($event)" tabindex="-1" :class="{ '!cursor-wait': processing }">
-		<DragSelectArea class="h-full" @selectRectangle="selectRectangle" @mouseup.exact="deselectAll">
+		<DragSelectArea class="h-full" @selectRectangle="selectRectangle" @mouseup.exact="deselectAll" @contextmenu.prevent="$emit('browserAction', 'contextMenu', { host, path, name: `Current directory (${path.split('/').pop() || '/'})` }, $event)">
 			<Table :key="host + path" v-if="settings.directoryView?.view === 'list'" emptyText="No entries." noHeader stickyHeaders
 				noShrink noShrinkHeight="h-full">
 				<template #thead>

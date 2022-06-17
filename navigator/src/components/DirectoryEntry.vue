@@ -4,14 +4,14 @@
 			:class="{ 'select-none dir-entry': true, '!bg-red-600/10': hover && !entry.selected, '!bg-red-600/20': hover && entry.selected, 'dir-entry-selected': entry.selected, 'suppress-border-t': suppressBorderT, 'suppress-border-b': suppressBorderB }">
 			<td class="!pl-1 relative">
 				<div :class="[entry.cut ? 'line-through' : '', 'flex items-center gap-1']">
-					<div class="w-6" v-for="i in Array(level).fill(0)" v-memo="[level]"></div>
+					<div class="w-6" v-for="i in Array(level).fill(0).keys()" :key="i" v-memo="[level]"></div>
 					<div class="relative w-6" :class="[entry.cut ? 'text-gray-500/50' : 'icon-default']">
 						<FolderIcon v-if="entry.resolvedType === 'd'" class="size-icon" />
 						<DocumentIcon v-else class="size-icon" />
 						<LinkIcon v-if="entry.type === 'l'" class="w-2 h-2 absolute right-0 bottom-0 text-default" />
 					</div>
-					<button class="z-10 icon-default" v-if="entry.resolvedType === 'd'" @click.stop="toggleShowEntries" @mouseenter="hover = true"
-						@mouseleave="hover = false">
+					<button class="z-10 icon-default" v-if="entry.resolvedType === 'd'" @click.stop="toggleShowEntries"
+						@mouseenter="hover = true" @mouseleave="hover = false">
 						<ChevronDownIcon v-if="!showEntries" class="size-icon" />
 						<ChevronUpIcon v-else class="size-icon" />
 					</button>
@@ -27,31 +27,21 @@
 				</div>
 				<div class="absolute left-0 top-0 bottom-0 w-full max-w-[50vw]" @mouseup.stop
 					@click.prevent="$emit('directoryViewAction', 'toggleSelected', entry, $event)"
+					@contextmenu.prevent.stop="$emit('browserAction', 'contextMenu', entry, $event)"
 					@dblclick="doubleClickCallback" @mouseenter="hover = true" @mouseleave="hover = false"
 					ref="selectIntersectElement" />
 			</td>
-			<td v-if="settings?.directoryView?.cols?.mode" class="font-mono">{{ entry.modeStr
-			}}</td>
-			<td v-if="settings?.directoryView?.cols?.owner">{{ entry.owner }}
-			</td>
-			<td v-if="settings?.directoryView?.cols?.group">{{ entry.group }}
-			</td>
-			<td v-if="settings?.directoryView?.cols?.size" class="font-mono text-right">{{
-					entry.sizeHuman
-			}}</td>
-			<td v-if="settings?.directoryView?.cols?.btime">{{
-					entry.btimeStr
-			}}</td>
-			<td v-if="settings?.directoryView?.cols?.mtime">{{
-					entry.mtimeStr
-			}}</td>
-			<td v-if="settings?.directoryView?.cols?.atime">{{
-					entry.atimeStr
-			}}</td>
+			<td v-if="settings?.directoryView?.cols?.mode" class="font-mono">{{ entry.modeStr }}</td>
+			<td v-if="settings?.directoryView?.cols?.owner">{{ entry.owner }}</td>
+			<td v-if="settings?.directoryView?.cols?.group">{{ entry.group }} </td>
+			<td v-if="settings?.directoryView?.cols?.size" class="font-mono text-right">{{ entry.sizeHuman }}</td>
+			<td v-if="settings?.directoryView?.cols?.btime">{{ entry.btimeStr }}</td>
+			<td v-if="settings?.directoryView?.cols?.mtime">{{ entry.mtimeStr }}</td>
+			<td v-if="settings?.directoryView?.cols?.atime">{{ entry.atimeStr }}</td>
 		</tr>
-		<component :is="DirectoryEntryList" v-if="entry.resolvedType === 'd' && showEntries" :host="host" :path="entry.path"
-			:isChild="true" :sortCallback="inheritedSortCallback" :searchFilterRegExp="searchFilterRegExp"
-			@startProcessing="(...args) => $emit('startProcessing', ...args)"
+		<component :is="DirectoryEntryList" v-if="entry.resolvedType === 'd' && showEntries" :host="host"
+			:path="entry.path" :isChild="true" :sortCallback="inheritedSortCallback"
+			:searchFilterRegExp="searchFilterRegExp" @startProcessing="(...args) => $emit('startProcessing', ...args)"
 			@stopProcessing="(...args) => $emit('stopProcessing', ...args)" @cancelShowEntries="showEntries = false"
 			ref="directoryEntryListRef" :level="level + 1" :selectedCount="selectedCount"
 			@browserAction="(...args) => $emit('browserAction', ...args)"
@@ -59,8 +49,10 @@
 	</template>
 	<div v-else class="select-none dir-entry flex flex-col items-center overflow-hidden dir-entry-width p-2"
 		:class="{ '!bg-red-600/10': hover && !entry.selected, '!bg-red-600/20': hover && entry.selected, 'dir-entry-selected': entry.selected, '!border-t-transparent': suppressBorderT, '!border-b-transparent': suppressBorderB, '!border-l-transparent': suppressBorderL, '!border-r-transparent': suppressBorderR }">
-		<div class="w-full" @dblclick="doubleClickCallback" @click.prevent="$emit('directoryViewAction', 'toggleSelected', entry, $event)"
-			@mouseup.stop @mouseenter="hover = true" @mouseleave="hover = false" ref="selectIntersectElement">
+		<div class="w-full" @dblclick="doubleClickCallback"
+			@click.prevent="$emit('directoryViewAction', 'toggleSelected', entry, $event)" @mouseup.stop
+			@contextmenu.prevent.stop="$emit('browserAction', 'contextMenu', entry, $event)"
+			@mouseenter="hover = true" @mouseleave="hover = false" ref="selectIntersectElement">
 			<div class="relative w-full" :class="[entry.cut ? 'text-gray-500/50' : 'icon-default']">
 				<FolderIcon v-if="entry.resolvedType === 'd'" class="w-full h-auto" />
 				<DocumentIcon v-else class="w-full h-auto" />

@@ -16,20 +16,19 @@ If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <template>
-	<ModalPopup :showModal="show" :headerText="entry?.nameHTML" @apply="apply"
-		@cancel="$emit('hide')">
+	<ModalPopup :showModal="show" :headerText="entry?.nameHTML ?? entry?.name" @apply="apply" @cancel="$emit('hide')">
 		<div class="flex flex-col space-y-content items-start">
 			<FileModeMatrix v-model="mode" />
 			<div>
 				<label class="block text-sm font-medium">Owner</label>
 				<select class="input-textlike" v-model="owner">
-					<option v-for="user in users" :value="user.user">{{ user.pretty }}</option>
+					<option v-for="user in users" :key="user.pretty" :value="user.user">{{ user.pretty }}</option>
 				</select>
 			</div>
 			<div>
 				<label class="block text-sm font-medium">Group</label>
 				<select class="input-textlike" v-model="group">
-					<option v-for="group in groups" :value="group.group">{{ group.pretty }}</option>
+					<option v-for="group in groups" :key="group.pretty" :value="group.group">{{ group.pretty }}</option>
 				</select>
 			</div>
 		</div>

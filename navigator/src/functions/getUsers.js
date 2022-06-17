@@ -18,7 +18,7 @@ export async function getUsers() {
 				return;
 			users.push({ user: record.replace(/^[^\\]+\\/, ""), domain: true, pretty: record.replace(/^[^\\]+\\/, "") + " (domain)" });
 		})
-	} catch {}
+	} catch { }
 	users.sort((a, b) => a.pretty.localeCompare(b.pretty));
 	return users;
 }
