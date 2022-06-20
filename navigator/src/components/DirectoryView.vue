@@ -26,7 +26,7 @@ If not, see <https://www.gnu.org/licenses/>.
 			class="h-full"
 			@selectRectangle="selectRectangle"
 			@mouseup.exact="deselectAll"
-			@contextmenu.prevent="$emit('browserAction', 'contextMenu', { host, path, name: `Current directory (${path.split('/').pop() || '/'})` }, $event)"
+			@contextmenu.prevent="$emit('browserAction', 'contextMenu', $event)"
 		>
 			<Table
 				:key="host + path"
@@ -514,11 +514,11 @@ export default {
 
 <style>
 tr.dir-entry>td {
-	@apply border-solid border-y-red-600/50 border-y-0 first: border-l last:border-r first:border-l-transparent last:border-r-transparent;
+	@apply border-solid border-y-red-600/50 border-y-0 first:border-l last:border-r first:border-l-transparent last:border-r-transparent;
 }
 
 tr.dir-entry-selected>td {
-	@apply border-y first: border-l-red-600/50 last:border-red-600/50 bg-red-600/10;
+	@apply border-y first:border-l-red-600/50 last:border-red-600/50 bg-red-600/10;
 }
 
 div.dir-entry {
