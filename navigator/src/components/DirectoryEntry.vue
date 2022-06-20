@@ -80,7 +80,7 @@ If not, see <https://www.gnu.org/licenses/>.
 					class="absolute left-0 top-0 bottom-0 w-full max-w-[50vw]"
 					@mouseup.stop
 					@click.prevent="$emit('directoryViewAction', 'toggleSelected', entry, $event)"
-					@contextmenu.prevent.stop="$emit('browserAction', 'contextMenu', entry, $event)"
+					@contextmenu.prevent.stop="contextMenuCallback"
 					@dblclick="doubleClickCallback"
 					@mouseenter="hover = true"
 					@mouseleave="hover = false"
@@ -129,7 +129,7 @@ If not, see <https://www.gnu.org/licenses/>.
 			@dblclick="doubleClickCallback"
 			@click.prevent="$emit('directoryViewAction', 'toggleSelected', entry, $event)"
 			@mouseup.stop
-			@contextmenu.prevent.stop="$emit('browserAction', 'contextMenu', entry, $event)"
+			@contextmenu.prevent.stop="contextMenuCallback"
 			@mouseenter="hover = true"
 			@mouseleave="hover = false"
 			ref="selectIntersectElement"
@@ -218,6 +218,13 @@ export default {
 			}
 		}
 
+		const contextMenuCallback = (event) => {
+			if (!props.entry.selected) {
+				emit('directoryViewAction', 'toggleSelected', props.entry, event);
+			}
+			nextTick(() => emit('browserAction', 'contextMenu', event));
+		}
+
 		const refresh = () => {
 			return directoryEntryListRef.value?.refresh?.();
 		}
@@ -251,6 +258,7 @@ export default {
 			showEntries,
 			directoryEntryListRef,
 			doubleClickCallback,
+			contextMenuCallback,
 			refresh,
 			toggleShowEntries,
 			gatherEntries,
