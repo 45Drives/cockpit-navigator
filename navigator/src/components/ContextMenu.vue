@@ -28,6 +28,7 @@ If not, see <https://www.gnu.org/licenses/>.
 			v-if="show"
 			class="fixed inset-0 bg-transparent"
 			@click="$emit('hide')"
+			@contextmenu.prevent="$emit('hide')"
 		>
 			<div
 				class="fixed z-20 max-w-sm flex flex-col items-stretch bg-default shadow-lg divide-y divide-default position-contextmenu">
@@ -54,51 +55,152 @@ If not, see <https://www.gnu.org/licenses/>.
 					</button>
 				</div>
 				<div class="flex flex-col items-stretch">
-					<!-- general actions -->
-					<button
-						v-if="entry?.path !== '/'"
-						class="context-menu-button"
-						@click="$emit('browserAction', 'editPermissions', entry)"
-					>
-						Edit permissions
-					</button>
-				</div>
-				<div
-					v-if="entry?.resolvedType === 'f'"
-					class="flex flex-col items-stretch"
-				>
-					<!-- regular file actions -->
+					<!-- Non-selection actions -->
 					<button
 						class="context-menu-button"
-						@click="$emit('browserAction', 'edit', entry)"
+						@click="$emit('browserAction', 'createFile', selection[0])"
 					>
-						Edit contents
+						<DocumentAddIcon class="size-icon icon-default" />
+						<span>New file</span>
 					</button>
 					<button
 						class="context-menu-button"
-						@click="$emit('browserAction', 'download', entry)"
+						@click="$emit('browserAction', 'createDirectory', selection[0])"
 					>
-						Download
+						<FolderAddIcon class="size-icon icon-default" />
+						<span>New directory</span>
 					</button>
-				</div>
-				<div
-					v-else-if="entry?.resolvedType === 'd'"
-					class="flex flex-col items-stretch"
-				>
-					<!-- directory actions -->
 					<button
 						class="context-menu-button"
-						@click="$emit('browserAction', 'cd', entry)"
+						@click="$emit('browserAction', 'createLink', selection[0])"
 					>
-						Open
+						<LinkIcon class="size-icon icon-default" />
+						<span>New link</span>
 					</button>
 				</div>
-				<div
-					v-if="entry?.type === 'l'"
-					class="flex flex-col items-stretch"
-				>
-					<!-- link actions -->
-				</div>
+				<template v-if="selection.length === 0">
+					<!-- Current directory actions -->
+					<div class="flex flex-col items-stretch">
+						<button
+							class="context-menu-button"
+							@click="$emit('browserAction', 'download', currentDirEntry)"
+						>
+							<FolderDownloadIcon class="size-icon icon-default" />
+							<span>Zip and download directory</span>
+						</button>
+					</div>
+					<div class="flex flex-col items-stretch">
+						<button
+							v-if="currentDirEntry?.path !== '/'"
+							class="context-menu-button"
+							@click="$emit('browserAction', 'editPermissions', currentDirEntry)"
+						>
+							<KeyIcon class="size-icon icon-default" />
+							<span>Edit permissions</span>
+						</button>
+					</div>
+				</template>
+				<template v-else-if="selection.length === 1">
+					<!-- Single entry selection actions -->
+					<div
+						v-if="selection[0]?.resolvedType === 'f'"
+						class="flex flex-col items-stretch"
+					>
+						<!-- regular file actions -->
+						<button
+							class="context-menu-button"
+							@click="$emit('browserAction', 'edit', selection[0])"
+						>
+							<PencilAltIcon class="size-icon icon-default" />
+							<span>Edit contents</span>
+						</button>
+						<button
+							class="context-menu-button"
+							@click="$emit('browserAction', 'download', selection[0])"
+						>
+							<DocumentDownloadIcon class="size-icon icon-default" />
+							<span>Download</span>
+						</button>
+					</div>
+					<div
+						v-else-if="selection[0]?.resolvedType === 'd'"
+						class="flex flex-col items-stretch"
+					>
+						<!-- directory actions -->
+						<button
+							class="context-menu-button"
+							@click="$emit('browserAction', 'cd', selection[0])"
+						>
+							<FolderOpenIcon class="size-icon icon-default" />
+							<span>Open</span>
+						</button>
+						<button
+							class="context-menu-button"
+							@click="$emit('browserAction', 'download', selection[0])"
+						>
+							<FolderDownloadIcon class="size-icon icon-default" />
+							<span>Zip and download directory</span>
+						</button>
+					</div>
+					<div
+						v-if="selection[0]?.type === 'l'"
+						class="flex flex-col items-stretch"
+					>
+						<!-- link actions -->
+						<button
+							class="context-menu-button"
+							@click="$emit('browserAction', 'editLink', selection[0])"
+						>
+							<LinkIcon class="size-icon icon-default" />
+							<span>Edit link target</span>
+						</button>
+					</div>
+					<div class="flex flex-col items-stretch">
+						<!-- general actions -->
+						<button
+							v-if="selection[0]?.path !== '/'"
+							class="context-menu-button"
+							@click="$emit('browserAction', 'editPermissions', selection[0])"
+						>
+							<KeyIcon class="size-icon icon-default" />
+							<span>Edit permissions</span>
+						</button>
+						<button
+							v-if="selection[0]?.path !== '/'"
+							class="context-menu-button"
+							@click="$emit('browserAction', 'rename', selection[0])"
+						>
+							<PencilIcon class="size-icon icon-default" />
+							<span>Rename</span>
+						</button>
+						<button
+							class="context-menu-button"
+							@click="$emit('browserAction', 'delete', selection[0])"
+						>
+							<TrashIcon class="size-icon icon-default" />
+							<span>Delete</span>
+						</button>
+					</div>
+				</template>
+				<tempalte v-else>
+					<!-- Multi-entry selection actions -->
+					<div class="flex flex-col items-stretch">
+						<button
+							class="context-menu-button"
+							@click="$emit('browserAction', 'download', [...selection])"
+						>
+							<DownloadIcon class="size-icon-sm icon-default" />
+							<span>Zip and download {{ selection.length }} items</span>
+						</button>
+						<button
+							class="context-menu-button"
+							@click="$emit('browserAction', 'delete', [...selection])"
+						>
+							<TrashIcon class="size-icon-sm icon-default" />
+							<span>Delete {{ selection.length }} items</span>
+						</button>
+					</div>
+				</tempalte>
 			</div>
 		</div>
 	</transition>
@@ -106,14 +208,30 @@ If not, see <https://www.gnu.org/licenses/>.
 
 <script>
 import { inject } from 'vue'
-import { ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon } from '@heroicons/vue/solid';
+import {
+	ArrowLeftIcon,
+	ArrowRightIcon,
+	ArrowUpIcon,
+	DocumentAddIcon,
+	DocumentDownloadIcon,
+	TrashIcon,
+	FolderAddIcon,
+	FolderDownloadIcon,
+	FolderOpenIcon,
+	LinkIcon,
+	PencilAltIcon,
+	PencilIcon,
+	KeyIcon,
+	DownloadIcon,
+} from '@heroicons/vue/solid';
 import { pathHistoryInjectionKey } from '../keys';
 
 export default {
 	props: {
 		show: Boolean,
 		event: Object,
-		entry: Object,
+		selection: Array,
+		currentDirEntry: Object,
 	},
 	setup(props, { emit }) {
 		const pathHistory = inject(pathHistoryInjectionKey);
@@ -126,6 +244,17 @@ export default {
 		ArrowLeftIcon,
 		ArrowRightIcon,
 		ArrowUpIcon,
+		DocumentAddIcon,
+		DocumentDownloadIcon,
+		TrashIcon,
+		FolderAddIcon,
+		FolderDownloadIcon,
+		FolderOpenIcon,
+		LinkIcon,
+		PencilAltIcon,
+		PencilIcon,
+		KeyIcon,
+		DownloadIcon,
 	},
 	emits: [
 		'hide',
@@ -141,7 +270,7 @@ div.position-contextmenu {
 }
 
 button.context-menu-button {
-	@apply text-default font-normal px-4 py-2 text-sm text-left;
+	@apply text-default font-normal pl-1 pr-2 text-sm text-left flex items-center gap-1;
 }
 
 button.context-menu-button:hover {

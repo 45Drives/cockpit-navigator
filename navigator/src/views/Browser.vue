@@ -163,8 +163,9 @@
 	/>
 	<ContextMenu
 		:show="contextMenu.show"
-		:entry="contextMenu.entry"
+		:selection="contextMenu.selection"
 		:event="contextMenu.event"
+		:currentDirEntry="{...pathHistory.current(), name: `Current directory (${pathHistory.current().path.split('/').pop()})`}"
 		@browserAction="handleAction"
 		@hide="contextMenu.close"
 	/>
@@ -307,19 +308,19 @@ export default {
 		});
 		const contextMenu = reactive({
 			show: false,
-			entry: null,
+			selection: [],
 			event: null,
 			resetTimeoutHandle: null,
-			open: (entry, event) => {
+			open: (event) => {
 				clearTimeout(contextMenu.resetTimeoutHandle);
-				contextMenu.entry = entry;
+				contextMenu.selection = getSelected();
 				contextMenu.event = event;
 				contextMenu.show = true;
 			},
 			close: () => {
 				contextMenu.show = false;
 				contextMenu.resetTimeoutHandle = setTimeout(() => {
-					contextMenu.resetTimeoutHandle = contextMenu.entry = null;
+					contextMenu.resetTimeoutHandle = contextMenu.selection = [];
 					contextMenu.resetTimeoutHandle = contextMenu.event = null;
 				}, 500);
 			},
@@ -349,9 +350,12 @@ export default {
 			router.push(`/edit/${newHost}${newPath}`);
 		}
 
-		const download = ({ path, name, host }) => {
-			fileDownload(path, name, host);
-			console.log('download', `${host}:${path}`);
+		const download = (selection) => {
+			const items = [].concat(selection); // forces to be array
+			if (items.length === 1 && items[0].resolvedType === 'f') {
+				let { path, name, host } = items[0];
+				fileDownload(path, name, host);
+			}
 		}
 
 		const getSelected = () => directoryViewRef.value?.getSelected?.() ?? [];
