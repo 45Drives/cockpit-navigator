@@ -4,17 +4,28 @@
 			<div
 				class="grid grid-cols-[auto_1fr] grid-rows-[1fr 1fr] md:grid-cols-[auto_3fr_1fr] md:grid-row-[1fr] items-stretch divide-x divide-y divide-default">
 				<div class="button-group-row p-1 md:px-4 md:py-2 border-t border-default">
-					<button class="p-2 rounded-lg hover:bg-accent relative" :disabled="!pathHistory.backAllowed()"
-						@click="back()" @mouseenter="backHistoryDropdown.mouseEnter"
-						@mouseleave="backHistoryDropdown.mouseLeave">
+					<button
+						class="p-2 rounded-lg hover:bg-accent relative"
+						:disabled="!pathHistory.backAllowed()"
+						@click="back()"
+						@mouseenter="backHistoryDropdown.mouseEnter"
+						@mouseleave="backHistoryDropdown.mouseLeave"
+					>
 						<ArrowLeftIcon class="size-icon icon-default" />
-						<ChevronDownIcon class="w-3 h-3 icon-default absolute bottom-1 right-1"
-							v-if="pathHistory.backAllowed()" />
-						<div v-if="backHistoryDropdown.showDropdown"
-							class="absolute top-full left-0 flex flex-col items-stretch z-50 bg-default shadow-lg rounded-lg overflow-y-auto max-h-80">
-							<div v-for="item, index in pathHistory.stack.slice(0, pathHistory.index).reverse()"
-								:key="index" @click="pathHistory.index = pathHistory.index - index"
-								class="hover:text-white hover:bg-red-600 px-4 py-2 text-sm text-left whitespace-nowrap">
+						<ChevronDownIcon
+							class="w-3 h-3 icon-default absolute bottom-1 right-1"
+							v-if="pathHistory.backAllowed()"
+						/>
+						<div
+							v-if="backHistoryDropdown.showDropdown"
+							class="absolute top-full left-0 flex flex-col items-stretch z-50 bg-default shadow-lg rounded-lg overflow-y-auto max-h-80"
+						>
+							<div
+								v-for="item, index in pathHistory.stack.slice(0, pathHistory.index).reverse()"
+								:key="index"
+								class="hover:text-white hover:bg-red-600 px-4 py-2 text-sm text-left whitespace-nowrap"
+								@click="pathHistory.index = pathHistory.index - index"
+							>
 								<span v-if="item.host !== pathHistory.current()?.host">
 									{{ item.host ?? cockpit.transport.host }}:
 								</span>
@@ -22,17 +33,28 @@
 							</div>
 						</div>
 					</button>
-					<button class="p-2 rounded-lg hover:bg-accent relative" :disabled="!pathHistory.forwardAllowed()"
-						@click="forward()" @mouseenter="forwardHistoryDropdown.mouseEnter"
-						@mouseleave="forwardHistoryDropdown.mouseLeave">
+					<button
+						class="p-2 rounded-lg hover:bg-accent relative"
+						:disabled="!pathHistory.forwardAllowed()"
+						@click="forward()"
+						@mouseenter="forwardHistoryDropdown.mouseEnter"
+						@mouseleave="forwardHistoryDropdown.mouseLeave"
+					>
 						<ArrowRightIcon class="size-icon icon-default" />
-						<ChevronDownIcon class="w-3 h-3 icon-default absolute bottom-1 right-1"
-							v-if="pathHistory.forwardAllowed()" />
-						<div v-if="forwardHistoryDropdown.showDropdown"
-							class="absolute top-full left-0 flex flex-col items-stretch z-50 bg-default shadow-lg rounded-lg overflow-y-auto max-h-80">
-							<div v-for="item, index in pathHistory.stack.slice(pathHistory.index + 1)" :key="index"
+						<ChevronDownIcon
+							class="w-3 h-3 icon-default absolute bottom-1 right-1"
+							v-if="pathHistory.forwardAllowed()"
+						/>
+						<div
+							v-if="forwardHistoryDropdown.showDropdown"
+							class="absolute top-full left-0 flex flex-col items-stretch z-50 bg-default shadow-lg rounded-lg overflow-y-auto max-h-80"
+						>
+							<div
+								v-for="item, index in pathHistory.stack.slice(pathHistory.index + 1)"
+								:key="index"
+								class="hover:text-white hover:bg-red-600 px-4 py-2 text-sm text-left whitespace-nowrap"
 								@click="pathHistory.index = pathHistory.index + index"
-								class="hover:text-white hover:bg-red-600 px-4 py-2 text-sm text-left whitespace-nowrap">
+							>
 								<span v-if="item.host !== pathHistory.current()?.host">
 									{{ item.host ?? cockpit.transport.host }}:
 								</span>
@@ -40,72 +62,153 @@
 							</div>
 						</div>
 					</button>
-					<button class="p-2 rounded-lg hover:bg-accent" @click="up()"
-						:disabled="pathHistory.current() === '/'">
+					<button
+						class="p-2 rounded-lg hover:bg-accent"
+						:disabled="pathHistory.current() === '/'"
+						@click="up()"
+					>
 						<ArrowUpIcon class="size-icon icon-default" />
 					</button>
-					<button class="p-2 rounded-lg hover:bg-accent" @click="directoryViewRef.refresh()">
+					<button
+						class="p-2 rounded-lg hover:bg-accent"
+						@click="directoryViewRef.refresh()"
+					>
 						<RefreshIcon class="size-icon icon-default" />
 					</button>
 				</div>
 
 				<div
 					class="p-1 md:px-4 md:py-2 col-start-1 col-end-3 row-start-2 row-end-3 md:col-start-auto md:col-end-auto md:row-start-auto md:row-end-auto">
-					<PathBreadCrumbs :host="pathHistory.current()?.host" :path="pathHistory.current()?.path ?? '/'"
-						@cd="cd" />
+					<PathBreadCrumbs
+						:host="pathHistory.current()?.host"
+						:path="pathHistory.current()?.path ?? '/'"
+						@cd="cd"
+					/>
 				</div>
 
 				<div class="p-1 md:px-4 md:py-2">
 					<div class="relative">
 						<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-							<SearchIcon class="size-icon icon-default" aria-hidden="true" />
+							<SearchIcon
+								class="size-icon icon-default"
+								aria-hidden="true"
+							/>
 						</div>
-						<input type="text" class="block input-textlike w-full pl-10" v-model="searchFilterStr"
-							placeholder="Search in directory (foo*, b?r, *.jpg)" />
+						<input
+							type="text"
+							class="block input-textlike w-full pl-10"
+							v-model="searchFilterStr"
+							placeholder="Search in directory (foo*, b?r, *.jpg)"
+						/>
 					</div>
 				</div>
 			</div>
 			<div class="grow overflow-hidden">
-				<DirectoryView :host="pathHistory.current()?.host" :path="pathHistory.current()?.path"
-					:searchFilterRegExp="searchFilterRegExp" @cd="path => cd({ path })" @edit="openEditor"
-					@browserAction="handleAction" ref="directoryViewRef" />
+				<DirectoryView
+					:host="pathHistory.current()?.host"
+					:path="pathHistory.current()?.path"
+					:searchFilterRegExp="searchFilterRegExp"
+					@cd="path => cd({ path })"
+					@edit="openEditor"
+					@browserAction="handleAction"
+					ref="directoryViewRef"
+				/>
 			</div>
 		</div>
 	</div>
-	<ModalPopup :showModal="openFilePromptModal.show" :headerText="openFilePromptModal.entry?.name ?? 'NULL'"
-		@close="() => openFilePromptModal.close()" autoWidth>
+	<ModalPopup
+		:showModal="openFilePromptModal.show"
+		:headerText="openFilePromptModal.entry?.name ?? 'NULL'"
+		autoWidth
+		@close="() => openFilePromptModal.close()"
+	>
 		What would you like to do with this {{ openFilePromptModal.entry?.resolvedTypeHuman }}?
 		<template #footer>
-			<button type="button" class="btn btn-secondary" @click="() => openFilePromptModal.close()">
+			<button
+				type="button"
+				class="btn btn-secondary"
+				@click="() => openFilePromptModal.close()"
+			>
 				Cancel
 			</button>
-			<button type="button" class="btn btn-primary" @click="() => openFilePromptModal.action('editPermissions')">
+			<button
+				type="button"
+				class="btn btn-primary"
+				@click="() => openFilePromptModal.action('editPermissions')"
+			>
 				Edit permissions
 			</button>
-			<button v-if="openFilePromptModal.entry?.resolvedType === 'f'" type="button" class="btn btn-primary"
-				@click="() => openFilePromptModal.action('edit')">
+			<button
+				v-if="openFilePromptModal.entry?.resolvedType === 'f'"
+				type="button"
+				class="btn btn-primary"
+				@click="() => openFilePromptModal.action('edit')"
+			>
 				Open for editing
 			</button>
-			<button v-if="openFilePromptModal.entry?.resolvedType === 'f'" type="button" class="btn btn-primary"
-				@click="() => openFilePromptModal.action('download')">
+			<button
+				v-if="openFilePromptModal.entry?.resolvedType === 'f'"
+				type="button"
+				class="btn btn-primary"
+				@click="() => openFilePromptModal.action('download')"
+			>
 				Download
 			</button>
 		</template>
 	</ModalPopup>
-	<FilePermissions :show="filePermissions.show" @hide="filePermissions.close" :entry="filePermissions.entry" />
-	<ContextMenu @browserAction="handleAction" :show="contextMenu.show" @hide="contextMenu.close" :entry="contextMenu.entry" :event="contextMenu.event" />
+	<FilePermissions
+		:show="filePermissions.show"
+		:entry="filePermissions.entry"
+		@hide="filePermissions.close"
+	/>
+	<ContextMenu
+		:show="contextMenu.show"
+		:entry="contextMenu.entry"
+		:event="contextMenu.event"
+		@browserAction="handleAction"
+		@hide="contextMenu.close"
+	/>
 	<Teleport to="#footer-buttons">
-		<IconToggle v-model="darkMode" v-slot="{ value }">
-			<MoonIcon v-if="value" class="size-icon icon-default" />
-			<SunIcon v-else class="size-icon icon-default" />
+		<IconToggle
+			v-model="darkMode"
+			v-slot="{ value }"
+		>
+			<MoonIcon
+				v-if="value"
+				class="size-icon icon-default"
+			/>
+			<SunIcon
+				v-else
+				class="size-icon icon-default"
+			/>
 		</IconToggle>
-		<IconToggle v-model="settings.directoryView.showHidden" v-slot="{ value }">
-			<EyeIcon v-if="value" class="size-icon icon-default" />
-			<EyeOffIcon v-else class="size-icon icon-default" />
+		<IconToggle
+			v-model="settings.directoryView.showHidden"
+			v-slot="{ value }"
+		>
+			<EyeIcon
+				v-if="value"
+				class="size-icon icon-default"
+			/>
+			<EyeOffIcon
+				v-else
+				class="size-icon icon-default"
+			/>
 		</IconToggle>
-		<IconToggle v-model="settings.directoryView.view" trueValue="list" falseValue="grid" v-slot="{ value }">
-			<ViewListIcon v-if="value" class="size-icon icon-default" />
-			<ViewGridIcon v-else class="size-icon icon-default" />
+		<IconToggle
+			v-model="settings.directoryView.view"
+			trueValue="list"
+			falseValue="grid"
+			v-slot="{ value }"
+		>
+			<ViewListIcon
+				v-if="value"
+				class="size-icon icon-default"
+			/>
+			<ViewGridIcon
+				v-else
+				class="size-icon icon-default"
+			/>
 		</IconToggle>
 	</Teleport>
 </template>

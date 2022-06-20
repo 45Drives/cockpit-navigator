@@ -1,34 +1,53 @@
 <!--
 Copyright (C) 2022 Josh Boudreau <jboudreau@45drives.com>
 
-This file is part of Cockpit File Sharing.
+This file is part of Cockpit Navigator.
 
-Cockpit File Sharing is free software: you can redistribute it and/or modify it under the terms
+Cockpit Navigator is free software: you can redistribute it and/or modify it under the terms
 of the GNU General Public License as published by the Free Software Foundation, either version 3
 of the License, or (at your option) any later version.
 
-Cockpit File Sharing is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+Cockpit Navigator is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
 without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along with Cockpit File Sharing.
+You should have received a copy of the GNU General Public License along with Cockpit Navigator.
 If not, see <https://www.gnu.org/licenses/>. 
 -->
 
 <template>
-	<ModalPopup :showModal="show" :headerText="entry?.nameHTML ?? entry?.name" @apply="apply" @cancel="$emit('hide')">
+	<ModalPopup
+		:showModal="show"
+		:headerText="entry?.nameHTML ?? entry?.name"
+		@apply="apply"
+		@cancel="$emit('hide')"
+	>
 		<div class="flex flex-col space-y-content items-start">
 			<FileModeMatrix v-model="mode" />
 			<div>
 				<label class="block text-sm font-medium">Owner</label>
-				<select class="input-textlike" v-model="owner">
-					<option v-for="user in users" :key="user.pretty" :value="user.user">{{ user.pretty }}</option>
+				<select
+					class="input-textlike"
+					v-model="owner"
+				>
+					<option
+						v-for="user in users"
+						:key="user.pretty"
+						:value="user.user"
+					>{{ user.pretty }}</option>
 				</select>
 			</div>
 			<div>
 				<label class="block text-sm font-medium">Group</label>
-				<select class="input-textlike" v-model="group">
-					<option v-for="group in groups" :key="group.pretty" :value="group.group">{{ group.pretty }}</option>
+				<select
+					class="input-textlike"
+					v-model="group"
+				>
+					<option
+						v-for="group in groups"
+						:key="group.pretty"
+						:value="group.group"
+					>{{ group.pretty }}</option>
 				</select>
 			</div>
 		</div>

@@ -1,17 +1,17 @@
 <!--
 Copyright (C) 2022 Josh Boudreau <jboudreau@45drives.com>
 
-This file is part of Cockpit File Sharing.
+This file is part of Cockpit Navigator.
 
-Cockpit File Sharing is free software: you can redistribute it and/or modify it under the terms
+Cockpit Navigator is free software: you can redistribute it and/or modify it under the terms
 of the GNU General Public License as published by the Free Software Foundation, either version 3
 of the License, or (at your option) any later version.
 
-Cockpit File Sharing is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+Cockpit Navigator is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
 without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along with Cockpit File Sharing.
+You should have received a copy of the GNU General Public License along with Cockpit Navigator.
 If not, see <https://www.gnu.org/licenses/>. 
 -->
 
@@ -23,19 +23,55 @@ If not, see <https://www.gnu.org/licenses/>.
 		<label class="text-label">Execute</label>
 
 		<label class="justify-self-start text-label">Owner</label>
-		<input type="checkbox" class="input-checkbox" v-model="modeMatrix.owner.read" />
-		<input type="checkbox" class="input-checkbox" v-model="modeMatrix.owner.write" />
-		<input type="checkbox" class="input-checkbox" v-model="modeMatrix.owner.execute" />
+		<input
+			type="checkbox"
+			class="input-checkbox"
+			v-model="modeMatrix.owner.read"
+		/>
+		<input
+			type="checkbox"
+			class="input-checkbox"
+			v-model="modeMatrix.owner.write"
+		/>
+		<input
+			type="checkbox"
+			class="input-checkbox"
+			v-model="modeMatrix.owner.execute"
+		/>
 
 		<label class="justify-self-start text-label">Group</label>
-		<input type="checkbox" class="input-checkbox" v-model="modeMatrix.group.read" />
-		<input type="checkbox" class="input-checkbox" v-model="modeMatrix.group.write" />
-		<input type="checkbox" class="input-checkbox" v-model="modeMatrix.group.execute" />
+		<input
+			type="checkbox"
+			class="input-checkbox"
+			v-model="modeMatrix.group.read"
+		/>
+		<input
+			type="checkbox"
+			class="input-checkbox"
+			v-model="modeMatrix.group.write"
+		/>
+		<input
+			type="checkbox"
+			class="input-checkbox"
+			v-model="modeMatrix.group.execute"
+		/>
 
 		<label class="justify-self-start text-label">Other</label>
-		<input type="checkbox" class="input-checkbox" v-model="modeMatrix.other.read" />
-		<input type="checkbox" class="input-checkbox" v-model="modeMatrix.other.write" />
-		<input type="checkbox" class="input-checkbox" v-model="modeMatrix.other.execute" />
+		<input
+			type="checkbox"
+			class="input-checkbox"
+			v-model="modeMatrix.other.read"
+		/>
+		<input
+			type="checkbox"
+			class="input-checkbox"
+			v-model="modeMatrix.other.write"
+		/>
+		<input
+			type="checkbox"
+			class="input-checkbox"
+			v-model="modeMatrix.other.execute"
+		/>
 
 		<label class="justify-self-start text-label">Mode</label>
 		<span class="col-span-3 font-mono font-medium whitespace-nowrap">{{ modeStr }}</span>

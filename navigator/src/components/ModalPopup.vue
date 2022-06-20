@@ -16,25 +16,45 @@ If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <template>
-	<TransitionRoot as="div" class="fixed inset-0 z-10 overflow-visible" :show="showModal">
-		<TransitionChild as="template" enter="ease-out duration-500" enter-from="opacity-0" enter-to="opacity-100"
-			leave="ease-in duration-500" leave-from="opacity-100" leave-to="opacity-0">
+	<TransitionRoot
+		as="div"
+		class="fixed inset-0 z-10 overflow-visible"
+		:show="showModal"
+	>
+		<TransitionChild
+			as="template"
+			enter="ease-out duration-500"
+			enter-from="opacity-0"
+			enter-to="opacity-100"
+			leave="ease-in duration-500"
+			leave-from="opacity-100"
+			leave-to="opacity-0"
+		>
 			<div class="fixed z-10 inset-0 bg-neutral-500/75 dark:bg-black/50 transition-opacity pointer" />
 		</TransitionChild>
-		<div @click.self="$emit('close')"
-			class="fixed z-10 inset-0 overflow-hidden flex items-end sm:items-center justify-center px-4 pb-20 sm:p-0">
-			<TransitionChild as="template" enter="ease-out duration-300"
+		<div
+			class="fixed z-10 inset-0 overflow-hidden flex items-end sm:items-center justify-center px-4 pb-20 sm:p-0"
+			@click.self="$emit('close')"
+		>
+			<TransitionChild
+				as="template"
+				enter="ease-out duration-300"
 				enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-90"
-				enter-to="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-100"
+				enter-to="opacity-100 translate-y-0 sm:scale-100"
+				leave="ease-in duration-100"
 				leave-from="opacity-100 translate-y-0 sm:scale-100"
-				leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-75">
+				leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-75"
+			>
 				<div
 					:class="[autoWidth ? 'sm:max-w-full' : 'sm:max-w-lg', 'inline-flex flex-col items-stretch overflow-hidden transform transition-all text-left z-10']">
 					<div class="block w-[512px]" /> <!-- set min width of div -->
 					<div class="card flex flex-col items-stretch overflow-hidden">
 						<div class="card-header">
 							<slot name="header">
-								<h3 class="text-header" v-html="headerText" />
+								<h3
+									class="text-header"
+									v-html="headerText"
+								/>
 							</slot>
 						</div>
 						<div class="card-body flex flex-row items-center gap-2">
@@ -45,12 +65,20 @@ If not, see <https://www.gnu.org/licenses/>.
 						</div>
 						<div class="card-footer button-group-row justify-end">
 							<slot name="footer">
-								<button v-if="!noCancel" type="button" class="btn btn-secondary"
-									@click="$emit('cancel'); $emit('close')">
+								<button
+									v-if="!noCancel"
+									type="button"
+									class="btn btn-secondary"
+									@click="$emit('cancel'); $emit('close')"
+								>
 									{{ cancelText }}
 								</button>
-								<button type="button" :class="['btn', applyDangerous ? 'btn-danger' : 'btn-primary']"
-									@click="$emit('apply'); $emit('close')" :disabled="disableContinue">
+								<button
+									type="button"
+									:class="['btn', applyDangerous ? 'btn-danger' : 'btn-primary']"
+									:disabled="disableContinue"
+									@click="$emit('apply'); $emit('close')"
+								>
 									{{ applyText }}
 								</button>
 							</slot>

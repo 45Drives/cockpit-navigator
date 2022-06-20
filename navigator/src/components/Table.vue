@@ -40,7 +40,10 @@ If not, see <https://www.gnu.org/licenses/>.
 				<tbody class="bg-default w-full">
 					<slot name="tbody">
 						<tr>
-							<td colspan="100%" class="text-center align-middle text-muted text-sm">{{ emptyText }}</td>
+							<td
+								colspan="100%"
+								class="text-center align-middle text-muted text-sm"
+							>{{ emptyText }}</td>
 						</tr>
 					</slot>
 				</tbody>
@@ -97,7 +100,7 @@ table.houston-table thead.use-sticky tr th {
 
 table.houston-table th,
 table.houston-table td {
-	@apply py-2 px-4 lg:px-6 whitespace-nowrap text-sm;
+	@apply py-2 px-4 lg: px-6 whitespace-nowrap text-sm;
 }
 
 table.houston-table th:not(.text-right):not(.text-center),
@@ -110,6 +113,6 @@ table.houston-table th {
 }
 
 table.houston-table tr {
-	@apply even:bg-accent;
+	@apply even: bg-accent;
 }
 </style>

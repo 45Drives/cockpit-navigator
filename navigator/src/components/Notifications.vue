@@ -16,49 +16,93 @@ If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <template>
-	<div aria-live="assertive"
-		class="fixed inset-0 flex items-end px-4 py-6 pointer-events-none sm:p-6 sm:items-start z-20 h-screen overflow-y-auto">
-		<transition-group tag="div" class="w-full flex flex-col-reverse items-center sm:items-end sm:flex-col space-y-content"
+	<div
+		aria-live="assertive"
+		class="fixed inset-0 flex items-end px-4 py-6 pointer-events-none sm:p-6 sm:items-start z-20 h-screen overflow-y-auto"
+	>
+		<transition-group
+			tag="div"
+			class="w-full flex flex-col-reverse items-center sm:items-end sm:flex-col space-y-content"
 			enter-active-class="transition-all transform ease-out duration-300"
 			enter-from-class="translate-y-8 opacity-0 scale-95 sm:translate-y-0 sm:translate-x-8"
 			enter-to-class="translate-y-0 opacity-100 scale-100 sm:translate-x-0"
 			leave-active-class="transition-all transform ease-in duration-100"
 			leave-from-class="opacity-100 scale-100 sm:translate-x-0"
-			leave-to-class="opacity-0 scale-95 sm:translate-x-8">
-			<div v-for="notification in notificationList" :key="notification.id"
+			leave-to-class="opacity-0 scale-95 sm:translate-x-8"
+		>
+			<div
+				v-for="notification in notificationList"
+				:key="notification.id"
 				class="max-w-sm w-full shadow-lg pointer-events-auto overflow-hidden bg-default text-default"
-				@mouseenter="notification.clearTimeouts?.()" @mouseleave="notification.setTimeouts?.()">
+				@mouseenter="notification.clearTimeouts?.()"
+				@mouseleave="notification.setTimeouts?.()"
+			>
 				<div class="p-4">
 					<div class="flex items-start">
-						<div class="flex-shrink-0" aria-hidden="true">
-							<ExclamationCircleIcon v-if="notification.level === 'error'" class="icon-error size-icon-lg"
-								aria-hidden="true" />
-							<ExclamationCircleIcon v-else-if="notification.level === 'warning'"
-								class="icon-warning size-icon-lg" aria-hidden="true" />
-							<CheckCircleIcon v-else-if="notification.level === 'success'"
-								class="icon-success size-icon-lg" aria-hidden="true" />
-							<MinusCircleIcon v-else-if="notification.level === 'denied'" class="icon-error size-icon-lg"
-								aria-hidden="true" />
-							<InformationCircleIcon v-else class="icon-info size-icon-lg" />
+						<div
+							class="flex-shrink-0"
+							aria-hidden="true"
+						>
+							<ExclamationCircleIcon
+								v-if="notification.level === 'error'"
+								class="icon-error size-icon-lg"
+								aria-hidden="true"
+							/>
+							<ExclamationCircleIcon
+								v-else-if="notification.level === 'warning'"
+								class="icon-warning size-icon-lg"
+								aria-hidden="true"
+							/>
+							<CheckCircleIcon
+								v-else-if="notification.level === 'success'"
+								class="icon-success size-icon-lg"
+								aria-hidden="true"
+							/>
+							<MinusCircleIcon
+								v-else-if="notification.level === 'denied'"
+								class="icon-error size-icon-lg"
+								aria-hidden="true"
+							/>
+							<InformationCircleIcon
+								v-else
+								class="icon-info size-icon-lg"
+							/>
 						</div>
 						<div class="ml-3 w-0 flex-1 pt-0.5">
 							<p class="text-sm font-medium">{{ notification.title }}</p>
-							<p class="mt-1 text-sm text-muted whitespace-pre-wrap" v-html="notification.body">
+							<p
+								class="mt-1 text-sm text-muted whitespace-pre-wrap"
+								v-html="notification.body"
+							>
 							</p>
-							<div v-if="notification.actions?.length" class="mt-3 flex space-x-7">
-								<button v-for="action in notification.actions" @click="action.callback"
-									class="rounded-md text-sm font-medium text-primary">
+							<div
+								v-if="notification.actions?.length"
+								class="mt-3 flex space-x-7"
+							>
+								<button
+									v-for="action in notification.actions"
+									class="rounded-md text-sm font-medium text-primary"
+									@click="action.callback"
+								>
 									{{ action.text }}
 								</button>
-								<button @click="notification.show = false" type="button"
-									class="rounded-md text-sm font-medium text-secondary">Dismiss</button>
+								<button
+									type="button"
+									class="rounded-md text-sm font-medium text-secondary"
+									@click="notification.show = false"
+								>Dismiss</button>
 							</div>
 						</div>
 						<div class="ml-4 flex-shrink-0 flex">
-							<button @click="notification.show = false"
-								class="icon-default">
+							<button
+								class="icon-default"
+								@click="notification.show = false"
+							>
 								<span class="sr-only">Close</span>
-								<XIcon class="size-icon" aria-hidden="true" />
+								<XIcon
+									class="size-icon"
+									aria-hidden="true"
+								/>
 							</button>
 						</div>
 					</div>
@@ -69,7 +113,7 @@ If not, see <https://www.gnu.org/licenses/>.
 </template>
 
 <script>
-import { ref, watch, reactive, onUnmounted } from 'vue';
+import { ref, watch, reactive } from 'vue';
 import { InformationCircleIcon, ExclamationCircleIcon, MinusCircleIcon, CheckCircleIcon } from '@heroicons/vue/outline';
 import { XIcon } from '@heroicons/vue/solid';
 import { FIFO } from '@45drives/cockpit-helpers';

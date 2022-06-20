@@ -1,24 +1,59 @@
+<!--
+Copyright (C) 2022 Josh Boudreau <jboudreau@45drives.com>
+
+This file is part of Cockpit Navigator.
+
+Cockpit Navigator is free software: you can redistribute it and/or modify it under the terms
+of the GNU General Public License as published by the Free Software Foundation, either version 3
+of the License, or (at your option) any later version.
+
+Cockpit Navigator is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with Cockpit Navigator.
+If not, see <https://www.gnu.org/licenses/>. 
+-->
+
 <template>
-	<DirectoryEntry v-for="entry, index in visibleEntries" :key="entry.path" :host="host" :entry="entry"
-		:inheritedSortCallback="sortCallback" :searchFilterRegExp="searchFilterRegExp"
-		@sortEntries="sortEntries"
-		@startProcessing="(...args) => $emit('startProcessing', ...args)"
-		@stopProcessing="(...args) => $emit('stopProcessing', ...args)" ref="entryRefs" :level="level" :selectedCount="selectedCount"
-		@setEntryProp="(prop, value) => entry[prop] = value"
-		@browserAction="(...args) => $emit('browserAction', ...args)"
-		@directoryViewAction="(...args) => $emit('directoryViewAction', ...args)"
+	<DirectoryEntry
+		v-for="entry, index in visibleEntries"
+		:key="entry.path"
+		:host="host"
+		:entry="entry"
+		:inheritedSortCallback="sortCallback"
+		:searchFilterRegExp="searchFilterRegExp"
+		:level="level"
+		:selectedCount="selectedCount"
 		:suppressBorderT="visibleEntries[index - cols]?.selected && !(visibleEntries[index - cols]?.dirOpen)"
 		:suppressBorderB="visibleEntries[index + cols]?.selected && !(entry.dirOpen)"
 		:suppressBorderL="settings.directoryView.view !== 'list' && (visibleEntries[index - 1]?.selected && (index) % cols !== 0)"
-		:suppressBorderR="settings.directoryView.view !== 'list' && (visibleEntries[index + 1]?.selected && (index + 1) % cols !== 0)" />
+		:suppressBorderR="settings.directoryView.view !== 'list' && (visibleEntries[index + 1]?.selected && (index + 1) % cols !== 0)"
+		@browserAction="(...args) => $emit('browserAction', ...args)"
+		@directoryViewAction="(...args) => $emit('directoryViewAction', ...args)"
+		@sortEntries="sortEntries"
+		@startProcessing="(...args) => $emit('startProcessing', ...args)"
+		@stopProcessing="(...args) => $emit('stopProcessing', ...args)"
+		@setEntryProp="(prop, value) => entry[prop] = value"
+		ref="entryRefs"
+	/>
 	<tr v-if="visibleEntries.length === 0">
-		<td :colspan="Object.values(settings?.directoryView?.cols ?? {}).reduce((sum, current) => current ? sum + 1 : sum, 1) ?? 100"
-			class="!pl-1 text-muted text-sm">
-			<div class="w-6" v-for="i in Array(level).fill(0)" v-memo="[level]"></div>
+		<td
+			:colspan="Object.values(settings?.directoryView?.cols ?? {}).reduce((sum, current) => current ? sum + 1 : sum, 1) ?? 100"
+			class="!pl-1 text-muted text-sm"
+		>
+			<div
+				class="w-6"
+				v-for="i in Array(level).fill(0)"
+				v-memo="[level]"
+			></div>
 			<div class="inline-block">No entries.</div>
 		</td>
 	</tr>
-	<Teleport to="#footer-text" v-if="selectedCount === 0">
+	<Teleport
+		to="#footer-text"
+		v-if="selectedCount === 0"
+	>
 		<div>
 			<span v-if="level > 0">{{ path.split('/').slice(-1 * (level)).join('/') }}:</span>
 			{{ stats }}
@@ -27,7 +62,7 @@
 </template>
 
 <script>
-import { ref, reactive, computed, inject, watch, onBeforeUnmount, onMounted, nextTick, onUnmounted } from 'vue';
+import { ref, reactive, computed, inject, watch, onBeforeUnmount, nextTick } from 'vue';
 import { errorStringHTML } from '@45drives/cockpit-helpers';
 import { notificationsInjectionKey, settingsInjectionKey, clipboardInjectionKey } from '../keys';
 import DirectoryEntry from './DirectoryEntry.vue';

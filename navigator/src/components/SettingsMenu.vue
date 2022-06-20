@@ -1,3 +1,20 @@
+<!--
+Copyright (C) 2022 Josh Boudreau <jboudreau@45drives.com>
+
+This file is part of Cockpit Navigator.
+
+Cockpit Navigator is free software: you can redistribute it and/or modify it under the terms
+of the GNU General Public License as published by the Free Software Foundation, either version 3
+of the License, or (at your option) any later version.
+
+Cockpit Navigator is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with Cockpit Navigator.
+If not, see <https://www.gnu.org/licenses/>. 
+-->
+
 <template>
 	<button @click="showMenu = true">
 		<AdjustmentsIcon class="size-icon icon-default" />
@@ -16,15 +33,16 @@
 					<LabelledSwitch v-model="darkMode">Dark mode</LabelledSwitch>
 					<LabelledSwitch v-model="settings.directoryView.showHidden">Show hidden files</LabelledSwitch>
 					<LabelledSwitch v-model="booleanAnalogs.directoryView.view.bool">List view</LabelledSwitch>
-					<LabelledSwitch
-						v-model="settings.directoryView.separateDirs"
-					>Separate directories while sorting</LabelledSwitch>
+					<LabelledSwitch v-model="settings.directoryView.separateDirs">Separate directories while sorting
+					</LabelledSwitch>
 				</div>
-				<div v-if="booleanAnalogs.directoryView.view.bool" class="self-stretch">
+				<div
+					v-if="booleanAnalogs.directoryView.view.bool"
+					class="self-stretch"
+				>
 					<div>List view columns</div>
 					<div
-						class="flex justify-start text-sm rounded-lg divide-x divide-default border border-default shadow"
-					>
+						class="flex justify-start text-sm rounded-lg divide-x divide-default border border-default shadow">
 						<div class="flex flex-col grow items-stretch">
 							<div class="font-semibold px-2">Visible</div>
 							<div

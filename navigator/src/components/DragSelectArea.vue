@@ -1,12 +1,36 @@
+<!--
+Copyright (C) 2022 Josh Boudreau <jboudreau@45drives.com>
+
+This file is part of Cockpit Navigator.
+
+Cockpit Navigator is free software: you can redistribute it and/or modify it under the terms
+of the GNU General Public License as published by the Free Software Foundation, either version 3
+of the License, or (at your option) any later version.
+
+Cockpit Navigator is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with Cockpit Navigator.
+If not, see <https://www.gnu.org/licenses/>. 
+-->
+
 <template>
-	<div v-show="dragging" class="fixed border-red-600/50 border border-solid bg-red-600/10 rounded-lg" ref="selectionBox"></div>
-	<div @mousedown="startDrag" v-bind="$attrs">
+	<div
+		v-show="dragging"
+		class="fixed border-red-600/50 border border-solid bg-red-600/10 rounded-lg"
+		ref="selectionBox"
+	></div>
+	<div
+		v-bind="$attrs"
+		@mousedown="startDrag"
+	>
 		<slot />
 	</div>
 </template>
 
 <script>
-import { ref, reactive, watch, onMounted, nextTick, onBeforeUnmount } from 'vue'
+import { ref, reactive, watch, onMounted } from 'vue'
 export default {
 	props: {
 		areaThreshold: {

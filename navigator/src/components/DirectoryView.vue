@@ -1,118 +1,235 @@
+<!--
+Copyright (C) 2022 Josh Boudreau <jboudreau@45drives.com>
+
+This file is part of Cockpit Navigator.
+
+Cockpit Navigator is free software: you can redistribute it and/or modify it under the terms
+of the GNU General Public License as published by the Free Software Foundation, either version 3
+of the License, or (at your option) any later version.
+
+Cockpit Navigator is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with Cockpit Navigator.
+If not, see <https://www.gnu.org/licenses/>. 
+-->
+
 <template>
-	<div class="h-full" @keydown="keyHandler($event)" tabindex="-1" :class="{ '!cursor-wait': processing }">
-		<DragSelectArea class="h-full" @selectRectangle="selectRectangle" @mouseup.exact="deselectAll" @contextmenu.prevent="$emit('browserAction', 'contextMenu', { host, path, name: `Current directory (${path.split('/').pop() || '/'})` }, $event)">
-			<Table :key="host + path" v-if="settings.directoryView?.view === 'list'" emptyText="No entries." noHeader stickyHeaders
-				noShrink noShrinkHeight="h-full">
+	<div
+		class="h-full"
+		@keydown="keyHandler($event)"
+		tabindex="-1"
+		:class="{ '!cursor-wait': processing }"
+	>
+		<DragSelectArea
+			class="h-full"
+			@selectRectangle="selectRectangle"
+			@mouseup.exact="deselectAll"
+			@contextmenu.prevent="$emit('browserAction', 'contextMenu', { host, path, name: `Current directory (${path.split('/').pop() || '/'})` }, $event)"
+		>
+			<Table
+				:key="host + path"
+				v-if="settings.directoryView?.view === 'list'"
+				emptyText="No entries."
+				noHeader
+				stickyHeaders
+				noShrink
+				noShrinkHeight="h-full"
+			>
 				<template #thead>
 					<tr>
 						<th class="!pl-1 border-l-2 border-l-transparent last:border-r-2 last:border-r-transparent">
 							<div class="flex flex-row flex-nowrap gap-1 items-center">
 								<div class="flex items-center justify-center w-6">
-									<LoadingSpinner v-if="processing" class="size-icon" />
+									<LoadingSpinner
+										v-if="processing"
+										class="size-icon"
+									/>
 								</div>
 								<div class="grow">Name</div>
-								<SortCallbackButton initialFuncIsMine v-model="sortCallback"
-									:compareFunc="sortCallbacks.name" />
+								<SortCallbackButton
+									initialFuncIsMine
+									v-model="sortCallback"
+									:compareFunc="sortCallbacks.name"
+								/>
 							</div>
 						</th>
-						<th class="last:border-r-2 last:border-r-transparent"
-							v-if="settings?.directoryView?.cols?.mode">
+						<th
+							class="last:border-r-2 last:border-r-transparent"
+							v-if="settings?.directoryView?.cols?.mode"
+						>
 							Mode</th>
-						<th class="last:border-r-2 last:border-r-transparent"
-							v-if="settings?.directoryView?.cols?.owner">
+						<th
+							class="last:border-r-2 last:border-r-transparent"
+							v-if="settings?.directoryView?.cols?.owner"
+						>
 							<div class="flex flex-row flex-nowrap gap-2 items-center">
 								<div class="grow">Owner</div>
-								<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.owner" />
+								<SortCallbackButton
+									v-model="sortCallback"
+									:compareFunc="sortCallbacks.owner"
+								/>
 							</div>
 						</th>
-						<th class="last:border-r-2 last:border-r-transparent"
-							v-if="settings?.directoryView?.cols?.group">
+						<th
+							class="last:border-r-2 last:border-r-transparent"
+							v-if="settings?.directoryView?.cols?.group"
+						>
 							<div class="flex flex-row flex-nowrap gap-2 items-center">
 								<div class="grow">Group</div>
-								<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.group" />
+								<SortCallbackButton
+									v-model="sortCallback"
+									:compareFunc="sortCallbacks.group"
+								/>
 							</div>
 						</th>
-						<th class="last:border-r-2 last:border-r-transparent"
-							v-if="settings?.directoryView?.cols?.size">
+						<th
+							class="last:border-r-2 last:border-r-transparent"
+							v-if="settings?.directoryView?.cols?.size"
+						>
 							<div class="flex flex-row flex-nowrap gap-2 items-center">
 								<div class="grow text-right">Size</div>
-								<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.size" />
+								<SortCallbackButton
+									v-model="sortCallback"
+									:compareFunc="sortCallbacks.size"
+								/>
 							</div>
 						</th>
-						<th class="last:border-r-2 last:border-r-transparent"
-							v-if="settings?.directoryView?.cols?.btime">
+						<th
+							class="last:border-r-2 last:border-r-transparent"
+							v-if="settings?.directoryView?.cols?.btime"
+						>
 							<div class="flex flex-row flex-nowrap gap-2 items-center">
 								<div class="grow">Created</div>
-								<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.btime" />
+								<SortCallbackButton
+									v-model="sortCallback"
+									:compareFunc="sortCallbacks.btime"
+								/>
 							</div>
 						</th>
-						<th class="last:border-r-2 last:border-r-transparent"
-							v-if="settings?.directoryView?.cols?.mtime">
+						<th
+							class="last:border-r-2 last:border-r-transparent"
+							v-if="settings?.directoryView?.cols?.mtime"
+						>
 							<div class="flex flex-row flex-nowrap gap-2 items-center">
 								<div class="grow">Modified</div>
-								<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.mtime" />
+								<SortCallbackButton
+									v-model="sortCallback"
+									:compareFunc="sortCallbacks.mtime"
+								/>
 							</div>
 						</th>
-						<th class="last:border-r-2 last:border-r-transparent"
-							v-if="settings?.directoryView?.cols?.atime">
+						<th
+							class="last:border-r-2 last:border-r-transparent"
+							v-if="settings?.directoryView?.cols?.atime"
+						>
 							<div class="flex flex-row flex-nowrap gap-2 items-center">
 								<div class="grow">Accessed</div>
-								<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.atime" />
+								<SortCallbackButton
+									v-model="sortCallback"
+									:compareFunc="sortCallbacks.atime"
+								/>
 							</div>
 						</th>
 					</tr>
 				</template>
 				<template #tbody>
-					<DirectoryEntryList :host="host" :path="path" :sortCallback="sortCallback"
+					<DirectoryEntryList
+						:host="host"
+						:path="path"
+						:sortCallback="sortCallback"
 						:searchFilterRegExp="searchFilterRegExp"
-						@startProcessing="processing++" @stopProcessing="processing--"
-						@browserAction="(...args) => $emit('browserAction', ...args)"
-						@directoryViewAction="handleAction" ref="directoryEntryListRef"
+						:level="0"
+						:cols="1"
+						:selectedCount="selectedCount"
 						@tallySelected="tallySelected"
-						:level="0" :cols="1" :selectedCount="selectedCount" />
+						@startProcessing="processing++"
+						@stopProcessing="processing--"
+						@browserAction="(...args) => $emit('browserAction', ...args)"
+						@directoryViewAction="handleAction"
+						ref="directoryEntryListRef"
+					/>
 				</template>
 			</Table>
-			<div v-else class="h-full flex flex-col items-stretch">
-				<div class="grow-0 flex flex-row justify-start items-center px-6 py-2 gap-4 text-sm border-t border-default">
+			<div
+				v-else
+				class="h-full flex flex-col items-stretch"
+			>
+				<div
+					class="grow-0 flex flex-row justify-start items-center px-6 py-2 gap-4 text-sm border-t border-default">
 					<div class="flex flex-row flex-nowrap gap-2 items-center">
 						<div>Name</div>
-						<SortCallbackButton initialFuncIsMine v-model="sortCallback"
-							:compareFunc="sortCallbacks.name" />
+						<SortCallbackButton
+							initialFuncIsMine
+							v-model="sortCallback"
+							:compareFunc="sortCallbacks.name"
+						/>
 					</div>
 					<div class="flex flex-row flex-nowrap gap-2 items-center">
 						<div>Owner</div>
-						<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.owner" />
+						<SortCallbackButton
+							v-model="sortCallback"
+							:compareFunc="sortCallbacks.owner"
+						/>
 					</div>
 					<div class="flex flex-row flex-nowrap gap-2 items-center">
 						<div>Group</div>
-						<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.group" />
+						<SortCallbackButton
+							v-model="sortCallback"
+							:compareFunc="sortCallbacks.group"
+						/>
 					</div>
 					<div class="flex flex-row flex-nowrap gap-2 items-center">
 						<div>Size</div>
-						<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.size" />
+						<SortCallbackButton
+							v-model="sortCallback"
+							:compareFunc="sortCallbacks.size"
+						/>
 					</div>
 					<div class="flex flex-row flex-nowrap gap-2 items-center">
 						<div>Created</div>
-						<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.btime" />
+						<SortCallbackButton
+							v-model="sortCallback"
+							:compareFunc="sortCallbacks.btime"
+						/>
 					</div>
 					<div class="flex flex-row flex-nowrap gap-2 items-center">
 						<div>Modified</div>
-						<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.mtime" />
+						<SortCallbackButton
+							v-model="sortCallback"
+							:compareFunc="sortCallbacks.mtime"
+						/>
 					</div>
 					<div class="flex flex-row flex-nowrap gap-2 items-center">
 						<div>Accessed</div>
-						<SortCallbackButton v-model="sortCallback" :compareFunc="sortCallbacks.atime" />
+						<SortCallbackButton
+							v-model="sortCallback"
+							:compareFunc="sortCallbacks.atime"
+						/>
 					</div>
 				</div>
-				<div :key="host + path" class="grow flex flex-wrap bg-well overflow-y-auto content-start" ref="gridRef"
-					@wheel="scrollHandler">
-					<DirectoryEntryList :host="host" :path="path" :sortCallback="sortCallback"
+				<div
+					:key="host + path"
+					class="grow flex flex-wrap bg-well overflow-y-auto content-start"
+					ref="gridRef"
+					@wheel="scrollHandler"
+				>
+					<DirectoryEntryList
+						:host="host"
+						:path="path"
+						:sortCallback="sortCallback"
 						:searchFilterRegExp="searchFilterRegExp"
-						@startProcessing="processing++" @stopProcessing="processing--"
+						:level="0"
+						:cols="cols"
+						:selectedCount="selectedCount"
+						@startProcessing="processing++"
+						@stopProcessing="processing--"
 						@browserAction="(...args) => $emit('browserAction', ...args)"
 						@directoryViewAction="handleAction"
-						@tallySelected="tallySelected" ref="directoryEntryListRef"
-						:level="0" :cols="cols" :selectedCount="selectedCount" />
+						@tallySelected="tallySelected"
+						ref="directoryEntryListRef"
+					/>
 				</div>
 			</div>
 		</DragSelectArea>
@@ -125,7 +242,7 @@
 </template>
 
 <script>
-import { ref, inject, watch, onMounted, computed, onBeforeUnmount, onUpdated, nextTick } from 'vue';
+import { ref, inject, watch, onMounted, onBeforeUnmount, onUpdated } from 'vue';
 import Table from './Table.vue';
 import { clipboardInjectionKey, notificationsInjectionKey, settingsInjectionKey } from '../keys';
 import LoadingSpinner from './LoadingSpinner.vue';
@@ -279,7 +396,7 @@ export default {
 							};
 						});
 						if (event.shiftKey)
-							clipboard.content = [ ...newContent, ...clipboard.content ].filter((a, index, arr) => arr.findIndex(b => b.uniqueId === a.uniqueId) === index);
+							clipboard.content = [...newContent, ...clipboard.content].filter((a, index, arr) => arr.findIndex(b => b.uniqueId === a.uniqueId) === index);
 						else
 							clipboard.content = newContent;
 						const message = event.shiftKey
@@ -397,11 +514,11 @@ export default {
 
 <style>
 tr.dir-entry>td {
-	@apply border-solid border-y-red-600/50 border-y-0 first:border-l last:border-r first:border-l-transparent last:border-r-transparent;
+	@apply border-solid border-y-red-600/50 border-y-0 first: border-l last:border-r first:border-l-transparent last:border-r-transparent;
 }
 
 tr.dir-entry-selected>td {
-	@apply border-y first:border-l-red-600/50 last:border-red-600/50 bg-red-600/10;
+	@apply border-y first: border-l-red-600/50 last:border-red-600/50 bg-red-600/10;
 }
 
 div.dir-entry {
@@ -413,19 +530,19 @@ div.dir-entry-selected {
 }
 
 tr.dir-entry-selected.suppress-border-t>td {
-	@apply !border-t-0;
+	@apply  !border-t-0;
 }
 
 tr.dir-entry-selected.suppress-border-b>td {
-	@apply !border-b-0;
+	@apply  !border-b-0;
 }
 
 tr.dir-entry-selected.suppress-border-l>td {
-	@apply !border-l-0;
+	@apply  !border-l-0;
 }
 
 tr.dir-entry-selected.suppress-border-r>td {
-	@apply !border-r-0;
+	@apply  !border-r-0;
 }
 
 div.dir-entry-width {

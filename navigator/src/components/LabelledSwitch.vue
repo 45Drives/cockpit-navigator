@@ -16,19 +16,29 @@ If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <template>
-	<SwitchGroup as="div" :class="[labelRight ? 'flex-row-reverse' : 'flex-row', 'inline-flex items-center']">
+	<SwitchGroup
+		as="div"
+		:class="[labelRight ? 'flex-row-reverse' : 'flex-row', 'inline-flex items-center']"
+	>
 		<span :class="[labelRight ? 'grow' : '', 'flex flex-col']">
-			<SwitchLabel as="div" class="text-label"><slot /></SwitchLabel>
+			<SwitchLabel
+				as="div"
+				class="text-label"
+			>
+				<slot />
+			</SwitchLabel>
 			<SwitchDescription
 				as="div"
 				class="text-sm text-muted"
-			><slot name="description" /></SwitchDescription>
+			>
+				<slot name="description" />
+			</SwitchDescription>
 		</span>
 		<div :class="[labelRight ? '' : 'grow', 'w-4']"></div> <!-- spacer -->
 		<Switch
 			:modelValue="modelValue"
-			@update:modelValue="newValue => { $emit('update:modelValue', newValue); $emit('change', newValue); $emit('input', newValue); }"
 			:class="[modelValue ? 'bg-45d' : 'bg-well', 'inline-flex shrink-0 h-6 w-11 p-[2px] rounded-full cursor-pointer shadow-inner']"
+			@update:modelValue="newValue => { $emit('update:modelValue', newValue); $emit('change', newValue); $emit('input', newValue); }"
 		>
 			<span
 				aria-hidden="true"
@@ -40,7 +50,6 @@ If not, see <https://www.gnu.org/licenses/>.
 
 <script>
 import { Switch, SwitchDescription, SwitchGroup, SwitchLabel } from '@headlessui/vue'
-import { watch, ref } from 'vue';
 export default {
 	props: {
 		modelValue: Boolean,
