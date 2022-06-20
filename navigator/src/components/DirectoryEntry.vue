@@ -21,7 +21,7 @@ If not, see <https://www.gnu.org/licenses/>.
 			:class="{ 'select-none dir-entry': true, '!bg-red-600/10': hover && !entry.selected, '!bg-red-600/20': hover && entry.selected, 'dir-entry-selected': entry.selected, 'suppress-border-t': suppressBorderT, 'suppress-border-b': suppressBorderB }">
 			<td class="!pl-1 relative">
 				<div :class="[entry.cut ? 'line-through' : '', 'flex items-center gap-1']">
-					<div class="indent-gap" />
+					<div :style="{ width: `${24 * level}px` }" />
 					<div
 						class="relative w-6"
 						:class="[entry.cut ? 'text-gray-500/50' : 'icon-default']"
@@ -289,9 +289,3 @@ export default {
 	]
 }
 </script>
-
-<style>
-.indent-gap {
-	width: v-bind("`${24 * level}px`");
-}
-</style>
