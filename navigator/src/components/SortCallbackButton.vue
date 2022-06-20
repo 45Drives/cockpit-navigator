@@ -29,7 +29,8 @@ If not, see <https://www.gnu.org/licenses/>.
 </template>
 
 <script>
-import { SortDescendingIcon } from "@heroicons/vue/solid";
+import { SortDescendingIcon, SortAscendingIcon } from "@heroicons/vue/solid";
+import { ref, nextTick, watch } from "vue";
 
 export default {
 	props: {
