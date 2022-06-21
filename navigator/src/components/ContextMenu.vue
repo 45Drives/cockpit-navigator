@@ -121,6 +121,13 @@ If not, see <https://www.gnu.org/licenses/>.
 							<DocumentDownloadIcon class="size-icon icon-default" />
 							<span>Download</span>
 						</button>
+						<button
+							class="context-menu-button"
+							@click="$emit('browserAction', 'download', selection[0], true)"
+						>
+							<FolderDownloadIcon class="size-icon icon-default" />
+							<span>Zip and download</span>
+						</button>
 					</div>
 					<div
 						v-else-if="selection[0]?.resolvedType === 'd'"

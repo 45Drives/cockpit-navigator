@@ -157,6 +157,15 @@
 				<span>Download</span>
 				<DownloadIcon class="size-icon text-default" />
 			</button>
+			<button
+				v-if="openFilePromptModal.entry?.resolvedType === 'f'"
+				type="button"
+				class="btn btn-primary flex items-center gap-1"
+				@click="() => openFilePromptModal.action('download', true)"
+			>
+				<span>Zip and download</span>
+				<FolderDownloadIcon class="size-icon text-default" />
+			</button>
 		</template>
 	</ModalPopup>
 	<ModalPopup
@@ -256,6 +265,7 @@ import {
 	KeyIcon,
 	PencilAltIcon,
 	DownloadIcon,
+	FolderDownloadIcon,
 } from '@heroicons/vue/solid';
 import IconToggle from '../components/IconToggle.vue';
 import ModalPopup from '../components/ModalPopup.vue';
@@ -264,6 +274,8 @@ import FilePermissions from '../components/FilePermissions.vue';
 import FileNameEditor from '../components/FileNameEditor.vue';
 import ContextMenu from '../components/ContextMenu.vue';
 import ModalPrompt from '../components/ModalPrompt.vue';
+import { commonPath } from '../functions/commonPath';
+import { streamProcDownload } from '../functions/streamProcDownload';
 
 const encodePartial = (string) =>
 	encodeURIComponent(string)
@@ -325,8 +337,8 @@ export default {
 				openFilePromptModal.show = false;
 				openFilePromptModal.resetTimeoutHandle = setTimeout(() => openFilePromptModal.resetTimeoutHandle = openFilePromptModal.entry = null, 500);
 			},
-			action: (action) => {
-				handleAction(action, openFilePromptModal.entry);
+			action: (action, ...args) => {
+				handleAction(action, openFilePromptModal.entry, ...args);
 				openFilePromptModal.close();
 			}
 		});
@@ -437,12 +449,34 @@ export default {
 			router.push(`/edit/${newHost}${newPath}`);
 		}
 
-		const download = (selection) => {
-			const items = [].concat(selection); // forces to be array
-			if (items.length === 1 && items[0].resolvedType === 'f') {
-				let { path, name, host } = items[0];
-				fileDownload(path, name, host);
+		const download = (selection, zip = false) => {
+			const getZipName = () => {
+				const now = new Date();
+				return `cockpit-navigator-dowload_${now.getFullYear()}-${now.getMonth()+1}-${now.getDay()}_${now.getHours()}-${now.getMinutes()}-${now.getSeconds()}.zip`;
 			}
+			let items = [].concat(selection); // forces to be array
+			console.log(items);
+			if (items.length > 1) {
+				const dirs = items.filter(item => item.type === 'd').map(item => item.path);
+				if (dirs.length) {
+					// remove items beyond any given dirs because we will tar dirs recursively
+					const containedRegex = new RegExp(`^(${dirs.join('|')}).+`);
+					items = items.filter(item => !containedRegex.test(item.path));
+				}
+				const { common, relativePaths } = commonPath(items.map(item => item.path));
+				console.log(common, relativePaths);
+				streamProcDownload(['zip', '-rq', '-', ...relativePaths], getZipName(), { superuser: 'try', directory: common });
+			} else {
+				let { path, name, host, resolvedType } = items[0];
+				if (resolvedType === 'd') {
+					streamProcDownload(['zip', '-rq', '-', '.'], `${name}.zip`, { superuser: 'try', directory: path });
+				} else if (zip) {
+					streamProcDownload(['zip', '-q', '-', name], `${name}.zip`, { superuser: 'try', directory: path.split('/').slice(0, -1).join('/') || '/' });
+				} else {
+					fileDownload(path, name, host);
+				}
+			}
+				
 			// TODO: mutlifile & directory downloads
 		}
 
@@ -650,6 +684,7 @@ export default {
 		KeyIcon,
 		PencilAltIcon,
 		DownloadIcon,
+		FolderDownloadIcon,
 		ModalPrompt,
 	},
 }
