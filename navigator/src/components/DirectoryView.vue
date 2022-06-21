@@ -358,19 +358,8 @@ export default {
 		 */
 		const keyHandler = (event) => {
 			const unCutEntries = () => gatherEntries([], false).map(entry => entry.cut = false);
-			if (event.key === 'Escape') {
-				if (getSelected().length === 0) {
-					if (clipboard.content.length) {
-						unCutEntries();
-						clipboard.content = [];
-						notifications.value.constructNotification('Clipboard', 'Cleared clipboard.', 'info', 2000);
-					}
-				} else {
-					deselectAll();
-				}
-			}
+			const keypress = event.key.toLowerCase();
 			if (event.ctrlKey) {
-				const keypress = event.key.toLowerCase();
 				switch (keypress) {
 					case 'a':
 						selectAll();
@@ -424,10 +413,27 @@ export default {
 					default:
 						return;
 				}
-			} else {
-				return;
+			}
+			switch (keypress) {
+				case 'delete':
+					emit('browserAction', 'delete', getSelected());
+					break;
+				case 'escape':
+					if (getSelected().length === 0) {
+						if (clipboard.content.length) {
+							unCutEntries();
+							clipboard.content = [];
+							notifications.value.constructNotification('Clipboard', 'Cleared clipboard.', 'info', 2000);
+						}
+					} else {
+						deselectAll();
+					}
+					break;
+				default:
+					return;
 			}
 			event.preventDefault();
+			event.stopPropagation();
 		}
 
 		const scrollHandler = (event) => {
