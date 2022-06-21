@@ -1,5 +1,6 @@
 /**
- * Get greatest common denomincator path of an array of input paths
+ * Get greatest common denominator absolute path and
+ * array of relative paths from an array of absolute paths
  * @param {string[]} paths - Full paths from which to get common denominator
  * @returns {CommonPathObj}
  */
