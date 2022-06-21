@@ -118,7 +118,7 @@
 	</div>
 	<ModalPopup
 		:showModal="openFilePromptModal.show"
-		:headerText="openFilePromptModal.entry?.name ?? 'NULL'"
+		:headerText="openFilePromptModal.entry?.linkRawPath || (openFilePromptModal.entry?.name ?? 'NULL')"
 		autoWidth
 		@close="() => openFilePromptModal.close()"
 	>
@@ -133,42 +133,62 @@
 			</button>
 			<button
 				type="button"
-				class="btn btn-primary"
+				class="btn btn-primary flex items-center gap-1"
 				@click="() => openFilePromptModal.action('editPermissions')"
 			>
-				Edit permissions
+				<span>Edit permissions</span>
+				<KeyIcon class="size-icon text-default" />
 			</button>
 			<button
 				v-if="openFilePromptModal.entry?.resolvedType === 'f'"
 				type="button"
-				class="btn btn-primary"
+				class="btn btn-primary flex items-center gap-1"
 				@click="() => openFilePromptModal.action('edit')"
 			>
-				Open for editing
+				<span>Open for editing</span>
+				<PencilAltIcon class="size-icon text-default" />
 			</button>
 			<button
 				v-if="openFilePromptModal.entry?.resolvedType === 'f'"
 				type="button"
-				class="btn btn-primary"
+				class="btn btn-primary flex items-center gap-1"
 				@click="() => openFilePromptModal.action('download')"
 			>
-				Download
+				<span>Download</span>
+				<DownloadIcon class="size-icon text-default" />
 			</button>
 		</template>
+	</ModalPopup>
+	<ModalPopup
+		:showModal="confirm.show"
+		:headerText="confirm.header"
+		autoWidth
+		:applyDangerous="confirm.dangerous"
+		@apply="confirm.resolve(true)"
+		@close="confirm.close"
+	>
+		<div class="whitespace-pre">{{ confirm.body }}</div>
 	</ModalPopup>
 	<FilePermissions
 		:show="filePermissions.show"
 		:entry="filePermissions.entry"
 		@hide="filePermissions.close"
 	/>
+	<FileNameEditor
+		:show="nameEditor.show"
+		:entry="nameEditor.entry"
+		:createNew="nameEditor.createNew"
+		@hide="nameEditor.close"
+	/>
 	<ContextMenu
 		:show="contextMenu.show"
 		:selection="contextMenu.selection"
 		:event="contextMenu.event"
-		:currentDirEntry="{...pathHistory.current(), name: `Current directory (${pathHistory.current().path.split('/').pop()})`}"
+		:currentDirEntry="{ ...pathHistory.current(), name: `Current directory (${pathHistory.current().path.split('/').pop()})` }"
 		@browserAction="handleAction"
 		@hide="contextMenu.close"
 	/>
+	<ModalPrompt ref="modalPromptRef" />
 	<Teleport to="#footer-buttons">
 		<IconToggle
 			v-model="darkMode"
@@ -220,12 +240,30 @@ import { useRoute, useRouter } from "vue-router";
 import DirectoryView from "../components/DirectoryView.vue";
 import PathBreadCrumbs from '../components/PathBreadCrumbs.vue';
 import { notificationsInjectionKey, pathHistoryInjectionKey, lastPathStorageKey, settingsInjectionKey } from '../keys';
-import { ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, RefreshIcon, ChevronDownIcon, SearchIcon, SunIcon, MoonIcon, EyeIcon, EyeOffIcon, ViewListIcon, ViewGridIcon } from '@heroicons/vue/solid';
+import {
+	ArrowLeftIcon,
+	ArrowRightIcon,
+	ArrowUpIcon,
+	RefreshIcon,
+	ChevronDownIcon,
+	SearchIcon,
+	SunIcon,
+	MoonIcon,
+	EyeIcon,
+	EyeOffIcon,
+	ViewListIcon,
+	ViewGridIcon,
+	KeyIcon,
+	PencilAltIcon,
+	DownloadIcon,
+} from '@heroicons/vue/solid';
 import IconToggle from '../components/IconToggle.vue';
 import ModalPopup from '../components/ModalPopup.vue';
-import { fileDownload } from '@45drives/cockpit-helpers';
+import { fileDownload, useSpawn, errorStringHTML } from '@45drives/cockpit-helpers';
 import FilePermissions from '../components/FilePermissions.vue';
+import FileNameEditor from '../components/FileNameEditor.vue';
 import ContextMenu from '../components/ContextMenu.vue';
+import ModalPrompt from '../components/ModalPrompt.vue';
 
 const encodePartial = (string) =>
 	encodeURIComponent(string)
@@ -292,6 +330,36 @@ export default {
 				openFilePromptModal.close();
 			}
 		});
+		const confirm = reactive({
+			show: false,
+			header: "",
+			body: "",
+			dangerous: false,
+			resolve: () => null,
+			reject: () => null,
+			resetTimeoutHandle: null,
+			ask: (header, body = "", dangerous = false) => {
+				clearTimeout(confirm.resetTimeoutHandle);
+				confirm.header = header;
+				confirm.body = body;
+				confirm.dangerous = dangerous;
+				confirm.show = true;
+				return new Promise((resolve, reject) => {
+					confirm.resolve = resolve;
+					confirm.reject = reject;
+				});
+			},
+			close: () => {
+				confirm.show = false;
+				confirm.resolve(false);
+				confirm.resetTimeoutHandle = setTimeout(() => {
+					confirm.resetTimeoutHandle = null;
+					confirm.header = confirm.body = "";
+					confirm.dangerous = false;
+					confirm.resolve = confirm.reject = () => null;
+				}, 500);
+			},
+		});
 		const filePermissions = reactive({
 			show: false,
 			entry: null,
@@ -304,6 +372,24 @@ export default {
 			close: () => {
 				filePermissions.show = false;
 				filePermissions.resetTimeoutHandle = setTimeout(() => filePermissions.resetTimeoutHandle = filePermissions.entry = null, 500);
+			},
+		});
+		const nameEditor = reactive({
+			show: false,
+			entry: null,
+			createNew: null,
+			resetTimeoutHandle: null,
+			open: (entry, createNew) => {
+				clearTimeout(nameEditor.resetTimeoutHandle);
+				nameEditor.entry = entry;
+				nameEditor.createNew = createNew ?? null;
+				nameEditor.show = true;
+			},
+			close: () => {
+				nameEditor.show = false;
+				nameEditor.resetTimeoutHandle = setTimeout(() => {
+					nameEditor.resetTimeoutHandle = nameEditor.entry = nameEditor.createNew = null;
+				}, 500);
 			},
 		});
 		const contextMenu = reactive({
@@ -325,6 +411,7 @@ export default {
 				}, 500);
 			},
 		});
+		const modalPromptRef = ref();
 
 		const cd = ({ path, host }) => {
 			const newHost = host ?? (pathHistory.current().host);
@@ -356,9 +443,89 @@ export default {
 				let { path, name, host } = items[0];
 				fileDownload(path, name, host);
 			}
+			// TODO: mutlifile & directory downloads
+		}
+
+		const deleteItems = async (selection) => {
+			const items = [].concat(selection); // forces to be array
+			if (items.length === 0)
+				return;
+			if (!await confirm.ask(`Permanently delete ${items.length} item${items.length > 1 ? 's' : ''}?`, items.map(i => i.path).join('\n'), true))
+				return;
+			try {
+				await useSpawn(['rm', '-rf', '--', ...items.map(i => i.path)]).promise();
+			} catch (state) {
+				notifications.value.constructNotification("Failed to remove file(s)", errorStringHTML(state), 'error');
+			}
 		}
 
 		const getSelected = () => directoryViewRef.value?.getSelected?.() ?? [];
+
+		const cwdAsEntryObj = () => {
+			const obj = { ...pathHistory.current() };
+			obj.name = obj.path.split('/').pop();
+			obj.resolvedPath = obj.path;
+			obj.type = obj.resolvedType = 'd';
+			return obj;
+		}
+
+		const createLink = async (parentEntry) => {
+			const result = await modalPromptRef.value.prompt("Create link")
+				.addInput(
+					'linkName',
+					'text',
+					'Name',
+					'Name',
+					'',
+					function (name) {
+						let result = true;
+						let feedbackArr = [];
+						if (!name) {
+							feedbackArr.push('Name cannot be empty');
+							result = false;
+						}
+						if (name && name.includes('/')) {
+							feedbackArr.push("Name cannot include '/'");
+							result = false;
+						}
+						if (['.', '..'].includes(name)) {
+							feedbackArr.push(`Name cannot be '${name}'`);
+							result = false;
+						}
+						this.feedback = feedbackArr.join(', ');
+						return result;
+					}
+				)
+				.addInput(
+					'linkTarget',
+					'text',
+					'Link target',
+					'Target path',
+					parentEntry.resolvedType !== 'd' ? parentEntry.path : ''
+				);
+			if (!result)
+				return; // cancelled
+			console.log(result);
+			try {
+				const parentPath = parentEntry.resolvedType === 'd' ? parentEntry.resolvedPath : parentEntry.path.split('/').slice(0, -1).join('/');
+				const path = `${parentPath}/${result.linkName}`
+				await useSpawn(['test', '!', '-e', path], { superuser: 'try' }).promise().catch(() => { throw new Error('File exists') });
+				await useSpawn(['ln', '-snT', result.linkTarget, path], { superuser: 'try' }).promise();
+			} catch (state) {
+				notifications.value.constructNotification("Failed to create link", errorStringHTML(state), 'error');
+			}
+		}
+
+		const editLink = async (linkEntry) => {
+			const { path, linkRawPath, name } = linkEntry;
+			const { newTarget } = await modalPromptRef.value.prompt(`Edit link target for ${name}`)
+				.addInput('newTarget', 'text', 'Link target', 'path/to/target', linkRawPath);
+			try {
+				await useSpawn(['ln', '-snfT', newTarget, path], { superuser: 'try' }).promise();
+			} catch (state) {
+				notifications.value.constructNotification("Failed to edit link", errorStringHTML(state), 'error');
+			}
+		}
 
 		const handleAction = (action, ...args) => {
 			switch (action) {
@@ -388,6 +555,24 @@ export default {
 					break;
 				case 'up':
 					up();
+					break;
+				case 'rename':
+					nameEditor.open(args[0], null);
+					break;
+				case 'createFile':
+					nameEditor.open(args[0] ?? cwdAsEntryObj(), 'f');
+					break;
+				case 'createLink':
+					createLink(args[0] ?? cwdAsEntryObj());
+					break;
+				case 'createDirectory':
+					nameEditor.open(args[0] ?? cwdAsEntryObj(), 'd');
+					break;
+				case 'editLink':
+					editLink(args[0]);
+					break;
+				case 'delete':
+					deleteItems(...args);
 					break;
 				default:
 					console.error('Unknown browserAction:', action, args);
@@ -427,8 +612,11 @@ export default {
 			backHistoryDropdown,
 			forwardHistoryDropdown,
 			openFilePromptModal,
+			confirm,
 			filePermissions,
+			nameEditor,
 			contextMenu,
+			modalPromptRef,
 			cd,
 			back,
 			forward,
@@ -457,7 +645,12 @@ export default {
 		ViewGridIcon,
 		ModalPopup,
 		FilePermissions,
+		FileNameEditor,
 		ContextMenu,
+		KeyIcon,
+		PencilAltIcon,
+		DownloadIcon,
+		ModalPrompt,
 	},
 }
 </script>
