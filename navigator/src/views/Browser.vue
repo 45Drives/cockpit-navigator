@@ -192,6 +192,7 @@
 	<ContextMenu
 		:currentPath="pathHistory.current() ?? { path: '/', host: 'localhost' }"
 		@browserAction="handleAction"
+		@directoryViewAction="(...args) => directoryViewRef?.handleAction(...args)"
 		ref="contextMenuRef"
 	/>
 	<ModalPrompt ref="modalPromptRef" />

@@ -26,7 +26,7 @@ If not, see <https://www.gnu.org/licenses/>.
 			class="h-full"
 			@selectRectangle="selectRectangle"
 			@mouseup.exact="deselectAll"
-			@contextmenu.prevent="$emit('browserAction', 'contextMenu', $event)"
+			@contextmenu.prevent="contextMenuCallback"
 		>
 			<Table
 				:key="host + path"
@@ -36,6 +36,7 @@ If not, see <https://www.gnu.org/licenses/>.
 				stickyHeaders
 				noShrink
 				noShrinkHeight="h-full"
+				class="border-x-0"
 			>
 				<template #thead>
 					<tr>
@@ -249,6 +250,7 @@ import LoadingSpinner from './LoadingSpinner.vue';
 import SortCallbackButton from './SortCallbackButton.vue';
 import DirectoryEntryList from './DirectoryEntryList.vue';
 import DragSelectArea from './DragSelectArea.vue';
+import { commonPath } from '../functions/commonPath';
 
 export default {
 	props: {
@@ -331,7 +333,7 @@ export default {
 			selectedCount.value = gatherEntries().map(entry => entry.selected = true).length ?? 0;
 		}
 
-		const deselectAll = (event) => {
+		const deselectAll = () => {
 			gatherEntries([], false).map(entry => entry.selected = false);
 			selectedCount.value = 0;
 		}
@@ -353,11 +355,64 @@ export default {
 			tallySelected();
 		}
 
+		const unCutEntries = () => gatherEntries([], false).map(entry => entry.cut = false);
+
+		const clipboardStore = (items, cut = false, append = false) => {
+			if (!append)
+				unCutEntries();
+			const newContent = items.map(entry => {
+				entry.cut = cut;
+				return {
+					uniqueId: entry.uniqueId,
+					host: entry.host,
+					path: entry.path,
+					name: entry.name,
+					cut,
+					clipboardRelativePath: entry.path.slice(props.path.length).replace(/^\//, '')
+				};
+			});
+			if (append)
+				clipboard.content = [...newContent, ...clipboard.content].filter((a, index, arr) => arr.findIndex(b => b.uniqueId === a.uniqueId) === index);
+			else
+				clipboard.content = newContent;
+			const message = append
+				? `Added ${newContent.length} items to clipboard.\n(${clipboard.content.length} items total)`
+				: `${cut ? 'Cut' : 'Copied'} ${newContent.length} items to clipboard.`;
+			notifications.value.constructNotification('Clipboard', message, 'info', 2000);
+		}
+
+		const paste = (destinations) => {
+			let destination;
+			if (destinations.length === 1) {
+				destination = destinations[0];
+				if (destination.resolvedType !== 'd') {
+					notifications.value.constructNotification("Paste Failed", 'Cannot paste to non-directory.', 'error');
+					return;
+				}
+			} else if (destinations.length === 0) {
+				destination = { host: props.host, path: props.path };
+			} else {
+				notifications.value.constructNotification("Paste Failed", 'Cannot paste to multiple directories.', 'error');
+				return;
+			}
+			console.log("paste", clipboard.content, destination);
+			const fullSources = [...clipboard.content];
+			const { common } = commonPath(fullSources.map(item => item.path));
+			const groupedByHost = fullSources.reduce((res, item) => {
+				if (!res[item.host])
+					res[item.host] = [];
+				res[item.host].push(item);
+				return res;
+			}, {});
+			for (const host of Object.keys(groupedByHost)) {
+				console.log(`rsync -avh ${groupedByHost[host].map(a => a.path).join(' ')} ${destination.host}:${destination.path}`);
+			}
+		}
+
 		/**
 		 * @param {KeyboardEvent} event
 		 */
 		const keyHandler = (event) => {
-			const unCutEntries = () => gatherEntries([], false).map(entry => entry.cut = false);
 			const keypress = event.key.toLowerCase();
 			const handleExact = (keypress) => {
 				switch (keypress) {
@@ -379,7 +434,6 @@ export default {
 						return;
 				}
 				event.preventDefault();
-				event.stopPropagation();
 			}
 			const handleCtrl = (keypress) => {
 				switch (keypress) {
@@ -392,51 +446,15 @@ export default {
 						break;
 					case 'c':
 					case 'x':
-						const isCut = keypress === 'x';
-						if (!event.shiftKey)
-							unCutEntries();
-						const newContent = getSelected().map(entry => {
-							entry.cut = isCut;
-							return {
-								uniqueId: entry.uniqueId,
-								host: entry.host,
-								path: entry.path,
-								name: entry.name,
-								cut: isCut,
-								clipboardRelativePath: entry.path.slice(props.path.length).replace(/^\//, '')
-							};
-						});
-						if (event.shiftKey)
-							clipboard.content = [...newContent, ...clipboard.content].filter((a, index, arr) => arr.findIndex(b => b.uniqueId === a.uniqueId) === index);
-						else
-							clipboard.content = newContent;
-						const message = event.shiftKey
-							? `Added ${newContent.length} items to clipboard.\n(${clipboard.content.length} items total)`
-							: `Copied ${newContent.length} items to clipboard.`;
-						notifications.value.constructNotification('Clipboard', message, 'info', 2000);
+						clipboardStore(getSelected(), keypress === 'x', event.shiftKey);
 						break;
 					case 'v':
-						const selected = getSelected();
-						let destination;
-						if (selected.length === 1) {
-							destination = selected[0];
-							if (destination.resolvedType !== 'd') {
-								notifications.value.constructNotification("Paste Failed", 'Cannot paste to non-directory.', 'error');
-								break;
-							}
-						} else if (selected.length === 0) {
-							destination = { host: props.host, path: props.path };
-						} else {
-							notifications.value.constructNotification("Paste Failed", 'Cannot paste to multiple directories.', 'error');
-							break;
-						}
-						console.log("paste", clipboard.content, destination);
+						paste(getSelected());
 						break;
 					default:
 						return;
 				}
 				event.preventDefault();
-				event.stopPropagation();
 			}
 			const handleShift = (keypress) => {
 				switch(keypress) {
@@ -444,7 +462,6 @@ export default {
 						return;
 				}
 				event.preventDefault();
-				event.stopPropagation();
 			}
 			const handleCtrlShift = (keypress) => {
 				switch(keypress) {
@@ -452,7 +469,6 @@ export default {
 						return;
 				}
 				event.preventDefault();
-				event.stopPropagation();
 			}
 			const handleAny = (keypress) => {
 				switch(keypress) {
@@ -460,7 +476,6 @@ export default {
 						return;
 				}
 				event.preventDefault();
-				event.stopPropagation();
 			}
 			if (event.ctrlKey && event.shiftKey) {
 				handleCtrlShift(keypress);
@@ -488,10 +503,26 @@ export default {
 			}
 		}
 
+		const contextMenuCallback = (event) => {
+			if (!(event.ctrlKey || event.shiftKey)) {
+				deselectAll();
+			}
+			emit('browserAction', 'contextMenu', event);
+		}
+
 		const handleAction = (action, ...args) => {
 			switch (action) {
 				case 'toggleSelected':
 					toggleSelected(...args);
+					break;
+				case 'copy':
+					clipboardStore(args?.flat(1) ?? getSelected(), false, false);
+					break;
+				case 'cut':
+					clipboardStore(args?.flat(1) ?? getSelected(), true, false);
+					break;
+				case 'paste':
+					paste(args?.flat(1) ?? getSelected());
 					break;
 				default:
 					console.error('Unknown directoryViewAction:', action, args);
@@ -539,6 +570,7 @@ export default {
 			selectAll,
 			deselectAll,
 			selectRectangle,
+			contextMenuCallback,
 			handleAction,
 			tallySelected,
 		}
