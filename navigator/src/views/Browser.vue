@@ -454,8 +454,6 @@ export default {
 					fileDownload(path, name, host);
 				}
 			}
-				
-			// TODO: mutlifile & directory downloads
 		}
 
 		const deleteItems = async (selection) => {
