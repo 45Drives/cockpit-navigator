@@ -190,12 +190,9 @@
 		@hide="nameEditor.close"
 	/>
 	<ContextMenu
-		:show="contextMenu.show"
-		:selection="contextMenu.selection"
-		:event="contextMenu.event"
-		:currentDirEntry="{ ...pathHistory.current(), name: `Current directory (${pathHistory.current().path.split('/').pop()})` }"
+		:currentPath="pathHistory.current() ?? { path: '/', host: 'localhost' }"
 		@browserAction="handleAction"
-		@hide="contextMenu.close"
+		ref="contextMenuRef"
 	/>
 	<ModalPrompt ref="modalPromptRef" />
 	<Teleport to="#footer-buttons">
@@ -290,10 +287,10 @@ export default {
 		const darkMode = inject('darkModeInjectionKey');
 		const settings = inject(settingsInjectionKey);
 		const notifications = inject(notificationsInjectionKey);
+		const pathHistory = inject(pathHistoryInjectionKey);
+
 		const route = useRoute();
 		const router = useRouter();
-		const pathHistory = inject(pathHistoryInjectionKey);
-		const directoryViewRef = ref();
 		const searchFilterStr = ref("");
 		const searchFilterRegExp = ref(/^/g);
 		const backHistoryDropdown = reactive({
@@ -404,25 +401,8 @@ export default {
 				}, 500);
 			},
 		});
-		const contextMenu = reactive({
-			show: false,
-			selection: [],
-			event: null,
-			resetTimeoutHandle: null,
-			open: (event) => {
-				clearTimeout(contextMenu.resetTimeoutHandle);
-				contextMenu.selection = getSelected();
-				contextMenu.event = event;
-				contextMenu.show = true;
-			},
-			close: () => {
-				contextMenu.show = false;
-				contextMenu.resetTimeoutHandle = setTimeout(() => {
-					contextMenu.resetTimeoutHandle = contextMenu.selection = [];
-					contextMenu.resetTimeoutHandle = contextMenu.event = null;
-				}, 500);
-			},
-		});
+		const directoryViewRef = ref();
+		const contextMenuRef = ref();
 		const modalPromptRef = ref();
 
 		const cd = ({ path, host }) => {
@@ -455,7 +435,6 @@ export default {
 				return `cockpit-navigator-dowload_${now.getFullYear()}-${now.getMonth()+1}-${now.getDay()}_${now.getHours()}-${now.getMinutes()}-${now.getSeconds()}.zip`;
 			}
 			let items = [].concat(selection); // forces to be array
-			console.log(items);
 			if (items.length > 1) {
 				const dirs = items.filter(item => item.type === 'd').map(item => item.path);
 				if (dirs.length) {
@@ -464,7 +443,6 @@ export default {
 					items = items.filter(item => !containedRegex.test(item.path));
 				}
 				const { common, relativePaths } = commonPath(items.map(item => item.path));
-				console.log(common, relativePaths);
 				streamProcDownload(['zip', '-rq', '-', ...relativePaths], getZipName(), { superuser: 'try', directory: common });
 			} else {
 				let { path, name, host, resolvedType } = items[0];
@@ -539,7 +517,6 @@ export default {
 				);
 			if (!result)
 				return; // cancelled
-			console.log(result);
 			try {
 				const parentPath = parentEntry.resolvedType === 'd' ? parentEntry.resolvedPath : parentEntry.path.split('/').slice(0, -1).join('/');
 				const path = `${parentPath}/${result.linkName}`
@@ -579,7 +556,8 @@ export default {
 					download(...args);
 					break;
 				case 'contextMenu':
-					contextMenu.open(...args);
+					const [event] = [...args];
+					contextMenuRef.value.open(event, getSelected());
 					break;
 				case 'back':
 					back();
@@ -636,11 +614,10 @@ export default {
 
 		return {
 			cockpit,
-			console,
+			// data
 			darkMode,
 			settings,
 			pathHistory,
-			directoryViewRef,
 			searchFilterStr,
 			searchFilterRegExp,
 			backHistoryDropdown,
@@ -649,8 +626,11 @@ export default {
 			confirm,
 			filePermissions,
 			nameEditor,
-			contextMenu,
+			// component refs
+			directoryViewRef,
+			contextMenuRef,
 			modalPromptRef,
+			// methods
 			cd,
 			back,
 			forward,

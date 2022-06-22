@@ -23,12 +23,13 @@ If not, see <https://www.gnu.org/licenses/>.
 		leave-active-class="origin-top-left transition ease-in duration-75"
 		leave-from-class="transform opacity-100 scale-100"
 		leave-to-class="transform opacity-0 scale-95"
+		@after-leave="reset"
 	>
 		<div
 			v-if="show"
 			class="fixed inset-0 bg-transparent"
-			@click="$emit('hide')"
-			@contextmenu.prevent="$emit('hide')"
+			@click="show = false"
+			@contextmenu.prevent="show = false"
 		>
 			<div
 				class="fixed z-20 max-w-sm flex flex-col items-stretch bg-default shadow-lg divide-y divide-default position-contextmenu">
@@ -214,7 +215,7 @@ If not, see <https://www.gnu.org/licenses/>.
 </template>
 
 <script>
-import { inject } from 'vue'
+import { inject, ref, computed } from 'vue'
 import {
 	ArrowLeftIcon,
 	ArrowRightIcon,
@@ -235,16 +236,45 @@ import { pathHistoryInjectionKey } from '../keys';
 
 export default {
 	props: {
-		show: Boolean,
-		event: Object,
-		selection: Array,
-		currentDirEntry: Object,
+		currentPath: Object,
 	},
 	setup(props, { emit }) {
 		const pathHistory = inject(pathHistoryInjectionKey);
+		const show = ref();
+		const event = ref();
+		const selection = ref();
+		const currentDirEntry = computed(() => ({
+			...props.currentPath,
+			name: `Current directory (${props.currentPath.path.split('/').pop()})`
+		}));
+
+		/**
+		 * Open the context menu
+		 * 
+		 * @param {MouseEvent} event_ - event triggering the menu to be opened
+		 * @param {DirectoryEntryObj[]} selection_ - items selected at event trigger
+		 */
+		const open = (event_, selection_) => {
+			event.value = event_;
+			selection.value = [...selection_];
+			show.value = true;
+		}
+
+		const reset = () => {
+			event.value = null;
+			selection.value = [];
+		}
 
 		return {
+			// data
 			pathHistory,
+			show,
+			event,
+			selection,
+			currentDirEntry,
+			// methods
+			open,
+			reset,
 		}
 	},
 	components: {
