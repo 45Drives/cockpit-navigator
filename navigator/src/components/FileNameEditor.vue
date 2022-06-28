@@ -60,15 +60,15 @@ export default {
 			stderr.value = "";
 			try {
 				if (!props.createNew) {
-					await (useSpawn(['mv', '-nT', props.entry.path, props.entry.path.split('/').slice(0, -1).concat(name.value).join('/')], { superuser: 'try' }).promise());
+					await (useSpawn(['mv', '-nT', props.entry.path, props.entry.path.split('/').slice(0, -1).concat(name.value).join('/')], { superuser: 'try', host: props.entry.host }).promise());
 				} else if (['f', 'd'].includes(props.createNew)) {
 					const parentPath = props.entry.resolvedType === 'd' ? props.entry.resolvedPath : props.entry.path.split('/').slice(0, -1).join('/');
 					const path = `${parentPath}/${name.value}`
-					await useSpawn(['test', '!', '(', '-e', path, '-o', '-L', path, ')'], { superuser: 'try' }).promise().catch(() => { throw new Error('File exists') });
+					await useSpawn(['test', '!', '(', '-e', path, '-o', '-L', path, ')'], { superuser: 'try', host: props.entry.host }).promise().catch(() => { throw new Error('File exists') });
 					if (props.createNew === 'f')
-						await useSpawn(['touch', '-h', path], { superuser: 'try' }).promise();
+						await useSpawn(['dd', 'count=0', 'oflag=nofollow', 'conv=excl,fsync', `of=${path}`], { superuser: 'try', host: props.entry.host }).promise();
 					else
-						await useSpawn(['mkdir', path], { superuser: 'try' }).promise();
+						await useSpawn(['mkdir', path], { superuser: 'try', host: props.entry.host }).promise();
 				}
 					
 				emit('hide');

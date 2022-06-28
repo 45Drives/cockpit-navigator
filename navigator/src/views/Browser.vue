@@ -436,6 +436,7 @@ export default {
 				return `cockpit-navigator-dowload_${now.getFullYear()}-${now.getMonth()+1}-${now.getDay()}_${now.getHours()}-${now.getMinutes()}-${now.getSeconds()}.zip`;
 			}
 			let items = [].concat(selection); // forces to be array
+			const host = pathHistory.current().host;
 			if (items.length > 1) {
 				const dirs = items.filter(item => item.type === 'd').map(item => item.path);
 				if (dirs.length) {
@@ -444,13 +445,13 @@ export default {
 					items = items.filter(item => !containedRegex.test(item.path));
 				}
 				const { common, relativePaths } = commonPath(items.map(item => item.path));
-				streamProcDownload(['zip', '-rq', '-', ...relativePaths], getZipName(), { superuser: 'try', directory: common });
+				streamProcDownload(['zip', '-rq', '-', ...relativePaths], getZipName(), { superuser: 'try', directory: common, host });
 			} else {
 				let { path, name, host, resolvedType } = items[0];
 				if (resolvedType === 'd') {
-					streamProcDownload(['zip', '-rq', '-', '.'], `${name}.zip`, { superuser: 'try', directory: path });
+					streamProcDownload(['zip', '-rq', '-', '.'], `${name}.zip`, { superuser: 'try', directory: path, host });
 				} else if (zip) {
-					streamProcDownload(['zip', '-q', '-', name], `${name}.zip`, { superuser: 'try', directory: path.split('/').slice(0, -1).join('/') || '/' });
+					streamProcDownload(['zip', '-q', '-', name], `${name}.zip`, { superuser: 'try', directory: path.split('/').slice(0, -1).join('/') || '/', host });
 				} else {
 					fileDownload(path, name, host);
 				}
@@ -464,7 +465,7 @@ export default {
 			if (!await confirm.ask(`Permanently delete ${items.length} item${items.length > 1 ? 's' : ''}?`, items.map(i => i.path).join('\n'), true))
 				return;
 			try {
-				await useSpawn(['rm', '-rf', '--', ...items.map(i => i.path)]).promise();
+				await useSpawn(['rm', '-rf', '--', ...items.map(i => i.path)], { superuser: 'try', host: pathHistory.current().host}).promise();
 			} catch (state) {
 				notifications.value.constructNotification("Failed to remove file(s)", errorStringHTML(state), 'error');
 			}
@@ -517,10 +518,11 @@ export default {
 			if (!result)
 				return; // cancelled
 			try {
+				const host = pathHistory.current().host;
 				const parentPath = parentEntry.resolvedType === 'd' ? parentEntry.resolvedPath : parentEntry.path.split('/').slice(0, -1).join('/');
 				const path = `${parentPath}/${result.linkName}`
-				await useSpawn(['test', '!', '-e', path], { superuser: 'try' }).promise().catch(() => { throw new Error('File exists') });
-				await useSpawn(['ln', '-snT', result.linkTarget, path], { superuser: 'try' }).promise();
+				await useSpawn(['test', '!', '-e', path], { superuser: 'try', host }).promise().catch(() => { throw new Error('File exists') });
+				await useSpawn(['ln', '-snT', result.linkTarget, path], { superuser: 'try', host }).promise();
 			} catch (state) {
 				notifications.value.constructNotification("Failed to create link", errorStringHTML(state), 'error');
 			}
@@ -531,7 +533,8 @@ export default {
 			const { newTarget } = await modalPromptRef.value.prompt(`Edit link target for ${name}`)
 				.addInput('newTarget', 'text', 'Link target', 'path/to/target', linkRawPath);
 			try {
-				await useSpawn(['ln', '-snfT', newTarget, path], { superuser: 'try' }).promise();
+				const host = pathHistory.current().host;
+				await useSpawn(['ln', '-snfT', newTarget, path], { superuser: 'try', host }).promise();
 			} catch (state) {
 				notifications.value.constructNotification("Failed to edit link", errorStringHTML(state), 'error');
 			}
