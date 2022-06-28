@@ -54,7 +54,7 @@ If not, see <https://www.gnu.org/licenses/>.
 		to="#footer-text"
 		v-if="selectedCount === 0"
 	>
-		<div>
+		<div :style="{order: level}">
 			<span v-if="level > 0">{{ path.split('/').slice(-1 * (level)).join('/') }}:</span>
 			{{ stats }}
 		</div>
