@@ -239,6 +239,9 @@
 			/>
 		</IconToggle>
 	</Teleport>
+	<Teleport to="#footer-icons-left">
+		<RootDangerNotifier :host="pathHistory.current()?.host" />
+	</Teleport>
 </template>
 
 <script>
@@ -274,6 +277,7 @@ import ContextMenu from '../components/ContextMenu.vue';
 import ModalPrompt from '../components/ModalPrompt.vue';
 import { commonPath } from '../functions/commonPath';
 import { streamProcDownload } from '../functions/streamProcDownload';
+import RootDangerNotifier from "../components/RootDangerNotifier.vue";
 
 const encodePartial = (string) =>
 	encodeURIComponent(string)
@@ -668,6 +672,7 @@ export default {
 		DownloadIcon,
 		FolderDownloadIcon,
 		ModalPrompt,
+		RootDangerNotifier,
 	},
 }
 </script>
