@@ -136,8 +136,10 @@ function parseRawEntryStats(records, cwd, host, failCallback, byteFormatter = co
 			let [btimeStr, mtimeStr, atimeStr] = [btime, mtime, atime].map(date => date?.toLocaleString() ?? '-');
 			let [nameHTML, symlinkTargetNameHTML] = [name, symlinkTargetName].map(escapeStringHTML);
 			mode = parseInt(mode, 8);
+			const uniqueDeviceId = szudzikPair(hostHash, devId);
 			return {
-				uniqueId: szudzikPair(hostHash, devId, inode),
+				uniqueDeviceId,
+				uniqueId: szudzikPair(uniqueDeviceId, inode),
 				devId,
 				inode,
 				name,
@@ -198,7 +200,8 @@ export default getDirEntryObjects;
  * Object representing file system entry
  * 
  * @typedef {Object} DirectoryEntryObj
- * @property {BigInt} uniqueId - Unique ID generated from pairing function on [devId, inode]
+ * @property {BigInt} uniqueDeviceId - Unique ID generated from pairing function on [hostHash, devId]
+ * @property {BigInt} uniqueId - Unique ID generated from pairing function on [uniqueDeviceId, inode]
  * @property {BigInt} devId - Device ID containing the file
  * @property {BigInt} inode - The file's inode
  * @property {String} name - File/directory name

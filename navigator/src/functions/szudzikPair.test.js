@@ -90,6 +90,22 @@ describe('Szudzik Pairing', () => {
 			it('can generate an encoding from two > MAX_SAFE_INT numbers', () => {
 				expect(szudzikPair(BigInt(Number.MAX_SAFE_INTEGER) + 5n, BigInt(Number.MAX_SAFE_INTEGER) + 10n)).toBe(81129638414606861839774099963998n);
 			});
+
+			it('works with array or nargs', () => {
+				const input = [1n, 2n, 3n, 4n];
+				expect(szudzikPair(input)).toEqual(szudzikPair(...input));
+			});
+	
+			it('has same result if broken into separate calls', () => {
+				const input = [532n, 12n, 128n, 40n, 983n];
+				const expected = szudzikPair(...input);
+				const a = szudzikPair(szudzikPair(szudzikPair(szudzikPair(input[0], input[1]), input[2]), input[3]), input[4]);
+				const b = szudzikPair(szudzikPair(szudzikPair(input[0], input[1], input[2]), input[3]), input[4]);
+				const c = szudzikPair(szudzikPair(input[0], input[1], input[2], input[3]), input[4]);
+				expect(a).toEqual(expected);
+				expect(b).toEqual(expected);
+				expect(c).toEqual(expected);
+			});
 		});
 
 		describe('szudzikUnpair', () => {
@@ -121,19 +137,14 @@ describe('Szudzik Pairing', () => {
 			}
 			const encodings = tuples.map(szudzikPair);
 
-			describe('has no collisions', () => {
+			it('has no collisions', () => {
 				expect((new Set(encodings)).size).toEqual(encodings.length);
 			});
 
-			describe('can be decoded', () => {
+			it('can be decoded', () => {
 				const decodings = encodings.map(e => szudzikUnpair(e, 4));
 				expect(decodings).toEqual(tuples);
 			});
-		});
-
-		describe('works with array or nargs', () => {
-			const input = [1n, 2n, 3n, 4n];
-			expect(szudzikPair(input)).toEqual(szudzikPair(...input));
 		});
 	})
 });
