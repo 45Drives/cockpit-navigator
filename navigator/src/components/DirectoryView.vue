@@ -372,11 +372,11 @@ export default {
 				};
 			});
 			if (append)
-				clipboard.content = [...newContent, ...clipboard.content].filter((a, index, arr) => arr.findIndex(b => b.uniqueId === a.uniqueId) === index);
+				clipboard.value = [...newContent, ...clipboard.value].filter((a, index, arr) => arr.findIndex(b => b.uniqueId === a.uniqueId) === index);
 			else
-				clipboard.content = newContent;
+				clipboard.value = newContent;
 			const message = append
-				? `Added ${newContent.length} items to clipboard.\n(${clipboard.content.length} items total)`
+				? `Added ${newContent.length} items to clipboard.\n(${clipboard.value.length} items total)`
 				: `${cut ? 'Cut' : 'Copied'} ${newContent.length} items to clipboard.`;
 			notifications.value.constructNotification('Clipboard', message, 'info', 2000);
 		}
@@ -395,8 +395,8 @@ export default {
 				notifications.value.constructNotification("Paste Failed", 'Cannot paste to multiple directories.', 'error');
 				return;
 			}
-			console.log("paste", clipboard.content, destination);
-			const fullSources = [...clipboard.content];
+			console.log("paste", clipboard.value, destination);
+			const fullSources = [...clipboard.value];
 			const { common } = commonPath(fullSources.map(item => item.path));
 			const groupedByHost = fullSources.reduce((res, item) => {
 				if (!res[item.host])
@@ -421,9 +421,9 @@ export default {
 						break;
 					case 'escape':
 						if (getSelected().length === 0) {
-							if (clipboard.content.length) {
+							if (clipboard.value.length) {
 								unCutEntries();
-								clipboard.content = [];
+								clipboard.value = [];
 								notifications.value.constructNotification('Clipboard', 'Cleared clipboard.', 'info', 2000);
 							}
 						} else {

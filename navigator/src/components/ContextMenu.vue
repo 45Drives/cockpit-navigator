@@ -92,7 +92,7 @@ If not, see <https://www.gnu.org/licenses/>.
 			<template v-if="selection.length === 0">
 				<!-- Current directory actions -->
 				<div
-					v-if="clipboard.content.length"
+					v-if="clipboard.length"
 					class="flex flex-col items-stretch"
 				>
 					<button
@@ -101,8 +101,8 @@ If not, see <https://www.gnu.org/licenses/>.
 					>
 						<ClipboardIcon class="size-icon icon-default" />
 						<span>
-							Paste {{ clipboard.content.length }}
-							item{{ clipboard.content.length > 1 ? 's' : '' }}
+							Paste {{ clipboard.length }}
+							item{{ clipboard.length > 1 ? 's' : '' }}
 							here
 						</span>
 					</button>
@@ -189,14 +189,14 @@ If not, see <https://www.gnu.org/licenses/>.
 							<span>Copy directory</span>
 						</button>
 						<button
-							v-if="clipboard.content.length"
+							v-if="clipboard.length"
 							class="context-menu-button"
 							@click="$emit('directoryViewAction', 'paste', selection[0])"
 						>
 							<ClipboardIcon class="size-icon icon-default" />
 							<span>
-								Paste {{ clipboard.content.length }}
-								item{{ clipboard.content.length > 1 ? 's' : '' }} into directory
+								Paste {{ clipboard.length }}
+								item{{ clipboard.length > 1 ? 's' : '' }} into directory
 							</span>
 						</button>
 					</div>
