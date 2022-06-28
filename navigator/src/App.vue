@@ -19,6 +19,7 @@ If not, see <https://www.gnu.org/licenses/>.
 	<div class="text-default bg-default h-full flex flex-col items-stretch">
 		<router-view v-if="providesValid" />
 		<div class="flex flex-row items-center px-4 py-2 gap-2">
+			<RootDangerNotifier />
 			<div
 				id="footer-text"
 				class="flex flex-row flex-wrap gap-x-4 gap-y-0 text-xs grow basis-0"
@@ -41,11 +42,12 @@ If not, see <https://www.gnu.org/licenses/>.
 </template>
 
 <script setup>
-import { ref, reactive, provide, onBeforeMount } from "vue";
+import { ref, reactive, provide } from "vue";
 import SettingsMenu from "./components/SettingsMenu.vue";
 import Notifications from './components/Notifications.vue';
 import { FIFO } from '@45drives/cockpit-helpers';
 import { settingsInjectionKey, notificationsInjectionKey, pathHistoryInjectionKey, clipboardInjectionKey } from "./keys";
+import RootDangerNotifier from "./components/RootDangerNotifier.vue";
 
 const props = defineProps({ notificationFIFO: FIFO });
 
@@ -71,9 +73,9 @@ const pathHistory = reactive({
 		pathHistory.index = Math.min(pathHistory.index + 1, pathHistory.stack.length - 1);
 		return pathHistory.stack[pathHistory.index];
 	},
-	push: (path) => {
+	push: (location) => {
 		pathHistory.stack = pathHistory.stack.slice(0, pathHistory.index + 1);
-		pathHistory.stack.push(path);
+		pathHistory.stack.push(location);
 		pathHistory.index = Math.min(pathHistory.index + 1, pathHistory.stack.length - 1);
 	},
 	current: () => pathHistory.stack[pathHistory.index],
@@ -82,9 +84,7 @@ const pathHistory = reactive({
 });
 provide(pathHistoryInjectionKey, pathHistory);
 
-const clipboard = reactive({
-	content: [],
-});
+const clipboard = ref([]);
 provide(clipboardInjectionKey, clipboard);
 providesValid.value = true;
 
