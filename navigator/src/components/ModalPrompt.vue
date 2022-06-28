@@ -1,27 +1,55 @@
 <template>
-	<ModalPopup
-		:showModal="show"
-		:headerText="headerText"
-		autoWidth
-		:disableContinue="!valid"
-		@cancel="cancel()"
-		@apply="apply()"
+	<ModalConfirm
+		:show="show ?? show_"
+		:clickAwayCancels="clickAwayCancels"
+		:confirmDangerous="opts_.confirmDangerous ?? confirmDangerous"
+		:cancelText="cancelText"
+		:confirmText="confirmText"
+		:fullWidth="fullWidth"
+		:disabled="!valid"
+		@cancel="cancel"
+		@confirm="confirm"
+		@after-leave="reset"
 	>
+		<template #header>
+			<slot name="header">
+				{{ headerText_ }}
+			</slot>
+		</template>
+		<div v-if="inputs_.length === 0">
+			<input
+				type="text"
+				v-model="defaultInputValue_"
+				class="w-full input-textlike"
+			/>
+		</div>
 		<div
-			v-for="input in inputs"
+			v-else
+			v-for="input in inputs_"
 			:key="input.key"
 		>
 			<label
 				v-if="input.label"
 				class="block text-label"
 			>{{ input.label }}</label>
+			<template v-if="input.type === 'radio'">
+				<input
+					v-for="option in input.options"
+					v-bind="{ ...input.props }"
+					type="radio"
+					:value="option"
+					v-model="input.value"
+					ref="inputRefs_"
+				/>
+			</template>
 			<input
-				:class="[!['button', 'checkbox', 'color', 'file', 'radio', 'range'].includes(input.type) ? 'input-textlike w-full' : input.type == 'checkbox' ? 'input-checkbox' : '']"
-				v-bind="{...input.props}"
+				v-else
+				v-bind="{ ...input.props }"
 				:type="input.type"
-				:value="output[input.key] ?? input.default"
 				:placeholder="input.placeholder"
-				@input="(event) => { output[input.key] = event.target.value; validate(); }"
+				v-model="input.value"
+				@change="input.feedback = input.validate(input.value)"
+				ref="inputRefs_"
 			/>
 			<div
 				v-if="input.feedback"
@@ -31,100 +59,194 @@
 				<span class="text-feedback text-error">{{ input.feedback }}</span>
 			</div>
 		</div>
-	</ModalPopup>
+	</ModalConfirm>
 </template>
 
 <script>
-import { ref, computed, nextTick } from 'vue';
+import { ref, nextTick } from 'vue';
 import { ExclamationCircleIcon } from '@heroicons/vue/solid';
-import ModalPopup from './ModalPopup.vue';
+import ModalConfirm from './ModalConfirm.vue';
+
+/**
+ * @template T
+ * @typedef {Object} ModalPromptInputObj
+ * @property {String} key - Key to index output object
+ * @property {String} label - Text to go in label
+ * @property {String} type - input tag type property value
+ * @property {T} value - current value of input to be v-modelled
+ * @property {String} placeholder - Placeholder text
+ * @property {ModalPromptInputValidationCallback<T>} validate - Validation function, return string if invalid or null if valid
+ * @property {String} feedback - Feedback if invalid
+ * @property {Object} props - Extra properties to v-bind to the input element
+ * @property {*[]|undefined} options - Array of option values for radio button input
+ */
+
+/**
+ * @template T
+ * @callback ModalPromptInputValidationCallback
+ * @param {T} value - Current value of input to validate
+ * @returns {String|null} - Return null if valid or string explaining why it's invalid
+ */
 
 export default {
+	props: {
+		show: {
+			type: Boolean,
+			required: false,
+			default: null,
+		},
+		clickAwayCancels: Boolean,
+		confirmDangerous: Boolean,
+		cancelText: {
+			type: String,
+			required: false,
+			default: 'Cancel',
+		},
+		confirmText: {
+			type: String,
+			required: false,
+			default: 'OK',
+		},
+		fullWidth: Boolean,
+	},
 	setup(props, { emit }) {
-		const show = ref(false);
-		const headerText = ref("");
-		const inputs = ref([]);
-		const output = ref({});
-		const valid = ref(false);
-		const apply = ref(() => null);
-		const cancel = ref(() => null);
+		const show_ = ref(false);
+		const headerText_ = ref("");
+		const opts_ = ref({});
+		const inputs_ = ref([]);
+		const valid_ = ref(false);
+		const resolver_ = ref(null);
+		const defaultInputRef_ = ref();
+		const defaultInputValue_ = ref("");
+		const inputRefs_ = ref([]);
 
-		/**
-		 * Promise with method to add input to prompt
-		 * @typedef {Object} ModalPromptPromise
-		 * @property {function} addInput
-		 */
-
-		/**
-		 * Prompt user for input
-		 * @param {string} header - Text to display in popup header
-		 * @returns {ModalPromptPromise} - Resolves object with responses or null if cancelled
-		 */
-		const prompt = (header) => {
-			headerText.value = header;
-			output.value = {};
-			inputs.value = [];
-			valid.value = false;
-			show.value = true;
-			const prom = new Promise((resolve, reject) => {
-				apply.value = () => resolve(output.value);
-				cancel.value = () => resolve(null);
-			}).finally(() => show.value = false);
+		const ask = (headerText, inputs = [], opts = {}) => {
+			const prom = new Promise(resolve => {
+				opts_.value = opts;
+				headerText_.value = headerText;
+				inputs_.value = inputs;
+				resolver_.value = resolve;
+				show_.value = true;
+				nextTick(() => {
+					if (inputs.length) {
+						inputRefs_.value[0].focus();
+					} else {
+						defaultInputRef_.value.focus();
+					}
+				});
+			});
 			/**
-			 * Callback to validate input, cannot be arrow function
-			 * @callback ModalPromptInputValidationCallback
-			 * @param {any} - value of input
-			 * @returns {boolean} - true if valid, false otherwise
+			 * Add a text input
+			 * @param {String} key - Key to index output object
+			 * @param {String} label - Text to go in label
+			 * @param {String} defaultValue - Default value
+			 * @param {String} placeholder - Placeholder text
+			 * @param {ModalPromptInputValidationCallback<String>} validate - Input validation callback
+			 * @param {Object} props - Extra properties to v-bind to the input element
 			 */
-			/**
-			 * Add an input to the prompt
-			 * @param {string} key - object key for result
-			 * @param {string} type - input tag type prop value
-			 * @param {string} label - label for input
-			 * @param {string} placeholder - input placeholder if applicable
-			 * @param {any} defaultValue - Default value of input
-			 * @param {ModalPromptInputValidationCallback} validate - Validation callback for input
-			 * @param {object} props  - optional extra properties for input tag
-			 * @returns {ModalPromptPromise} - Resolves object with responses or null if cancelled
-			 */
-			const addInput = (key, type, label, placeholder, defaultValue, validate, props) => {
+			prom.addTextInput = (key, label, defaultValue, placeholder, validate = () => null, props = {}) => {
+				/**
+				 * @type {ModalPromptInputObj<String>}
+				 */
 				const input = {
 					key,
-					type,
 					label,
+					type: 'text',
+					value: defaultValue,
 					placeholder,
-					default: defaultValue,
-					props,
+					validate,
+					props: {...props, class: 'input-textlike ' + (props.class ?? '')},
 					feedback: '',
 				}
-				output.value[key] = defaultValue;
-				input.validate = validate?.bind(input),
-				inputs.value.push(input);
+				inputs_.value.push(input);
 				return prom;
 			}
-			prom.addInput = addInput;
+			/**
+			 * Add a checkbox input
+			 * @param {String} key - Key to index output object
+			 * @param {String} label - Text to go in label
+			 * @param {*} defaultValue - Default value
+			 * @param {*} trueValue - Value of result when checked
+			 * @param {*} falseValue - Value of result when unchecked
+			 * @param {Object} props - Extra properties to v-bind to the input element
+			 */
+			prom.addCheckboxInput = (key, label, defaultValue = false, trueValue = true, falseValue = false, props = {}) => {
+				/**
+				 * @type {ModalPromptInputObj<*>}
+				 */
+				const input = {
+					key,
+					label,
+					type: 'checkbox',
+					value: defaultValue,
+					placeholder,
+					validate: () => null,
+					props: { ...props, 'true-value': trueValue, 'false-value': falseValue, class: 'input-checkbox ' + (props.class ?? '') },
+					feedback: '',
+				}
+				inputs_.value.push(input);
+				return prom;
+			}
 			return prom;
-		}
+		};
+
+		const confirm = () => {
+			const response = inputs_.value.length
+				? inputs_.value.reduce((response, input) => {
+					response[input.key] = input.value;
+					return response;
+				}, {})
+				: defaultInputValue_.value;
+			resolver_.value?.(response);
+			show_.value = false;
+			emit('confirm');
+		};
+
+		const cancel = () => {
+			resolver_.value?.(null);
+			show_.value = false;
+			emit('cancel');
+		};
+
+		const reset = () => {
+			headerText_ = "";
+			opts_.value = {};
+			inputs_.value = [];
+			valid_.value = false;
+			resolver_.value = null;
+			defaultInputValue_.value = "";
+			emit('after-leave');
+		};
 
 		const validate = () => {
-			valid.value = inputs.value.every(input => input.validate?.(output.value[input.key]) ?? true);
-		}
+			valid_.value = inputs_.value.every(input => input.feedback === null);
+		};
 
 		return {
-			show,
-			headerText,
-			inputs,
-			output,
-			valid,
-			apply,
+			show_,
+			opts_,
+			headerText_,
+			inputs_,
+			valid_,
+			resolver_,
+			defaultInputRef_,
+			defaultInputValue_,
+			inputRefs_,
+			ask,
+			confirm,
 			cancel,
-			prompt,
+			reset,
 			validate,
 		}
 	},
 	components: {
-		ModalPopup,
+		ModalConfirm,
 		ExclamationCircleIcon,
-	}
+	},
+	emits: [
+		'confirm',
+		'cancel',
+		'after-leave',
+	]
 }
 </script>

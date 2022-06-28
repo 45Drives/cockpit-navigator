@@ -16,114 +16,118 @@ If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <template>
-	<TransitionRoot
-		as="div"
-		class="fixed inset-0 z-10 overflow-visible"
-		:show="showModal"
+	<transition
+		enter-active-class="ease-out duration-500"
+		enter-from-class="opacity-0"
+		enter-to-class="opacity-100"
+		leave-active-class="ease-in duration-500"
+		leave-from-class="opacity-100"
+		leave-to-class="opacity-0"
 	>
-		<TransitionChild
-			as="template"
-			enter="ease-out duration-500"
-			enter-from="opacity-0"
-			enter-to="opacity-100"
-			leave="ease-in duration-500"
-			leave-from="opacity-100"
-			leave-to="opacity-0"
-		>
-			<div class="fixed z-10 inset-0 bg-neutral-500/75 dark:bg-black/50 transition-opacity pointer" />
-		</TransitionChild>
 		<div
+			v-if="() => show ?? show_"
+			class="fixed z-10 inset-0 bg-neutral-500/75 dark:bg-black/50 transition-opacity pointer"
+		/>
+	</transition>
+	<transition
+		enter-active-class="ease-out duration-300"
+		enter-from-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-90"
+		enter-to-class="opacity-100 translate-y-0 sm:scale-100"
+		leave-active-class="ease-in duration-100"
+		leave-from-class="opacity-100 translate-y-0 sm:scale-100"
+		leave-to-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-75"
+		@after-leave="reset"
+	>
+		<div
+			v-if="() => show ?? show_"
 			class="fixed z-10 inset-0 overflow-hidden flex items-end sm:items-center justify-center px-4 pb-20 sm:p-0"
-			@click.self="$emit('close')"
+			@click.self="close(false)"
 		>
-			<TransitionChild
-				as="template"
-				enter="ease-out duration-300"
-				enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-90"
-				enter-to="opacity-100 translate-y-0 sm:scale-100"
-				leave="ease-in duration-100"
-				leave-from="opacity-100 translate-y-0 sm:scale-100"
-				leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-75"
-			>
-				<div
-					:class="[autoWidth ? 'sm:max-w-full' : 'sm:max-w-lg', 'inline-flex flex-col items-stretch overflow-hidden transform transition-all text-left z-10']">
-					<div class="block w-[512px]" /> <!-- set min width of div -->
-					<div class="card flex flex-col items-stretch overflow-hidden">
-						<div class="card-header">
+			<div
+				:class="[fullWidth ? 'sm:max-w-full' : 'sm:max-w-lg', 'inline-flex flex-col items-stretch overflow-hidden transform transition-all text-left z-10']">
+				<div class="block w-[512px]" /> <!-- set min width of div -->
+				<div class="card flex flex-col items-stretch overflow-hidden">
+					<div class="card-header">
+						<h3 class="text-header">
 							<slot name="header">
-								<h3
-									class="text-header"
-									v-html="headerText"
-								/>
+								{{ headerText_ }}
+							</slot>
+						</h3>
+					</div>
+					<div class="card-body flex flex-row items-center gap-2">
+						<slot name="icon" />
+						<div class="grow overflow-x-auto">
+							<slot>
+								{{ bodyText_ }}
 							</slot>
 						</div>
-						<div class="card-body flex flex-row items-center gap-2">
-							<slot name="icon" />
-							<div class="grow overflow-x-auto">
-								<slot />
-							</div>
-						</div>
-						<div class="card-footer button-group-row justify-end">
+					</div>
+					<div class="card-footer w-full">
+						<div class="button-group-row justify-end overflow-x-auto">
 							<slot name="footer">
 								<button
-									v-if="!noCancel"
 									type="button"
-									class="btn btn-secondary"
-									@click="$emit('cancel'); $emit('close')"
+									class="btn btn-primary"
+									@click="close(true)"
 								>
-									{{ cancelText }}
-								</button>
-								<button
-									type="button"
-									:class="['btn', applyDangerous ? 'btn-danger' : 'btn-primary']"
-									:disabled="disableContinue"
-									@click="$emit('apply'); $emit('close')"
-								>
-									{{ applyText }}
+									OK
 								</button>
 							</slot>
 						</div>
 					</div>
 				</div>
-			</TransitionChild>
+			</div>
 		</div>
-	</TransitionRoot>
+	</transition>
 </template>
 
 <script>
-import { TransitionChild, TransitionRoot } from '@headlessui/vue';
-
+import { ref } from 'vue';
 export default {
 	props: {
-		showModal: Boolean,
-		noCancel: {
+		show: {
 			type: Boolean,
 			required: false,
-			default: false,
+			default: null,
 		},
-		autoWidth: Boolean,
-		headerText: String,
-		cancelText: {
-			type: String,
-			required: false,
-			default: "Cancel",
-		},
-		applyText: {
-			type: String,
-			required: false,
-			default: "Apply",
-		},
-		applyDangerous: Boolean,
-		disableContinue: Boolean,
+		fullWidth: Boolean,
 	},
-	components: {
-		TransitionChild,
-		TransitionRoot,
+	setup(props, { emit }) {
+		const show_ = ref(false);
+		const headerText_ = ref("");
+		const bodyText_ = ref("");
+		const onClose_ = ref(null);
+		const open = (headerText, bodyText) => {
+			return new Promise(resolve => {
+				headerText_.value = headerText;
+				bodyText_.value = bodyText;
+				onClose_.value = resolve;
+				show_.value = true;
+			});
+		};
+		const close = (clickedOk) => {
+			onClose_.value?.(clickedOk);
+			show_.value = false;
+			emit('close');
+		};
+		const reset = () => {
+			headerText_.value = '';
+			bodyText_.value = '';
+			onClose_.value = null;
+			emit('after-leave');
+		}
+		return {
+			show_,
+			headerText_,
+			bodyText_,
+			open,
+			close,
+			reset,
+		}
 	},
 	emits: [
-		'apply',
-		'cancel',
 		'close',
+		'after-leave',
 	]
 };
 </script>
