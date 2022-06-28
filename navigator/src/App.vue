@@ -19,7 +19,7 @@ If not, see <https://www.gnu.org/licenses/>.
 	<div class="text-default bg-default h-full flex flex-col items-stretch">
 		<router-view v-if="providesValid" />
 		<div class="flex flex-row items-center px-4 py-2 gap-2">
-			<RootDangerNotifier />
+			<div id="footer-icons-left" class="inline-flex flex-row gap-buttons" />
 			<div
 				id="footer-text"
 				class="flex flex-row flex-wrap gap-x-4 gap-y-0 text-xs grow basis-0"
@@ -47,7 +47,6 @@ import SettingsMenu from "./components/SettingsMenu.vue";
 import Notifications from './components/Notifications.vue';
 import { FIFO } from '@45drives/cockpit-helpers';
 import { settingsInjectionKey, notificationsInjectionKey, pathHistoryInjectionKey, clipboardInjectionKey } from "./keys";
-import RootDangerNotifier from "./components/RootDangerNotifier.vue";
 
 const props = defineProps({ notificationFIFO: FIFO });
 
