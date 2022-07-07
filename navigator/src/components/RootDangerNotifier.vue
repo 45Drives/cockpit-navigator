@@ -1,5 +1,10 @@
 <template>
-	<ShieldExclamationIcon v-if="showWarning" class="size-icon icon-danger" />
+	<div
+		v-if="showWarning"
+		title="You have administrative access. Be careful."
+	>
+		<ShieldExclamationIcon class="size-icon icon-danger" />
+	</div>
 </template>
 
 <script>
