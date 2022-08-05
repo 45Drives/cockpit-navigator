@@ -1,3 +1,3 @@
-## Cockpit Navigator 0.5.8-2
+## Cockpit Navigator 0.5.9-1
 
-* Add file and coreutils dependencies.
+* Fix CSS for Cockpit 273 and greater

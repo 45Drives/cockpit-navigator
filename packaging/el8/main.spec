@@ -32,6 +32,8 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Fri Aug 05 2022 Joshua Boudreau <jboudreau@45drives.com> 0.5.9-1
+- Fix CSS for Cockpit 273 and greater
 * Mon Jun 06 2022 Joshua Boudreau <jboudreau@45drives.com> 0.5.8-2
 - Add file and coreutils dependencies.
 * Wed Dec 01 2021 Joshua Boudreau <jboudreau@45drives.com> 0.5.8-1

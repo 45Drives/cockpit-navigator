@@ -1,3 +1,9 @@
+cockpit-navigator (0.5.9-1focal) focal; urgency=medium
+
+  * Fix CSS for Cockpit 273 and greater
+
+ -- Joshua Boudreau <jboudreau@45drives.com>  Fri, 05 Aug 2022 12:53:34 -0300
+
 cockpit-navigator (0.5.8-2focal) focal; urgency=medium
 
   * Add file and coreutils dependencies.
