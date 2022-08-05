@@ -52,6 +52,7 @@ function FileSystemWatcher(path, options = {}, handlers = {}, defer=false) {
 	};
 
 	const handleEvent = (eventObj) => {
+		if (self.log) console.log('fsWatchEvent', eventObj);
 		if (options.ignoreSelf && eventObj.path === self.path)
 			return;
 		switch (eventObj.event) {
@@ -122,7 +123,6 @@ function FileSystemWatcher(path, options = {}, handlers = {}, defer=false) {
 		fsWatchChannel = cockpit.channel({
 			payload: "fswatch1",
 			command: "open",
-			watch: true,
 			superuser: options.superuser ?? 'try',
 			host: self.host,
 			path: self.path,
