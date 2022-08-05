@@ -247,6 +247,8 @@ export default {
 
 		fileSystemWatcher.onError = (error) => notifications.value.constructNotification("File System Watcher Error", errorStringHTML(error), 'error');
 
+		// fileSystemWatcher.log = true;
+
 		onBeforeUnmount(() => {
 			processingHandler.resolveDangling();
 			fileSystemWatcher.stop();
