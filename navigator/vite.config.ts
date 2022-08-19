@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
@@ -9,5 +10,8 @@ export default defineConfig({
 		target: [
 			"chrome87", "edge88", "firefox78", "safari14"
 		]
+	},
+	test: {
+		globals: true,
 	}
 })

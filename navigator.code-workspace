@@ -10,6 +10,11 @@
 		}
 	],
 	"settings": {
-		"jest.disabledWorkspaceFolders": ["Git Repo Root"]
+		"vitest.disabledWorkspaceFolders": [
+			"Git Repo Root"
+		],
+		"vitest.enable": true,
+		"vitest.showFailMessages": false,
+		"vitest.commandLine": "npx vitest"
 	}
 }
