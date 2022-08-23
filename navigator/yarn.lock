@@ -19,6 +19,11 @@
   dependencies:
     "@45drives/cockpit-helpers" "^0.1.2"
 
+"@45drives/cockpit-typings@0.0.1-beta6":
+  version "0.0.1-beta6"
+  resolved "https://npm.pkg.github.com/download/@45drives/cockpit-typings/0.0.1-beta6/9dc1c33ea430c6b2e34d4d24ba0aece97990bf8b#9dc1c33ea430c6b2e34d4d24ba0aece97990bf8b"
+  integrity sha512-QXro1N17gB1QTtjqNjkmMpidB5Um9q4nC/C6g2NTEz5Tnxz133l4miSyHvUm33qPPMVN/O2H7RmCqRCvQmPr4w==
+
 "@45drives/regex@^0.1.0":
   version "0.1.0"
   resolved "https://npm.pkg.github.com/download/@45drives/regex/0.1.0/0f5192aa2141b3cb3d2e41b12f1003bbb880f5552f71a776b74bad0f2e6ef15b#5bd4aaeb4f28521de4551869cd88e12d9f61f065"
