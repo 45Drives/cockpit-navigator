@@ -1,4 +1,4 @@
-import { NavigatorError } from './Error'
+import { NavigatorError } from './Error';
 import cockpit from '@45drives/cockpit-typings';
 
 export class ProcessError extends NavigatorError { }
@@ -9,13 +9,21 @@ export interface IProcess {
 	 */
 	exitCode: number;
 	/**
-	 * Standard output of process.
+	 * Standard output of process as Uint8Array.
 	 */
 	stdout: Uint8Array;
 	/**
-	 * Standard error of process.
+	 * Standard output of process as string.
+	 */
+	output: string;
+	/**
+	 * Standard error of process as Uint8Array.
 	 */
 	stderr: Uint8Array;
+	/**
+	 * Standard error of process as string.
+	 */
+	error: string;
 	/**
 	 * Argument vector of process
 	 */
@@ -26,8 +34,13 @@ const utf8Decoder = new TextDecoder('utf-8');
 const utf8Encoder = new TextEncoder();
 
 export class Process implements PromiseLike<IProcess> {
+	/**
+	 * Argument vector used to spawn process
+	 */
+	public readonly argv: string[];
 	private spawnProc: cockpit.Spawn.ProcessHandle<Uint8Array>;
 	private innerPromise: Promise<IProcess>;
+	protected _noThrow: boolean = false;
 	/**
 	 * Execute a server-side process. Awaiting on {@link Process} will return
 	 * {@link IProcess}. Wrapper for
@@ -40,50 +53,67 @@ export class Process implements PromiseLike<IProcess> {
 	 * 	console.error(error);
 	 * }
 	 * // or with noThrow modifier:
-	 * const proc = new Process(['hostname']).noThrow;
+	 * const proc = new Process(['hostname']);
+	 * if (await proc.noThrow.exitCode !== 0)
+	 * 	console.error(Process.errorMessage(await proc.noThrow));
 	 * const hostname = await proc.output;
-	 * if (await proc.exitCode !== 0)
-	 * 	console.error(Process.errorMessage(proc));
 	 * 
 	 * @param argv - Argument vector to execute
 	 * @param spawnOpts - Options for process spawning
 	 */
 	constructor(argv: string[], spawnOpts: Omit<cockpit.Spawn.Options, 'binary'>);
+	/**
+	 * Copy a Process object (does not re-execute, only used internally for {@link Process.noThrow})
+	 * @param other Process to copy
+	 */
 	constructor(other: Process);
 	constructor(argvOrOther: string[] | Process, spawnOpts: Omit<cockpit.Spawn.Options, 'binary'> = {}) {
 		if (argvOrOther instanceof Process) {
+			// copy constructor
 			const other = argvOrOther;
+			this.argv = other.argv;
 			this.spawnProc = other.spawnProc;
 			this.innerPromise = other.innerPromise;
-		} else {
-			const argv = argvOrOther;
-			spawnOpts.err ??= 'message';
-			spawnOpts.superuser ??= 'try';
-			const spawnProc = cockpit.spawn(argv, { ...spawnOpts, binary: true });
-			this.spawnProc = spawnProc;
-			this.innerPromise = new Promise((resolve, reject) => {
-				spawnProc.then((stdout, stderr) => {
-					resolve({
-						exitCode: 0,
-						stdout,
-						stderr: stderr ?? new Uint8Array([]),
-						argv: [...argv],
-					});
-				});
-				spawnProc.catch((exception, stdout) => {
-					reject({
-						exitCode: exception.exit_status ?? 1,
-						stdout: stdout ?? new Uint8Array([]),
-						stderr: utf8Encoder.encode(exception.message) ?? new Uint8Array([]),
-						argv: [...argv],
-					});
+			this._noThrow = other._noThrow;
+			return this;
+		}
+		// regular constructor
+		const argv = argvOrOther;
+		this.argv = argv;
+		spawnOpts.err ??= 'message';
+		spawnOpts.superuser ??= 'try';
+		this.spawnProc = this.getSpawnProc(argv, spawnOpts);
+		this.innerPromise = new Promise<IProcess>((resolve, reject) => {
+			this.spawnProc.then((stdout, stderr) => {
+				resolve({
+					exitCode: 0,
+					stdout,
+					output: utf8Decoder.decode(stdout),
+					stderr: utf8Encoder.encode(stderr),
+					error: stderr,
+					argv: [...argv],
 				});
 			});
-		}
+			this.spawnProc.catch((exception, stdout) => {
+				reject({
+					exitCode: exception.exit_status ?? 1,
+					stdout: stdout,
+					output: utf8Decoder.decode(stdout),
+					stderr: utf8Encoder.encode(exception.message),
+					error: exception.message,
+					argv: [...argv],
+				});
+			});
+		});
 	}
-	then<TResult1 = any, TResult2 = never>(onfulfilled?: ((value: IProcess) => TResult1 | PromiseLike<TResult1>) | null | undefined, onrejected?: ((reason: IProcess) => TResult2 | PromiseLike<TResult2>) | null | undefined): PromiseLike<TResult1 | TResult2> {
+	protected getSpawnProc(argv: string[], spawnOpts: Omit<cockpit.Spawn.Options, 'binary'> = {}) {
+		return cockpit.spawn(argv, { ...spawnOpts, binary: true });
+	}
+	then<TResult1 = any, TResult2 = any>(onfulfilled?: ((value: IProcess) => TResult1 | PromiseLike<TResult1>) | null | undefined, onrejected?: ((reason: IProcess) => TResult2 | PromiseLike<TResult2>) | null | undefined): PromiseLike<TResult1 | TResult2> {
 		return this.innerPromise
 			.catch((proc: IProcess) => {
+				if (this._noThrow)
+					return proc;
 				throw new ProcessError(Process.errorMessage(proc));
 			})
 			.then(onfulfilled, onrejected);
@@ -92,9 +122,9 @@ export class Process implements PromiseLike<IProcess> {
 	 * Always resolve even when process exits with code other than `0`.
 	 */
 	get noThrow() {
-		const proc = new Process(this);
-		proc.innerPromise = proc.innerPromise.catch(proc => proc);
-		return proc;
+		const newProcess = new Process(this);
+		newProcess._noThrow = true;
+		return newProcess;
 	}
 	/**
 	 * Exit code of process. Resolves when the process exits.
@@ -164,5 +194,50 @@ export class Process implements PromiseLike<IProcess> {
 	}
 	static errorMessage(proc: IProcess) {
 		return `${proc.argv[0]} -> ${proc.exitCode}: ${utf8Decoder.decode(proc.stderr)}`;
+	}
+}
+
+export class ScriptProcess extends Process {
+	/**
+	 * Execute a server-side shell script (with bash). Awaiting on {@link Process} will return
+	 * {@link IProcess}. Wrapper for
+	 * [cockpit.spawn](https://cockpit-project.org/guide/latest/cockpit-spawn)
+	 * 
+	 * @example
+	 * try {
+	 * 	const progs = await new ScriptProcess('ls -lH /bin').output;
+	 * } catch (error) {
+	 * 	console.error(error);
+	 * }
+	 * // or with noThrow modifier:
+	 * const proc = new ScriptProcess('ls -lH /bin');
+	 * if (await proc.noThrow.exitCode !== 0)
+	 * 	console.error(Process.errorMessage(await proc.noThrow));
+	 * const progs = await proc.output;
+	 * 
+	 * @param script - The script to execute
+	 * @param args - Arguments for the script, i.e. $@ == args
+	 * @param spawnOpts - Options for spawning script
+	 */
+	constructor(script: string, args: string[] = [], spawnOpts: Omit<cockpit.Spawn.Options, 'binary'>) {
+		super(['bash', '-c', script, ...args], spawnOpts);
+	}
+}
+
+export class PythonProcess extends Process {
+	constructor(script: string, args: string[] = [], spawnOpts: Omit<cockpit.Spawn.Options, 'binary'>) {
+		super(['python', '-c', script, ...args], spawnOpts);
+	}
+}
+
+export class NodeProcess extends Process {
+	constructor(script: string, args: string[] = [], spawnOpts: Omit<cockpit.Spawn.Options, 'binary'>) {
+		super(['node', '-e', script, ...args], spawnOpts);
+	}
+}
+
+export class PerlProcess extends Process {
+	constructor(script: string, args: string[] = [], perlArgs: string[] = [], spawnOpts: Omit<cockpit.Spawn.Options, 'binary'>) {
+		super(['perl', ...perlArgs, '-e', script, ...args], spawnOpts);
 	}
 }
