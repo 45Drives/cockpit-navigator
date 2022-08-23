@@ -1,11 +1,15 @@
-import { Source } from "../types/Source";
-import { Location } from "../types/Location";
-import { INotifications } from "../types/Notifications";
+import { ref } from 'vue';
+import { useRoute } from 'vue-router';
+import { Source } from "@/lib/Source";
+import { Location } from "@/types/Location";
+import { INotifications } from "@/types/Notifications";
 
-export interface SourceContext {
-	notifications: INotifications;
-}
+export default function useSourceAdapter() {
+	let source;
+	const items = ref([]);
+	const route = useRoute();
 
-export function defineSource<SourceType extends Source<Location>>(factory: (ctx: SourceContext) => SourceType) {
-	return factory;
+	return {
+		items
+	}
 }

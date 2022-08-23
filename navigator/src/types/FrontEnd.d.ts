@@ -7,7 +7,8 @@ export namespace ItemDisplay {
 export interface ItemDisplay<SourceItemType extends Location> {
 	sourceItem: SourceItemType;
 	name: string;
-	displayType: 'file' | 'directory';
-	isLink: true;
+	displayType: 'directory' | 'file';
+	isLink: boolean;
+	isBrokenLink: boolean;
 	mimetype?: ItemDisplay.mimetype;
 }
