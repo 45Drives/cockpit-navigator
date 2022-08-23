@@ -42,6 +42,8 @@ If not, see <https://www.gnu.org/licenses/>.
 </template>
 
 <script setup>
+import { Process, ScriptProcess } from './lib/Process';
+
 import { ref, reactive, provide } from "vue";
 import SettingsMenu from "./components/SettingsMenu.vue";
 import Notifications from './components/Notifications.vue';
