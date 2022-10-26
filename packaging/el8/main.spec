@@ -32,6 +32,9 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Wed Oct 26 2022 Joshua Boudreau <jboudreau@45drives.com> 0.5.10-1
+- Disallow changing selected file/folder while editing permissions
+- Allow opening non-text file for editing via prompt
 * Fri Aug 05 2022 Joshua Boudreau <jboudreau@45drives.com> 0.5.9-1
 - Fix CSS for Cockpit 273 and greater
 * Mon Jun 06 2022 Joshua Boudreau <jboudreau@45drives.com> 0.5.8-2
