@@ -1,3 +1,4 @@
-## Cockpit Navigator 0.5.9-1
+## Cockpit Navigator 0.5.10-1
 
-* Fix CSS for Cockpit 273 and greater
+* Disallow changing selected file/folder while editing permissions
+* Allow opening non-text file for editing via prompt

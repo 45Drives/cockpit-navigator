@@ -210,6 +210,8 @@ export class NavWindow {
 	}
 	
 	clear_selected() {
+		if (this.editing_permissions)
+			return;
 		for (let entry of this.selected_entries) {
 			entry.unstyle_selected();
 		}
@@ -221,11 +223,15 @@ export class NavWindow {
 	 * @param {NavEntry} entry 
 	 */
 	select_one(entry) {
+		if (this.editing_permissions)
+			return;
 		entry.style_selected();
 		this.selected_entries.add(entry);
 	}
 
 	deselect_one(entry) {
+		if (this.editing_permissions)
+			return;
 		entry.unstyle_selected();
 		this.selected_entries.delete(entry);
 	}
@@ -236,6 +242,8 @@ export class NavWindow {
 	 * @param {NavEntry} end 
 	 */
 	select_range(start, end) {
+		if (this.editing_permissions)
+			return;
 		let start_ind = this.entries.indexOf(start);
 		let end_ind = this.entries.indexOf(end);
 		if (start_ind === -1 || end_ind === -1)
@@ -252,6 +260,8 @@ export class NavWindow {
 	}
 
 	reset_selection() {
+		if (this.editing_permissions)
+			return;
 		this.clear_selected();
 		this.select_one(this.pwd());
 		this.last_selected_entry = null;
@@ -268,6 +278,8 @@ export class NavWindow {
 	 * @param {Boolean} ctrl 
 	 */
 	set_selected(target, shift, ctrl) {
+		if (this.editing_permissions)
+			return;
 		if (!ctrl && !shift)
 			this.clear_selected();
 		if (!shift || !this.last_selected_entry)
@@ -299,6 +311,8 @@ export class NavWindow {
 	}
 
 	select_all() {
+		if (this.editing_permissions)
+			return;
 		this.clear_selected();
 		this.select_range(this.entries[0], this.entries[this.entries.length - 1]);
 		this.update_selection_info();
@@ -395,11 +409,13 @@ export class NavWindow {
 		document.getElementById("nav-mode-preview").innerText = "unchanged";
 		document.getElementById("nav-edit-properties").style.display = "flex";
 		document.getElementById("nav-show-properties").style.display = "none";
+		this.editing_permissions = true;
 	}
 	
 	hide_edit_selected() {
 		document.getElementById("nav-show-properties").style.display = "flex";
 		document.getElementById("nav-edit-properties").style.display = "none";
+		this.editing_permissions = false;
 	}
 	
 	/**

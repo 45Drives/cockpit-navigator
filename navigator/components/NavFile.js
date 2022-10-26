@@ -41,18 +41,18 @@ export class NavFile extends NavEntry {
 	 * @param {Event} e 
 	 */
 	handleEvent(e) {
-		switch(e.type){
+		switch (e.type) {
 			case "click":
 				if (this.double_click) {
-					if(this.timeout)
+					if (this.timeout)
 						clearTimeout(this.timeout);
 					this.double_click = false;
 					this.open();
 					return;
 				} else { // single click
 					this.double_click = true;
-					if(this.timeout)
-						clearTimeout(this.timeout)
+					if (this.timeout)
+						clearTimeout(this.timeout);
 					this.timeout = setTimeout(() => {
 						this.double_click = false;
 					}, 500);
@@ -77,7 +77,7 @@ export class NavFile extends NavEntry {
 		return new Promise((resolve, reject) => {
 			var proc = cockpit.spawn(
 				["rm", "-f", this.path_str()],
-				{superuser: "try", err: "out"}
+				{ superuser: "try", err: "out" }
 			);
 			proc.done((data) => {
 				resolve();
@@ -87,20 +87,21 @@ export class NavFile extends NavEntry {
 			});
 		});
 	}
-	
+
 	async open() {
-		var proc_output = await cockpit.spawn(["file", "--mime-type", this.path_str()], {superuser: "try"});
-		var fields = proc_output.split(/:(?=[^:]+$)/); // ensure it's the last : with lookahead
-		var type = fields[1].trim();
-		
-		if (/^text/.test(type) || /^inode\/x-empty$/.test(type) || this.stat["size"] === 0 || (/^application\/octet-stream/.test(type) && this.stat["size"] === 1)) {
+		async function isEditable(path, fileSize) {
+			if (fileSize === 0)
+				return true; // empty file always editable
+			const encoding = (await cockpit.spawn(["file", "-bL", "--mime-encoding", path], { superuser: "try" })).trim();
+			if (['us-ascii', 'utf-8'].includes(encoding))
+				return true;
+			if (fileSize === 1 && ['\n', '\t', ' '].includes(await cockpit.file(path).read()))
+				return true; // special case for empty file with newline, shows as `application/octet-stream; charset=binary`
+			return false;
+		}
+
+		if (await isEditable(this.path_str(), this.stat['size']) || await this.nav_window_ref.modal_prompt.confirm(`'${this.filename}' is not a text file. Open it anyway?`, "WARNING: this may lead to file corruption.", true)) {
 			this.show_edit_file_contents();
-		} else {
-			console.log("Unknown mimetype: " + type);
-			if (await this.nav_window_ref.modal_prompt.confirm("Can't open " + this.filename + " for editing.", "Download it instead?")) {
-				var download = new NavDownloader(this);
-				download.download();
-			}
 		}
 	}
 
@@ -109,7 +110,7 @@ export class NavFile extends NavEntry {
 		this.nav_window_ref.disable_buttons_for_editing();
 		var contents = "";
 		try {
-			contents = await cockpit.file(this.path_str(), {superuser: "try"}).read();
+			contents = await cockpit.file(this.path_str(), { superuser: "try" }).read();
 		} catch (e) {
 			this.nav_window_ref.enable_buttons();
 			this.nav_window_ref.modal_prompt.alert(e.message);
@@ -124,7 +125,7 @@ export class NavFile extends NavEntry {
 		document.getElementById("nav-contents-view-holder").style.display = "none";
 		document.getElementById("nav-edit-contents-view").style.display = "flex";
 	}
-	
+
 	async write_to_file() {
 		var new_contents = document.getElementById("nav-edit-contents-textarea").value;
 		try {
@@ -135,7 +136,7 @@ export class NavFile extends NavEntry {
 		this.nav_window_ref.refresh();
 		this.hide_edit_file_contents();
 	}
-	
+
 	hide_edit_file_contents() {
 		window.addEventListener("keydown", this.nav_window_ref);
 		document.getElementById("nav-edit-contents-textarea").removeEventListener("keydown", this);
@@ -145,7 +146,7 @@ export class NavFile extends NavEntry {
 	}
 }
 
-export class NavFileLink extends NavFile{
+export class NavFileLink extends NavFile {
 	/**
 	 * 
 	 * @param {string} path 
@@ -187,10 +188,10 @@ export class NavFileLink extends NavFile{
 
 	async open() {
 		var target_path = this.get_link_target_path();
-		var proc_output = await cockpit.spawn(["file", "--mime-type", target_path], {superuser: "try"});
+		var proc_output = await cockpit.spawn(["file", "--mime-type", target_path], { superuser: "try" });
 		var fields = proc_output.split(/:(?=[^:]+$)/); // ensure it's the last : with lookahead
 		var type = fields[1].trim();
-		
+
 		if ((/^text/.test(type) || /^inode\/x-empty$/.test(type) || this.stat["size"] === 0)) {
 			this.show_edit_file_contents();
 		} else {
@@ -206,8 +207,8 @@ export class NavFileLink extends NavFile{
 		var target_path = this.get_link_target_path();
 		var contents = "";
 		try {
-			contents = await cockpit.file(target_path, {superuser: "try"}).read();
-		} catch(e) {
+			contents = await cockpit.file(target_path, { superuser: "try" }).read();
+		} catch (e) {
 			this.nav_window_ref.enable_buttons();
 			this.nav_window_ref.modal_prompt.alert(e.message);
 			return;

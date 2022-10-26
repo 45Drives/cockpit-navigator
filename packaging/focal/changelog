@@ -1,3 +1,10 @@
+cockpit-navigator (0.5.10-1focal) focal; urgency=medium
+
+  * Disallow changing selected file/folder while editing permissions
+  * Allow opening non-text file for editing via prompt
+
+ -- Joshua Boudreau <jboudreau@45drives.com>  Wed, 26 Oct 2022 14:40:50 -0300
+
 cockpit-navigator (0.5.9-1focal) focal; urgency=medium
 
   * Fix CSS for Cockpit 273 and greater
