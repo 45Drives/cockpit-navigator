@@ -36,6 +36,8 @@ export class NavEntry {
 		this.filename = this.get_filename();
 		this.dom_element = document.createElement("div");
 		this.dom_element.classList.add("nav-item");
+		this.dom_element.setAttribute("tabindex", "0");
+		this.dom_element.setAttribute("role", "option");
 		let icon = this.dom_element.nav_item_icon = document.createElement("i");
 		icon.classList.add("nav-item-icon");
 		let title = this.dom_element.nav_item_title = document.createElement("div");
@@ -62,6 +64,7 @@ export class NavEntry {
 			this.dom_element.style.cursor = "not-allowed";
 		} else {
 			this.dom_element.addEventListener("click", this);
+			this.dom_element.addEventListener("keydown", this);
 			this.dom_element.addEventListener("contextmenu", this);
 		}
 		this.is_hidden_file = this.filename.startsWith('.');
@@ -128,6 +131,13 @@ export class NavEntry {
 				this.nav_window_ref.set_selected(this, e.shiftKey, e.ctrlKey);
 				this.context_menu_ref.hide();
 				break;
+			case "keydown":
+				if (e.key === " ") {
+					this.nav_window_ref.set_selected(this, e.shiftKey, e.ctrlKey);
+					this.context_menu_ref.hide();
+				}
+                break;
+
 			case "contextmenu":
 				this.context_menu_ref.show(e, this);
 				e.preventDefault();
