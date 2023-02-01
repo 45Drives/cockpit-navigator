@@ -63,6 +63,8 @@ export class NavFile extends NavEntry {
 					e.preventDefault();
 					e.stopPropagation();
 					this.write_to_file();
+				} else if (e.key == "Enter") {
+					this.open();
 				}
 				break;
 		}
