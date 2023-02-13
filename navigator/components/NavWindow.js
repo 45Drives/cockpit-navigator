@@ -481,7 +481,7 @@ export class NavWindow {
 			return;
 		var prompt = "";
 		if (this.selected_entries.size > 1) {
-			prompt = cockpit.format(_("Deleting ${num} files",{num:this.selected_entries.size}));
+			prompt = cockpit.format(_("Deleting ${num} files"),{num:this.selected_entries.size});
 		} else {
 			prompt = cockpit.format(_("Deleting `${filePath}`"),{filePath:this.selected_entry().path_str()});
 		}
