@@ -22,6 +22,8 @@ import { NavFile, NavFileLink } from "./NavFile.js";
 import { NavDir, NavDirLink } from "./NavDir.js";
 import { NavDownloader } from "./NavDownloader.js";
 
+const _ = cockpit.gettext;
+
 export class NavContextMenu {
 	/**
 	 * 
@@ -48,11 +50,23 @@ export class NavContextMenu {
 			["download", '<div><i class="fas fa-download"></i></div>'],
 			["properties", '<div><i class="fas fa-sliders-h"></i></div>']
 		];
+		var labels={
+			"new_dir": _("New Directory"),
+			"new_file": _("New File"),
+			"new_link": _("New Symbolic Link"),
+			"cut": _("Cut"),
+			"copy": _("Copy"),
+			"paste": _("Paste"),
+			"rename": _("Rename"),
+			"delete": _("Delete"),
+			"download": _("Download"),
+			"properties": _("Properties")
+		};
 		for (let func of functions) {
 			var elem = document.createElement("div");
 			var name_list = func[0].split("_");
 			name_list.forEach((word, index) => {name_list[index] = word.charAt(0).toUpperCase() + word.slice(1)});
-			elem.innerHTML = func[1] + name_list.join(" ");
+			elem.innerHTML = func[1] + labels[func[0]];
 			elem.addEventListener("click", (e) => {this[func[0]].bind(this, e).apply()});
 			elem.classList.add("nav-context-menu-item")
 			elem.id = "nav-context-menu-" + func[0];
@@ -92,8 +106,8 @@ export class NavContextMenu {
 		this.hide();
 		if (this.target.is_dangerous_path()) {
 			await this.nav_window_ref.modal_prompt.alert(
-				"Cannot rename system-critical paths.",
-				"If you think you need to, use the terminal."
+				_("Cannot rename system-critical paths"),
+				_("If you think you need to, use the terminal.")
 			);
 		} else {
 			this.target.show_edit(this.target.dom_element.nav_item_title);

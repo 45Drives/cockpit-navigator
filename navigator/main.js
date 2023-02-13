@@ -165,6 +165,8 @@ async function main() {
 	await get_groups;
 	await refresh;
 	set_up_buttons();
+	cockpit.translate();
 }
 
 main();
+
