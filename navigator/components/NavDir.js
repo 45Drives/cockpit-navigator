@@ -22,6 +22,8 @@ import { NavFile, NavFileLink } from "./NavFile.js";
 import { NavWindow } from "./NavWindow.js";
 import { property_entry_html } from "../functions.js";
 
+const _ = cockpit.gettext;
+
 export class NavDir extends NavEntry {
 	/**
 	 * 
@@ -123,7 +125,7 @@ export class NavDir extends NavEntry {
 			});
 			proc.fail(async (e, data) => {
 				if (/^rmdir: failed to remove .*: Directory not empty\n?$/.test(data)) {
-					if (await this.nav_window_ref.modal_prompt.confirm("WARNING: '" + this.path_str() + "' is not empty.", "Delete recursively? This can NOT be undone.", true)) {
+					if (await this.nav_window_ref.modal_prompt.confirm(cockpit.format(_("WARNING: '$0' is not empty"),[this.path_str()]), "Delete recursively? This can NOT be undone.", true)) {
 						this.rm_recursive(resolve, reject);
 					}
 				} else {
@@ -177,7 +179,7 @@ export class NavDir extends NavEntry {
 		// See if a JSON object exists for folder we are currently looking at
 		if (this.ceph_stats !== null) {
 			extra_properties +=
-				'<div class="vertical-spacer"></div><h2 class="nav-info-column-filename">Ceph Status</h2>';
+				'<div class="vertical-spacer"></div><h2 class="nav-info-column-filename">' + _("Ceph Status") + '</h2>';
 			extra_properties += property_entry_html(
 				"Files",
 				this.ceph_stats.hasOwnProperty("files") ? this.ceph_stats.files : "N/A"
@@ -267,7 +269,7 @@ export class NavDirLink extends NavDir{
 	}
 
 	show_properties() {
-		var extra_properties = property_entry_html("Link Target", this.link_target);
+		var extra_properties = property_entry_html(_("Link Target"), this.link_target);
 		super.show_properties(extra_properties);
 	}
 }

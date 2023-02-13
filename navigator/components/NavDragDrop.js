@@ -22,6 +22,8 @@ import { ModalPrompt } from "./ModalPrompt.js";
 import { NavWindow } from "./NavWindow.js";
 import { FileUploadManager } from "./FileUploadManager.js";
 
+const _ = cockpit.gettext;
+
 export class NavDragDrop {
 	/**
 	 * 
@@ -64,7 +66,7 @@ export class NavDragDrop {
 	async scan_files(item, path) {
 		let new_uploads = [];
 		if (item.isDirectory) {
-			if (!path && !await this.modal_prompt.confirm(`Copy whole directory: ${item.fullPath}?`, "", true))
+			if (!path && !await this.modal_prompt.confirm(cockpit.format(_("Copy whole directory: ${fullPath}?"),{fullPath:item.fullPath}), "", true))
 				return new_uploads;
 			let directoryReader = item.createReader();
 			let promise = new Promise((resolve, reject) => {
@@ -149,7 +151,7 @@ export class NavDragDrop {
 		}
 		if (Object.keys(requests).length > 0) {
 			let responses = await this.nav_window_ref.modal_prompt.prompt(
-				"Conflicts found while uploading. Replace?",
+				_("Conflicts found while uploading. Replace?"),
 				requests
 			)
 			if (responses === null)

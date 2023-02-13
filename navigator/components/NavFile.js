@@ -22,6 +22,8 @@ import { NavDownloader } from "./NavDownloader.js";
 import { NavWindow } from "./NavWindow.js";
 import { property_entry_html, simple_spawn } from "../functions.js";
 
+const _ = cockpit.gettext;
+
 export class NavFile extends NavEntry {
 	/**
 	 * 
@@ -100,7 +102,7 @@ export class NavFile extends NavEntry {
 			return false;
 		}
 
-		if (await isEditable(this.path_str(), this.stat['size']) || await this.nav_window_ref.modal_prompt.confirm(`'${this.filename}' is not a text file. Open it anyway?`, "WARNING: this may lead to file corruption.", true)) {
+		if (await isEditable(this.path_str(), this.stat['size']) || await this.nav_window_ref.modal_prompt.confirm(cockpit.format(_("'${filename}' is not a text file. Open it anyway?"),{filename:this.filename}), _("WARNING: this may lead to file corruption."), true)) {
 			this.show_edit_file_contents();
 		}
 	}
@@ -121,7 +123,7 @@ export class NavFile extends NavEntry {
 		text_area.addEventListener("keydown", this);
 		document.getElementById("nav-cancel-edit-contents-btn").onclick = this.hide_edit_file_contents.bind(this);
 		document.getElementById("nav-continue-edit-contents-btn").onclick = this.write_to_file.bind(this);
-		document.getElementById("nav-edit-contents-header").innerText = "Editing " + this.path_str();
+		document.getElementById("nav-edit-contents-header").innerText = _("Editing") + " " + this.path_str();
 		document.getElementById("nav-contents-view-holder").style.display = "none";
 		document.getElementById("nav-edit-contents-view").style.display = "flex";
 	}
@@ -167,7 +169,7 @@ export class NavFileLink extends NavFile {
 	}
 
 	show_properties() {
-		var extra_properties = property_entry_html("Link Target", this.link_target);
+		var extra_properties = property_entry_html(_("Link Target"), this.link_target);
 		super.show_properties(extra_properties);
 	}
 
@@ -195,8 +197,8 @@ export class NavFileLink extends NavFile {
 		if ((/^text/.test(type) || /^inode\/x-empty$/.test(type) || this.stat["size"] === 0)) {
 			this.show_edit_file_contents();
 		} else {
-			console.log("Unknown mimetype: " + type);
-			this.nav_window_ref.modal_prompt.alert("Can't open " + this.filename + " for editing.");
+			console.log(cockpit.format(_("Unknown mimetype: $0"),[type]));
+			this.nav_window_ref.modal_prompt.alert(cockpit.format(_("Can't open ${filename} for editing"),{filename:this.filename}));
 		}
 	}
 
@@ -218,7 +220,7 @@ export class NavFileLink extends NavFile {
 		text_area.addEventListener("keydown", this);
 		document.getElementById("nav-cancel-edit-contents-btn").onclick = this.hide_edit_file_contents.bind(this);
 		document.getElementById("nav-continue-edit-contents-btn").onclick = this.write_to_file.bind(this);
-		document.getElementById("nav-edit-contents-header").innerHTML = "Editing " + this.path_str() + ' <i class="fas fa-long-arrow-alt-right"></i> ' + this.get_link_target_path();
+		document.getElementById("nav-edit-contents-header").innerHTML = _("Editing") + " " + this.path_str() + ' <i class="fas fa-long-arrow-alt-right"></i> ' + this.get_link_target_path();
 		document.getElementById("nav-contents-view-holder").style.display = "none";
 		document.getElementById("nav-edit-contents-view").style.display = "flex";
 	}

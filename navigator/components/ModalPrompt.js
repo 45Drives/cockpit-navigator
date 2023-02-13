@@ -28,19 +28,21 @@ let secondary_btn = "pf-m-secondary";
 let danger_btn = "pf-m-danger";
 let all_btn = [primary_btn, secondary_btn, danger_btn];
 
+const _ = cockpit.gettext;
+
 export class ModalPrompt {
 	constructor() {
 		this.ok = document.createElement("button");
-		this.ok.innerText = "OK";
+		this.ok.innerText = _("OK");
 		this.ok.classList.add("pf-c-button", "pf-m-primary");
 		this.cancel = document.createElement("button");
-		this.cancel.innerText = "Cancel";
+		this.cancel.innerText = _("Cancel");
 		this.cancel.classList.add("pf-c-button", "pf-m-secondary");
 		this.yes = document.createElement("button");
-		this.yes.innerText = "Yes";
+		this.yes.innerText = _("Yes");
 		this.yes.classList.add("pf-c-button", "pf-m-primary");
 		this.no = document.createElement("button");
-		this.no.innerText = "No";
+		this.no.innerText = _("No");
 		this.no.classList.add("pf-c-button", "pf-m-secondary");
 		this.construct_element();
 	}

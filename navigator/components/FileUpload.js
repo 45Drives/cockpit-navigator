@@ -21,6 +21,8 @@ import { NavWindow } from "./NavWindow.js";
 import { format_time_remaining } from "../functions.js";
 import { ModalPrompt } from "./ModalPrompt.js";
 
+const _ = cockpit.gettext;
+
 export class FileUpload {
 	/**
 	 * 
@@ -58,7 +60,7 @@ export class FileUpload {
 		header.style.gap = "5px";
 
 		var title = document.createElement("p");
-		title.innerText = "Uploading " + this.filename;
+		title.innerText = _("Uploading") + " " + this.filename;
 		title.title = this.filename;
 
 		var cancel = document.createElement("i");
@@ -140,7 +142,7 @@ export class FileUpload {
 		})
 		this.proc.always(() => this?.done_hook?.());
 		this.reader.onerror = (evt) => {
-			this.modal_prompt.alert("Failed to read file: " + this.filename, "Upload of directories not supported.");
+			this.modal_prompt.alert(cockpit.format(_("Failed to read file: ${filename}"),{filename:this.filename}), _("Upload of directories not supported."));
 			this.done();
 		}
 		this.reader.onload = (evt) => {
@@ -160,7 +162,7 @@ export class FileUpload {
 			if (this.using_webkit) {
 				this.proc.input(JSON.stringify({seek: 0, chunk: ""}), true);
 			} else {
-				this.modal_prompt.alert("Failed to read file: " + this.filename, "Upload of directories and empty files not supported.");
+				this.modal_prompt.alert(cockpit.format(_("Failed to read file: ${filename}"),{filename:this.filename}), _("Upload of directories and empty files not supported."));
 			}
 			this.done();
 		}
