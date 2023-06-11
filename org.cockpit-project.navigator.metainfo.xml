@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="addon">
+  <id>org.cockpit_project.navigator</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <name>Navigator</name>
+  <summary>A Featureful File Browser for Cockpit</summary>
+  <description>
+    <p>
+     A Featureful File System Browser for Cockpit - remotely browse, manage, edit, upload, and download files on your server through your web browser.
+    </p>
+  </description>
+  <extends>org.cockpit_project.cockpit</extends>
+  <launchable type="cockpit-manifest">navigator</launchable>
+  <url type="homepage">https://github.com/45Drives/cockpit-navigator</url>
+  <url type="bugtracker">https://github.com/45Drives/cockpit-navigator/issues</url>
+</component>
