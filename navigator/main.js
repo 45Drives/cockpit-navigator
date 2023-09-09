@@ -65,10 +65,10 @@ function set_last_theme_state() {
 		icon.classList.add("fa-moon");
 		logo.src = "branding/logo-dark.svg";
 	} else {
-		toggle_switch.checked = false;
-		state = "light";
+		state = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark" : "light";
+		toggle_switch.checked = state === "dark";		
 		localStorage.setItem("houston-theme-state", state);
-		logo.src = "branding/logo-light.svg";
+		logo.src = `branding/logo-${state}.svg`;
 	}
 }
 
