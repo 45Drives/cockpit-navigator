@@ -51,24 +51,20 @@ function set_last_theme_state() {
 	var toggle_switch = document.getElementById("toggle-theme");
 	var state = localStorage.getItem("houston-theme-state");
 	var icon = document.getElementById("houston-theme-icon");
-	var logo = document.getElementById("logo-45d");
 	if (state === "light") {
 		toggle_switch.checked = false;
 		document.documentElement.setAttribute("data-theme", "light");
 		icon.classList.remove("fa-moon");
 		icon.classList.add("fa-sun");
-		logo.src = "branding/logo-light.svg";
 	} else if (state === "dark") {
 		toggle_switch.checked = true;
 		document.documentElement.setAttribute("data-theme", "dark");
 		icon.classList.remove("fa-sun");
 		icon.classList.add("fa-moon");
-		logo.src = "branding/logo-dark.svg";
 	} else {
 		toggle_switch.checked = false;
 		state = "light";
 		localStorage.setItem("houston-theme-state", state);
-		logo.src = "branding/logo-light.svg";
 	}
 }
 
@@ -78,18 +74,15 @@ function set_last_theme_state() {
  */
 function switch_theme(e) {
 	var icon = document.getElementById("houston-theme-icon");
-	var logo = document.getElementById("logo-45d");
 	var state = "";
 	if (e.target.checked) {
 		state = "dark";
 		icon.classList.remove("fa-sun");
 		icon.classList.add("fa-moon");
-		logo.src = "branding/logo-dark.svg";
 	} else {
 		state = "light";
 		icon.classList.remove("fa-moon");
 		icon.classList.add("fa-sun");
-		logo.src = "branding/logo-light.svg";
 	}
 	document.documentElement.setAttribute("data-theme", state);
 	localStorage.setItem("houston-theme-state", state);
