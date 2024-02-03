@@ -30,7 +30,6 @@
 	--scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
 	--loading-bg-color: rgba(255, 255, 255, 0.5);
 	--textarea-bg: var(--navigation);
-	--logo-45: #333;
 	--nav-entry-color: #555F6E;
 	--nav-border-radius: 4px;
 	--symlink-symbol-color: var(--navigation);
@@ -50,7 +49,6 @@
 	--scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
 	--loading-bg-color: rgba(33, 36, 39, 0.5);
 	--textarea-bg: var(--navigation);
-	--logo-45: #fff;
 	--nav-entry-color: #555F6E;
 	--symlink-symbol-color: var(--navigation);
 	--list-view-header: var(--container);
@@ -526,22 +524,6 @@ input[type="text"] {
 	align-items: baseline;
 	justify-content: space-between;
 	padding: 5px;
-}
-
-.nav-footer > a > img {
-	height: 1.25em;
-	width: auto;
-	margin-bottom: 4px;
-}
-
-.nav-footer > a > .logo-45 {
-	font-weight: 900;
-	color: var(--logo-45);
-}
-
-.nav-footer > a > .logo-drives {
-	font-weight: 600;
-	color: #981c20;
 }
 
 .nav-toggle {
