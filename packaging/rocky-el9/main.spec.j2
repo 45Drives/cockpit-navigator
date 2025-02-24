@@ -1,0 +1,37 @@
+%global debug_package %{nil}
+
+Name: {{ name }}
+Version: {{ version }}
+Release: {{ build_number }}%{?dist}
+Summary: {{ description }}
+License: {{ license }}
+URL: {{ git_url }}
+Source0: %{name}-%{version}.tar.gz
+BuildArch: {{ architecture.rocky }}
+Requires: {{ dependencies.rocky_common | join(',') }}
+
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
+
+%description
+{{ title }}
+{{ description }}
+
+
+%prep
+%setup -q
+
+%build
+# empty
+
+%install
+make DESTDIR=%{buildroot} DIST=%{dist} NAV_VERS="%{version}-%{release}" install
+
+%clean
+rm -rf %{buildroot}
+
+%files
+/usr/share/cockpit/navigator/*
+
+%changelog
+* Mon Feb 24 2025 Brett Kelly <bkelly@45drives.com> 0.5.10-1
+- build for el9

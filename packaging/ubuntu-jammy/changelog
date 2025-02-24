@@ -1,0 +1,5 @@
+cockpit-navigator (0.5.10-1jammy) jammy; urgency=medium
+
+  * build for jammy
+
+ -- Brett Kelly <bkelly@45drives.com>  Mon, 24 Feb 2025 14:40:50 -0300

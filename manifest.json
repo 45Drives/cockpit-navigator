@@ -1,28 +1,24 @@
 {
-    "__version": "45D-R1",
+    "schema_version": "45D_AP_V2.0",
     "name": "cockpit-navigator",
     "title": "Cockpit Navigator",
-    "prerelease": false,
+    "description": "A File System Browser for Cockpit.",
     "version": "0.5.10",
-    "buildVersion": "1",
+    "build_number": "1",
+    "stable": true,
     "author": "Josh Boudreau <jboudreau@45drives.com>",
-    "url": "https://github.com/45Drives/cockpit-navigator",
-    "category": "utils",
-    "priority": "optional",
-    "licence": "GPL-3.0+",
-    "architecture": {
-        "deb": "all",
-        "el": "noarch"
-    },
-    "description": {
-        "long": "A File System Browser for Cockpit.",
-        "short": "A File System Browser for Cockpit."
-    },
+    "git_url": "https://github.com/45Drives/cockpit-navigator",
+    "license": "GPL-3.0+",
     "defaults": {
         "urgency": "medium"
     },
+    "architecture": {
+        "rocky": "x86_64",
+        "debian": "amd64",
+        "ubuntu": "amd64"
+    },
     "dependencies": {
-        "deb": [
+        "ubuntu_common": [
             "cockpit",
             "python3",
             "rsync",
@@ -30,7 +26,7 @@
             "file",
             "coreutils"
         ],
-        "el": [
+        "rocky_common": [
             "cockpit",
             "python3",
             "rsync",
@@ -40,22 +36,31 @@
             "/bin/rmdir"
         ]
     },
-    "releases": [
+    "builds": [
         {
-            "image": "ubuntu-focal-builder",
-            "codeName": "focal",
-            "type": "deb"
+            "group": "ubuntu",
+            "os_name": "ubuntu-focal",
+            "image": "ci.cr.45d.io/ci/simple/ubuntu-focal:1"
         },
         {
-            "image": "rocky-el8-builder",
-            "codeName": "el8",
-            "type": "el"
+            "group": "ubuntu",
+            "os_name": "ubuntu-jammy",
+            "image": "ci.cr.45d.io/ci/simple/ubuntu-jammy:1"
         },
         {
-            "image": "centos-el7-builder",
-            "codeName": "el7",
-            "type": "el"
+            "group": "rocky",
+            "os_name": "rocky-el8",
+            "image": "ci.cr.45d.io/ci/simple/rocky-el8:1"
+        },
+        {
+            "group": "rocky",
+            "os_name": "rocky-el9",
+            "image": "ci.cr.45d.io/ci/simple/rocky-el9:1"
         }
+    ],
+    "repos": [
+        "community",
+        "enterprise"
     ],
     "changelog": {
         "urgency": "medium",

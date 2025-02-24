@@ -1,20 +1,21 @@
 %global debug_package %{nil}
 
-Name: ::package_name::
-Version: ::package_version::
-Release: ::package_build_version::%{?dist}
-Summary: ::package_description_short::
-License: ::package_licence::
-URL: ::package_url::
+Name: {{ name }}
+Version: {{ version }}
+Release: {{ build_number }}%{?dist}
+Summary: {{ description }}
+License: {{ license }}
+URL: {{ git_url }}
 Source0: %{name}-%{version}.tar.gz
-BuildArch: ::package_architecture_el::
-Requires: ::package_dependencies_el::
+BuildArch: {{ architecture.rocky }}
+Requires: {{ dependencies.rocky_common | join(',') }}
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %description
-::package_title::
-::package_description_long::
+{{ title }}
+{{ description }}
+
 
 %prep
 %setup -q
