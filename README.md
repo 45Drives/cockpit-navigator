@@ -24,7 +24,7 @@ With no command line use needed, you can:
 ## From Github Release
 ### Ubuntu
 1. `$ wget https://github.com/45Drives/cockpit-navigator/releases/download/v0.5.10/cockpit-navigator_0.5.10-1focal_all.deb`
-1. `# apt install ./cockpit-navigator_0.5.10-1focal_all.deb`
+1. `# dpkg -i cockpit-navigator_0.5.10-1focal_all.deb`
 ### EL7
 1. `# yum install https://github.com/45Drives/cockpit-navigator/releases/download/v0.5.10/cockpit-navigator-0.5.10-1.el7.noarch.rpm`
 ### EL8
