@@ -158,34 +158,85 @@ export class NavContextMenu {
 			this.nav_window_ref.stop_load();
 		  }
 		}
-	  		if (result?.["archive-path"]) {
-			const unitName = `nav-clean-on-open-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
-			const script = [
-				'set -euo pipefail',
-				'if ! command -v inotifywait >/dev/null 2>&1; then ' +
-				  'sleep 300; rm -f -- "$ARCHIVE"; ' +
-				  '[ -n "${TEMPDIR:-}" ] && [[ "$TEMPDIR" == /tmp/navigator-* ]] && rm -rf -- "$TEMPDIR"; ' +
-				  'exit 0; fi',
-				'inotifywait -q -t 1800 -e open -- "$ARCHIVE" || true',
-				'rm -f -- "$ARCHIVE"',
-				'sleep 3600',
-				'[ -n "${TEMPDIR:-}" ] && [[ "$TEMPDIR" == /tmp/navigator-* ]] && rm -rf -- "$TEMPDIR" || :'
-			  ].join(' && ');
-			  const cmd = [
-					'systemd-run',
-					'--property=CollectMode=inactive-or-failed',
-					'--property=RuntimeMaxSec=90000',
-					'--unit', unitName,
-					'--setenv=ARCHIVE=' + result['archive-path'],
-					...(result['temp-dir'] ? ['--setenv=TEMPDIR=' + result['temp-dir']] : []),
-					'/bin/bash','-lc', script
-					];
-
-			await cockpit.spawn(cmd, { superuser: 'require', err: 'out' }).then(out => console.log(out));
-			console.log("scheduled cleanup:", unitName);
-			console.log("Deleting :", result['archive-path'], "in 30 minutes or after download starts.");
-		}
-	  
+		if (result?.["archive-path"]) {
+			const unitName = `nav-clean-sweep-on-close-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+		  
+			const script = `
+		  set -euo pipefail
+		  
+		  ARCHIVE="$ARCHIVE"
+		  DIR="$(dirname -- "$ARCHIVE")"
+		  BASE="$(basename -- "$ARCHIVE")"
+		  ROOT="/tmp/navigator"
+		  PATTERN="navigator-download*"
+		  
+		  if ! command -v inotifywait >/dev/null 2>&1; then
+			sleep 300
+			rm -f -- "$ARCHIVE" || true
+			# Sweep everything matching PATTERN that's not in use
+			find "$ROOT" -mindepth 1 -maxdepth 1 -name "$PATTERN" -print0 | \
+			while IFS= read -r -d '' p; do
+			  if command -v lsof >/dev/null 2>&1 && lsof -t -- "$p" >/dev/null 2>&1; then
+				continue
+			  fi
+			  rm -rf -- "$p"
+			done
+			[ -n "\${TEMPDIR:-}" ] && [[ "$TEMPDIR" == /tmp/navigator-* ]] && rm -rf -- "$TEMPDIR" || :
+			exit 0
+		  fi
+		  
+		  if ! timeout 1800 bash -lc '
+			inotifywait -q -m -e open --format "%e %f" -- "$DIR" |
+			while read ev f; do
+			  if [ "$f" = "$BASE" ]; then exit 0; fi
+			done
+		  '; then
+			find "$ROOT" -mindepth 1 -maxdepth 1 -name "$PATTERN" -print0 | \
+			while IFS= read -r -d '' p; do
+			  if command -v lsof >/dev/null 2>&1 && lsof -t -- "$p" >/dev/null 2>&1; then
+				continue
+			  fi
+			  rm -rf -- "$p"
+			done
+			exit 0
+		  fi
+		  
+		  if command -v lsof >/dev/null 2>&1; then
+			# Ensure no process holds ARCHIVE open
+			sleep 1
+			while lsof -t -- "$ARCHIVE" >/dev/null 2>&1; do sleep 1; done
+		  else
+			timeout 86400 bash -lc '
+			  inotifywait -q -m -e close --format "%e %f" -- "$DIR" |
+			  while read ev f; do
+				if [ "$f" = "$BASE" ]; then exit 0; fi
+			  done
+			' || true
+		  fi
+		  
+		  rm -f -- "$ARCHIVE" || true
+		  
+		  #    (uncomment -mmin +5 to keep very fresh ones)
+		  find "$ROOT" -mindepth 1 -maxdepth 1 -name "$PATTERN" -print0 | \
+		  while IFS= read -r -d '' p; do
+			if command -v lsof >/dev/null 2>&1 && lsof -t -- "$p" >/dev/null 2>&1; then
+			  continue
+			fi
+			rm -rf -- "$p"
+		  done		  
+		  [ -n "\${TEMPDIR:-}" ] && [[ "$TEMPDIR" == /tmp/navigator-* ]] && rm -rf -- "$TEMPDIR" || :
+		  `;
+			const cmd = [
+			  'systemd-run',
+			  '--property=CollectMode=inactive-or-failed',
+			  '--property=RuntimeMaxSec=90000',
+			  '--unit', unitName,
+			  '--setenv=ARCHIVE=' + result['archive-path'],
+			  ...(result['temp-dir'] ? ['--setenv=TEMPDIR=' + result['temp-dir']] : []),
+			  '/bin/bash','-lc', script
+			];		  
+			await cockpit.spawn(cmd, { superuser: 'require', err: 'out' });
+		  }	  
 		const downloader = new NavDownloader(download_target);
 		downloader.download();
 	  }
