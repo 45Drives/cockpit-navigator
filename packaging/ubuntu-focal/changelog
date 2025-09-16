@@ -1,3 +1,9 @@
+cockpit-navigator (0.5.11-4focal) focal; urgency=medium
+
+  * build package
+
+ -- Rachit Hans <rhans@45drives.com>  Tue, 16 Sep 2025 11:51:03 -0300
+
 cockpit-navigator (0.5.11-1focal) focal; urgency=medium
 
   * deleting tmp/navigotrs files and fixed auto  parent folder selection
