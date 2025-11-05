@@ -34,6 +34,9 @@ export class NavFile extends NavEntry {
 		this.nav_type = "file";
 		this.dom_element.nav_item_icon.classList.add("fas", "fa-file");
 		this.double_click = false;
+
+		this.md5 = null;
+		this.sha256 = null;
 	}
 
 	/**
@@ -145,6 +148,56 @@ export class NavFile extends NavEntry {
 		document.getElementById("nav-edit-contents-view").style.display = "none";
 		document.getElementById("nav-contents-view-holder").style.display = "flex";
 		this.nav_window_ref.enable_buttons();
+	}
+
+	async show_properties(extra_properties = "") {
+		const computed_prop = (name, value_getter, value_updater) => {
+			const html = `
+		<div class="nav-property-pair">
+	<span class="nav-property-pair-key">${name}</span>
+	<span class="nav-property-pair-value" id="nav-file-value-${name}">${value_getter() ?? "Click to calculate ->"}</span>
+	<button class="pf-c-button pf-m-plain pf-m-small" title="Refresh" id="nav-file-refresh-${name}"><i class="fas fa-sync"></i></button>
+	</div>`;
+			const configure = () => {
+				const button = document.getElementById(`nav-file-refresh-${name}`);
+				if (!button) {
+					console.error(`document.getElementById("nav-file-refresh-${name}") returned null!`);
+					return;
+				}
+				button.onclick = async () => {
+					const promise = value_updater();
+					document.getElementById(`nav-file-value-${name}`).innerText = value_getter();
+					await promise;
+					if (this.nav_window_ref.selected_entries.size == 1 && this.nav_window_ref.selected_entry() === this) // check that still selected
+						document.getElementById(`nav-file-value-${name}`).innerText = value_getter();
+				};
+			};
+			return { html, configure };
+		};
+		const computed_props = [
+			computed_prop("MD5", () => this.md5, async () => { await this.update_md5(); }),
+			computed_prop("SHA256", () => this.sha256, async () => { await this.update_sha256(); }),
+		];
+
+		for (const { html } of computed_props) {
+			extra_properties += html;
+		}
+
+		super.show_properties(extra_properties);
+
+		for (const { configure } of computed_props) {
+			configure();
+		}
+	}
+
+	async update_md5() {
+		this.md5 = "Calculating...";
+		this.md5 = (await cockpit.spawn(["md5sum", this.path_str()], { superuser: "try" })).trim().split(/\s+/)[0];
+	}
+
+	async update_sha256() {
+		this.sha256 = "Calculating...";
+		this.sha256 = (await cockpit.spawn(["sha256sum", this.path_str()], { superuser: "try" })).trim().split(/\s+/)[0];
 	}
 }
 

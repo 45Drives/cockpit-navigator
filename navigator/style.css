@@ -442,6 +442,7 @@ input[type="text"] {
 	font-size: 85%;
 	flex-basis: 0;
 	flex: 3;
+	overflow-x: auto;
 }
 
 .nav-property-pair > input[type="text"] {
