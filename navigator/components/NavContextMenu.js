@@ -256,8 +256,8 @@ export class NavContextMenu {
 	 */
 	show(event, target) {
 		if (!this.nav_window_ref.none_selected()) {
-			if (event.shiftKey || event.ctrlKey)
-				this.nav_window_ref.set_selected(target, event.shiftKey, event.ctrlKey);
+			// if (event.shiftKey || event.ctrlKey)
+			this.nav_window_ref.set_selected(target, event.shiftKey, event.ctrlKey);
 		} else {
 			this.nav_window_ref.set_selected(target, false, false);
 		}
