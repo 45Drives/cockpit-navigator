@@ -13,7 +13,7 @@
         "change_urgency": "medium"
     },
     "architecture": {
-        "rocky": "x86_64",
+        "rocky": "noarch",
         "ubuntu": "all"
     },
     "dependencies": {
