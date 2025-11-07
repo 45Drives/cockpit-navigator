@@ -22,14 +22,13 @@ import { ModalPrompt } from "./ModalPrompt.js";
 
 const MAX_CONCURRENT_UPLOADS = 6;
 
-let gActiveUploads = 0;
+const gActiveUploads = new Set();
 
-window.addEventListener("load", () => {
-	window.addEventListener("beforeunload", () => {
-		if (gActiveUploads) {
-			return "Are you sure? Your active file uploads will be cancelled!";
-		}
-	});
+window.addEventListener("beforeunload", (e) => {
+	if (gActiveUploads.size) {
+		e.preventDefault();
+		return "";
+	}
 });
 
 /**
@@ -46,8 +45,6 @@ function uploadFile(file, destination) {
 	const cancel = () => { cancelled = true; };
 
 	const promise = (async () => {
-		gActiveUploads++;
-
 		// superuser test
 		let superuser = undefined;
 		try {
@@ -58,9 +55,13 @@ function uploadFile(file, destination) {
 		}
 
 		let proc = cockpit.script('mkdir -p "$(dirname "$1")" && dd of="$1"', [destination], { err: "message", binary: true, superuser });
+		gActiveUploads.add(proc);
 		proc.catch(e => {
 			new ModalPrompt().alert(e.message);
 			cancel();
+		});
+		proc.finally(() => {
+			gActiveUploads.delete(proc);
 		});
 		for await (const chunk of stream) {
 			if (cancelled) {
