@@ -17,195 +17,263 @@
 	along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { NavWindow } from "./NavWindow.js";
 import { format_time_remaining } from "../functions.js";
 import { ModalPrompt } from "./ModalPrompt.js";
 
-export class FileUpload {
-	/**
-	 * 
-	 * @param {File|Blob} file 
-	 * @param {NavWindow} nav_window_ref
-	 * @param {string|undefined} path_prefix 
-	 */
-	constructor(file, nav_window_ref, path_prefix = "") {
+const MAX_CONCURRENT_UPLOADS = 6;
+
+let gActiveUploads = 0;
+
+window.addEventListener("load", () => {
+	window.addEventListener("beforeunload", () => {
+		if (gActiveUploads) {
+			return "Are you sure? Your active file uploads will be cancelled!";
+		}
+	});
+});
+
+/**
+ * 
+ * @param {File|Blob} file file to upload
+ * @param {string} destination where to upload on server
+ */
+function uploadFile(file, destination) {
+	const total_bytes = file.size;
+	let current_bytes = 0;
+	const stream = file.stream();
+
+	let cancelled = false;
+	const cancel = () => { cancelled = true; };
+
+	const promise = (async () => {
+		gActiveUploads++;
+
+		// superuser test
+		let superuser = undefined;
 		try {
-			this.chunk_size = (parseInt(cockpit.info.version) > 238)? 1048576 : 65536;
-		} catch(e) {
-			console.log(e);
-			this.chunk_size = 65536;
+			await cockpit.script('DIRNAME="$(dirname "$1")"; mkdir -p "$DIRNAME" && test -d "$DIRNAME" -a -x "$DIRNAME" -a -w "$DIRNAME"', [destination], { err: "message", binary: true, superuser });
+		} catch (e) {
+			console.error(e);
+			superuser = 'try';
 		}
-		this.filename = path_prefix + file.name;
-		this.nav_window_ref = nav_window_ref;
-		this.path = nav_window_ref.pwd().path_str() + "/" + this.filename;
-		this.reader = new FileReader();
-		this.chunks = this.slice_file(file);
-		this.chunk_index = 0;
-		this.modal_prompt = new ModalPrompt();
-		this.using_webkit = true;
-		this.make_html_element();
-	}
 
-	make_html_element() {
-		var notification = this.dom_element = document.createElement("div");
-		notification.classList.add("nav-notification");
-
-		var header = document.createElement("div");
-		header.classList.add("nav-notification-header");
-		notification.appendChild(header);
-		header.style.display = "grid";
-		header.style.gridTemplateColumns = "1fr 20px";
-		header.style.gap = "5px";
-
-		var title = document.createElement("p");
-		title.innerText = "Uploading " + this.filename;
-		title.title = this.filename;
-
-		var cancel = document.createElement("i");
-		cancel.classList.add("fa", "fa-times");
-		cancel.style.justifySelf = "center";
-		cancel.style.alignSelf = "center";
-		cancel.style.cursor = "pointer";
-		cancel.onclick = () => {
-			if (this.proc) {
-				this.reader.onload = () => {};
-				this.done();
+		let proc = cockpit.script('mkdir -p "$(dirname "$1")" && dd of="$1"', [destination], { err: "message", binary: true, superuser });
+		proc.catch(e => {
+			new ModalPrompt().alert(e.message);
+			cancel();
+		});
+		for await (const chunk of stream) {
+			if (cancelled) {
+				break;
 			}
+			proc.input(chunk, true);
+			current_bytes += chunk.length;
 		}
+		stream.cancel();
+		proc.input(); // close STDIN
+		await proc;
+	})();
+	promise.finally(() => {
+		gActiveUploads--;
+	});
 
-		header.append(title, cancel);
+	let last_stat_time = performance.now();
+	let last_current_bytes = 0;
+	let rate_avg = null;
 
-		var info = document.createElement("div");
-		info.classList.add("flex-row", "space-between");
-		notification.appendChild(info);
+	const getStats = () => {
+		const now = performance.now();
+		const delta_t = now - last_stat_time;
+		last_stat_time = now;
 
-		var rate = document.createElement("div");
-		rate.classList.add("monospace-sm");
-		info.appendChild(rate);
-		rate.innerText = "-";
-		this.rate = rate;
+		const delta_b = current_bytes - last_current_bytes;
+		last_current_bytes = current_bytes;
 
-		var eta = document.createElement("div");
-		eta.classList.add("monospace-sm");
-		info.appendChild(eta);
-		eta.innerText = "-";
-		this.eta = eta;
+		const rate = 1000 * delta_b / delta_t;
+		rate_avg = 0.125 * rate + (0.875 * (rate_avg ?? rate));
 
-		var progress = document.createElement("progress");
-		progress.max = this.num_chunks;
-		notification.appendChild(progress);
-		this.progress = progress;
+		const eta = (total_bytes - current_bytes) / rate_avg;
 
-		this.html_elements = [progress, eta, rate, info, header, notification];
-		document.getElementById("nav-notifications").appendChild(notification);
-	}
-
-	remove_html_element() {
-		for (let elem of this.html_elements) {
-			if (elem.parentElement)
-				elem.parentElement.removeChild(elem);
-		}
-	}
-
-	/**
-	 * 
-	 * @param {File|Blob} file 
-	 * @returns {Blob[]}
-	 */
-	slice_file(file) {
-		var offset = 0;
-		var next_offset;
-		var chunks = [];
-		this.num_chunks = Math.ceil(file.size / this.chunk_size);
-		for (let i = 0; i < this.num_chunks; i++) {
-			next_offset = Math.min(this.chunk_size * (i + 1), file.size);
-			chunks.push(file.slice(offset, next_offset));
-			offset = next_offset;
-		}
-		return chunks;
-	}
-
-	async upload() {
-		this.timestamp = Date.now();
-		this.dom_element.style.display = "flex";
-		this.proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/write-chunks.py3", this.path], {err: "out", superuser: "try"});
-		this.proc.fail((e, data) => {
-			this.reader.onload = () => {}
-			this.done();
-			this.nav_window_ref.modal_prompt.alert(e, data);
-		})
-		this.proc.done((data) => {
-			if (!this.done_hook)
-				this.nav_window_ref.refresh();
-		})
-		this.proc.always(() => this?.done_hook?.());
-		this.reader.onerror = (evt) => {
-			this.modal_prompt.alert("Failed to read file: " + this.filename, "Upload of directories not supported.");
-			this.done();
-		}
-		this.reader.onload = (evt) => {
-			this.write_to_file(evt, this.chunk_index * this.chunk_size);
-			this.chunk_index++;
-			this.progress.value = this.chunk_index;
-			if (this.chunk_index < this.num_chunks)
-				this.reader.readAsDataURL(this.chunks[this.chunk_index]);
-			else {
-				this.done();
-			}
+		return {
+			/**
+			 * instantaneous rate
+			 */
+			rate,
+			/**
+			 * smoothed rate
+			 */
+			rate_avg,
+			/**
+			 * ETA in seconds
+			 */
+			eta,
+			total_bytes,
+			current_bytes,
 		};
-		try {
-			this.reader.readAsDataURL(this.chunks[0]);
-		} catch {
-			this.reader.onload = () => {};
-			if (this.using_webkit) {
-				this.proc.input(JSON.stringify({seek: 0, chunk: ""}), true);
-			} else {
-				this.modal_prompt.alert("Failed to read file: " + this.filename, "Upload of directories and empty files not supported.");
-			}
-			this.done();
-		}
-		this.update_rates_interval = setInterval(this.display_xfr_rate.bind(this), 1000);
-	}
+	};
 
+	return {
+		filename: file.name,
+		promise,
+		cancel,
+		getStats,
+	};
+}
+
+/**
+ * @typedef { typeof uploadFile extends (...args: any[]) => infer U ? U : any } UploadHandle
+ */
+
+/**
+ * @typedef { typeof uploadFile extends (...args: infer U) => any ? U : any } UploadArgs
+ */
+
+/**
+ * 
+ * @param {UploadArgs[]} uploadRequests 
+ */
+function uploadFiles(uploadRequests) {
+	if (uploadRequests.length === 1) {
+		return uploadFile(...(uploadRequests[0]));
+	}
+	const handles = uploadRequests.map(uploadFile);
 	/**
-	 * 
-	 * @param {Event} evt 
+	 * @type UploadHandle
 	 */
-	write_to_file(evt) {
-		var chunk_b64 = evt.target.result.replace(/^data:[^\/]+\/[^;]+;base64,/, "");
-		const seek = this.chunk_index * this.chunk_size;
-		var obj = {
-			seek: seek,
-			chunk: chunk_b64
-		};
-		this.proc.input(JSON.stringify(obj) + "\n", true);
-		this.update_xfr_rate();
-	}
+	const handle = {
+		filename: `${handles.length} files`,
+		promise: Promise.allSettled(handles.map(({ promise }) => promise)),
+		cancel: () => handles.forEach((h) => h.cancel()),
+		getStats: () => {
+			let total_bytes = 0;
+			let current_bytes = 0;
+			let rate = 0;
+			let rate_avg = 0;
+			let eta = 0;
 
-	done() {
-		this.proc.input(); // close stdin
-		this.remove_html_element();
-		clearInterval(this.update_rates_interval);
-	}
+			for (const stats of handles.map(h => h.getStats())) {
+				total_bytes += stats.total_bytes;
+				current_bytes += stats.current_bytes;
+				rate += stats.rate;
+				rate_avg += stats.rate_avg;
+				eta = Math.max(eta, stats.eta);
+			}
 
-	update_xfr_rate() {
-		var now = Date.now();
-		var elapsed = (now - this.timestamp) / 1000;
-		this.timestamp = now;
-		var rate = this.chunk_size / elapsed;
-		this.rate_avg = (this.rate_avg)
-			? (0.125 * rate + (0.875 * this.rate_avg))
-			: rate;
-		// keep exponential moving average of chunk time for eta
-		this.chunk_time = (this.chunk_time)
-			? (0.125 * elapsed + (0.875 * this.chunk_time))
-			: elapsed;
-		var eta = (this.num_chunks - this.chunk_index) * this.chunk_time;
-		this.eta_avg = eta;
-	}
+			return {
+				total_bytes,
+				current_bytes,
+				rate,
+				rate_avg,
+				eta,
+			};
 
-	display_xfr_rate() {
-		this.rate.innerText = cockpit.format_bytes_per_sec(this.rate_avg);
-		this.eta.innerText = format_time_remaining(this.eta_avg);
+		}
+	};
+	return handle;
+}
+
+/**
+ * 
+ * @param { UploadHandle } upload_handle 
+ */
+function makeUploadNotification(upload_handle) {
+	const notification = document.createElement("div");
+	notification.classList.add("nav-notification");
+
+	const header = document.createElement("div");
+	header.classList.add("nav-notification-header");
+	header.style.display = "grid";
+	header.style.gridTemplateColumns = "1fr 20px";
+	header.style.gap = "5px";
+	notification.appendChild(header);
+
+	const title = document.createElement("p");
+	title.innerText = "Uploading " + upload_handle.filename;
+	title.title = upload_handle.filename;
+	header.appendChild(title);
+
+	const cancel_button = document.createElement("button");
+	cancel_button.classList.add(..."pf-c-button pf-m-plain pf-m-danger pf-m-small".split(" "));
+	cancel_button.style.justifySelf = "center";
+	cancel_button.style.alignSelf = "center";
+	cancel_button.title = "Cancel upload";
+	cancel_button.onclick = () => {
+		upload_handle.cancel();
+	};
+	header.appendChild(cancel_button);
+
+	const cancel_icon = document.createElement("i");
+	cancel_icon.classList.add("fa", "fa-times");
+	cancel_button.appendChild(cancel_icon);
+
+	const info = document.createElement("div");
+	info.classList.add("flex-row", "space-between");
+	notification.appendChild(info);
+
+	const rate = document.createElement("div");
+	rate.classList.add("monospace-sm");
+	rate.innerText = "-";
+	info.appendChild(rate);
+
+	const eta = document.createElement("div");
+	eta.classList.add("monospace-sm");
+	eta.innerText = "-";
+	info.appendChild(eta);
+
+	const progress = document.createElement("progress");
+	progress.style.width = "100%";
+	notification.appendChild(progress);
+
+	const interval = setInterval(() => {
+		const stats = upload_handle.getStats();
+		rate.innerText = cockpit.format_bytes_per_sec(stats.rate_avg);
+		eta.innerText = format_time_remaining(stats.eta);
+		progress.max = stats.total_bytes;
+		progress.value = stats.current_bytes;
+	}, 250);
+
+	upload_handle.promise.finally(() => {
+		clearInterval(interval);
+		notification.remove();
+	});
+
+	document.getElementById("nav-notifications").appendChild(notification);
+	return notification;
+}
+
+/**
+ * 
+ * @param  { UploadArgs } args 
+ */
+function uploadFileWithNotification(...args) {
+	const handle = uploadFile(...args);
+	makeUploadNotification(handle);
+	return handle;
+}
+
+const gUploadQueue = [];
+let gActiveUploadCount = 0;
+
+function startNextUploads() {
+	while (gUploadQueue.length > 0 && gActiveUploadCount < MAX_CONCURRENT_UPLOADS) {
+		gUploadQueue.pop()();
 	}
+}
+
+/**
+ * 
+ * @param  { UploadArgs } args 
+ */
+export function queueUpload(...args) {
+	return new Promise((resolve) => {
+		gUploadQueue.unshift(() => {
+			gActiveUploadCount++;
+			uploadFileWithNotification(...args).promise.finally(() => {
+				gActiveUploadCount--;
+				resolve();
+				startNextUploads();
+			});
+		});
+		startNextUploads();
+	});
 }

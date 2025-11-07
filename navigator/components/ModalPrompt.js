@@ -19,8 +19,9 @@
 /**
  * @typedef {Object} Request
  * @property {string} label
- * @property {"text"|"checkbox"} type
+ * @property {"text"|"checkbox"|"radio"} type
  * @property {string|undefined} default
+ * @property {string|undefined} radio_group
  */
 
 let primary_btn = "pf-m-primary";
@@ -70,15 +71,16 @@ export class ModalPrompt {
 		footer.style.flexFlow = "row no-wrap";
 		footer.style.justifyContent = "flex-end";
 		popup.appendChild(footer);
-		document.body.appendChild(this.modal);
 	}
 
 	show() {
+		document.body.appendChild(this.modal);
 		this.modal.style.display = "block";
 	}
 
 	hide() {
 		this.modal.style.display = "none";
+		document.body.removeChild(this.modal);
 	}
 
 	/**
@@ -115,7 +117,7 @@ export class ModalPrompt {
 			this.ok.onclick = () => {
 				resolve();
 				this.hide();
-			}
+			};
 		});
 	}
 
@@ -131,7 +133,7 @@ export class ModalPrompt {
 		this.set_body(message);
 		this.footer.innerHTML = "";
 		this.footer.append(this.no, this.yes);
-		this.yes.classList.remove(... all_btn);
+		this.yes.classList.remove(...all_btn);
 		if (danger)
 			this.yes.classList.add(danger_btn);
 		else
@@ -145,11 +147,11 @@ export class ModalPrompt {
 			let resolve_true = () => {
 				resolve(true);
 				this.hide();
-			}
+			};
 			let resolve_false = () => {
 				resolve(false);
 				this.hide();
-			}
+			};
 			this.yes.onclick = resolve_true;
 			this.no.onclick = resolve_false;
 		});
@@ -178,7 +180,7 @@ export class ModalPrompt {
 					"label": label,
 					"type": "text"
 				}
-			}
+			};
 		}
 
 		let req_holder = document.createElement("div");
@@ -186,7 +188,7 @@ export class ModalPrompt {
 		req_holder.style.flexFlow = "column nowrap";
 		req_holder.style.alignItems = "stretch";
 		this.body.appendChild(req_holder);
-		for(let key of Object.keys(requests)) {
+		for (let key of Object.keys(requests)) {
 			let row = document.createElement("div");
 			row.style.display = "flex";
 			row.style.alignItems = "baseline";
@@ -212,7 +214,14 @@ export class ModalPrompt {
 				case "text":
 					req.style.flexGrow = "3";
 					break;
+				case "radio":
+					if (request.radio_group) {
+						req.name = request.radio_group;
+					}
 				case "checkbox":
+					if (request.default) {
+						req.checked = true;
+					}
 					label.style.cursor = req.style.cursor = "pointer";
 					break;
 				default:
@@ -224,15 +233,15 @@ export class ModalPrompt {
 		inputs[0].focus();
 		for (let i = 0; i < inputs.length - 1; i++) {
 			inputs[i].onchange = () => {
-				inputs[i+1].focus();
-			}
+				inputs[i + 1].focus();
+			};
 		}
 		inputs[inputs.length - 1].onchange = () => {
 			this.ok.focus();
-		}
+		};
 		return new Promise((resolve, reject) => {
 			this.ok.onclick = () => {
-				let response
+				let response;
 				if (simple_prompt) {
 					response = inputs[0].value;
 				} else {
@@ -240,6 +249,7 @@ export class ModalPrompt {
 					for (let input of inputs) {
 						switch (input.type) {
 							case "checkbox":
+							case "radio":
 								response[input.id] = input.checked;
 								break;
 							case "text":
@@ -251,12 +261,11 @@ export class ModalPrompt {
 				}
 				resolve(response);
 				this.hide();
-			}
+			};
 			this.cancel.onclick = () => {
 				resolve(null);
 				this.hide();
-			}
+			};
 		});
 	}
 }
-

@@ -669,7 +669,6 @@ input:checked + .slider:before {
 .nav-notification {
 	margin: 5px;
 	position: relative;
-	display: none;
 	flex-flow: column nowrap;
 	align-items: stretch;
 	z-index: 10;
