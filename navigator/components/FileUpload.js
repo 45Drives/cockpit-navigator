@@ -21,6 +21,7 @@ import { format_time_remaining } from "../functions.js";
 import { ModalPrompt } from "./ModalPrompt.js";
 
 const MAX_CONCURRENT_UPLOADS = 6;
+const CHUNK_SIZE = 512 * 1024;
 
 const gActiveUploads = new Set();
 
@@ -31,6 +32,54 @@ window.addEventListener("beforeunload", (e) => {
 	}
 });
 
+class Waiter {
+	constructor() {
+		this.unblock = () => { };
+	}
+	block() {
+		return new Promise(resolve => {
+			this.unblock = resolve;
+		});
+	}
+}
+
+class LineBufferer {
+	constructor() {
+		this.buffer = "";
+		this.decoder = new TextDecoder("utf-8");
+		new TextDecoderStream();
+	}
+
+	get_lines(raw) {
+		const str = this.buffer + this.decoder.decode(raw);
+		const i = str.lastIndexOf("\n");
+		if (i === -1) {
+			// no newline found
+			this.buffer = str;
+			return [];
+		}
+		const lines = str.slice(0, i);
+		this.buffer = str.slice(i + 1); // store remainder for next call
+		return lines.trim().split("\n");
+	}
+
+	get_last_line(raw) {
+		const str = this.buffer + this.decoder.decode(raw);
+		const end = str.lastIndexOf("\n");
+		if (end === -1) {
+			// no newline found
+			this.buffer = str;
+			return null;
+		}
+		let start = str.lastIndexOf("\n", end - 1);
+		if (start === -1) {
+			start = 0;
+		}
+		this.buffer = str.slice(end + 1); // store remainder for next call
+		return str.slice(start, end).trim();
+	}
+}
+
 /**
  * 
  * @param {File|Blob} file file to upload
@@ -38,11 +87,20 @@ window.addEventListener("beforeunload", (e) => {
  */
 function uploadFile(file, destination) {
 	const total_bytes = file.size;
-	let current_bytes = 0;
+	let bytes_sent = 0;
+	let bytes_received = 0;
+	let cancelled = false;
+
 	const stream = file.stream();
 
-	let cancelled = false;
-	const cancel = () => { cancelled = true; };
+	const stdout_bufferer = new LineBufferer();
+
+	const waiter = new Waiter();
+
+	const cancel = () => {
+		cancelled = true;
+		waiter.unblock();
+	};
 
 	const promise = (async () => {
 		// superuser test
@@ -54,8 +112,23 @@ function uploadFile(file, destination) {
 			superuser = 'try';
 		}
 
-		let proc = cockpit.script('mkdir -p "$(dirname "$1")" && dd of="$1"', [destination], { err: "message", binary: true, superuser });
+		let proc = cockpit.spawn(["/usr/share/cockpit/navigator/scripts/write-chunks.py3", destination], { err: "message", binary: true, superuser });
 		gActiveUploads.add(proc);
+
+		const on_output = (raw) => {
+			const received = stdout_bufferer.get_last_line(raw);
+			if (received === null) {
+				return;
+			}
+			bytes_received = parseInt(received);
+			// console.log("received:", bytes_received);
+			waiter.unblock();
+		};
+
+		proc.done((stdout) => {
+			if (stdout.length)
+				on_output(stdout);
+		});
 		proc.catch(e => {
 			new ModalPrompt().alert(e.message);
 			cancel();
@@ -63,20 +136,24 @@ function uploadFile(file, destination) {
 		proc.finally(() => {
 			gActiveUploads.delete(proc);
 		});
+
+		proc.stream(on_output);
+
 		for await (const chunk of stream) {
+			bytes_sent += chunk.length;
+			proc.input(chunk, bytes_sent < total_bytes);
+			// console.log("sent:", bytes_sent);
+			while (!cancelled && ((bytes_sent - bytes_received) >= CHUNK_SIZE * 5)) {
+				await waiter.block();
+			}
 			if (cancelled) {
+				proc.input(); // close STDIN
 				break;
 			}
-			proc.input(chunk, true);
-			current_bytes += chunk.length;
 		}
 		stream.cancel();
-		proc.input(); // close STDIN
 		await proc;
 	})();
-	promise.finally(() => {
-		gActiveUploads--;
-	});
 
 	let last_stat_time = performance.now();
 	let last_current_bytes = 0;
@@ -87,13 +164,13 @@ function uploadFile(file, destination) {
 		const delta_t = now - last_stat_time;
 		last_stat_time = now;
 
-		const delta_b = current_bytes - last_current_bytes;
-		last_current_bytes = current_bytes;
+		const delta_b = bytes_received - last_current_bytes;
+		last_current_bytes = bytes_received;
 
 		const rate = 1000 * delta_b / delta_t;
 		rate_avg = 0.125 * rate + (0.875 * (rate_avg ?? rate));
 
-		const eta = (total_bytes - current_bytes) / rate_avg;
+		const eta = (total_bytes - bytes_received) / rate_avg;
 
 		return {
 			/**
@@ -109,7 +186,7 @@ function uploadFile(file, destination) {
 			 */
 			eta,
 			total_bytes,
-			current_bytes,
+			current_bytes: bytes_received,
 		};
 	};
 
