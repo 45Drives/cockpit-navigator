@@ -138,6 +138,11 @@ function uploadFile(file, destination) {
 			gActiveUploads.delete(proc);
 		});
 
+		if (total_bytes === 0) {
+			proc.input(); // close STDIN
+			return proc;
+		}
+
 		proc.stream(on_output);
 
 		const reader = stream.getReader({ mode: "byob" });
