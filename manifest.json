@@ -5,7 +5,7 @@
     "description": "A File System Browser for Cockpit.",
     "version": "0.6.0",
     "build_number": "1",
-    "stable": true,
+    "stable": false,
     "author": "Josh Boudreau <jboudreau@45drives.com>",
     "git_url": "https://github.com/45Drives/cockpit-navigator",
     "license": "GPL-3.0+",
