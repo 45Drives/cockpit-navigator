@@ -48,13 +48,13 @@ uninstall-local:
 REMOTE_HOST ?= 192.168.123.5
 REMOTE_USER ?= root
 # Where navigator lands on the remote
-REMOTE_PREFIX ?= /usr/share/cockpit
+REMOTE_PREFIX ?= /root/.local/share/cockpit
 REMOTE_DESTDIR ?= $(DESTDIR)
 # Restart cockpit on remote after install (1=yes)
-RESTART_COCKPIT ?= 1
+RESTART_COCKPIT ?= 0
 # Tools
 SSH := ssh $(REMOTE_USER)@$(REMOTE_HOST)
-RSYNC := rsync -aH --delete
+RSYNC := rsync -aH
 
 # Remote install (uses ssh + rsync)
 install-remote:
@@ -65,6 +65,7 @@ ifeq ($(DIST),$(EL7_DIST))
 	$(SSH) "sed -i 's/pf-c-button/btn/g;s/pf-m-primary/btn-primary/g;s/pf-m-secondary/btn-default/g;s/pf-m-danger/btn-danger/g' $(REMOTE_DESTDIR)$(REMOTE_PREFIX)/navigator/index.html"
 	$(SSH) "sed -i 's/pf-c-button/btn/g;s/pf-m-primary/btn-primary/g;s/pf-m-secondary/btn-default/g;s/pf-m-danger/btn-danger/g' $(REMOTE_DESTDIR)$(REMOTE_PREFIX)/navigator/components/ModalPrompt.js"
 endif
+	$(SSH) "find \$$HOME/.local/share/cockpit/navigator -name '*.js' -exec sed -i 's#\"/usr/share/\(cockpit/navigator/scripts/.*\)\"#\"'\$$HOME'/.local/share/\1\"#g' {} \;"
 ifneq ($(NAV_VERS),)
 	$(SSH) "printf '%s\n' 'export let NAVIGATOR_VERSION = \"$(NAV_VERS)\";' > $(REMOTE_DESTDIR)$(REMOTE_PREFIX)/navigator/version.js"
 endif
