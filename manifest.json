@@ -3,7 +3,7 @@
     "name": "cockpit-navigator",
     "title": "Cockpit Navigator",
     "description": "A File System Browser for Cockpit.",
-    "version": "0.5.12",
+    "version": "0.6.0",
     "build_number": "1",
     "stable": true,
     "author": "Josh Boudreau <jboudreau@45drives.com>",
@@ -69,7 +69,7 @@
     ],
     "changelog": {
         "urgency": "medium",
-        "version": "0.5.12",
+        "version": "0.6.0",
         "build_number": "1",
         "date": null,
         "packager": "Josh Boudreau <jboudreau@45drives.com>",
