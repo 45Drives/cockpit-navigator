@@ -4,7 +4,7 @@ from pathlib import Path
 import argparse
 import sys
 
-CHUNK_SIZE = 512 * 1024
+CHUNK_SIZE = 1024 * 1024
 
 def main():
     parser = argparse.ArgumentParser()

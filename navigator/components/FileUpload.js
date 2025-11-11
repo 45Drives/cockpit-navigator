@@ -21,7 +21,7 @@ import { format_time_remaining } from "../functions.js";
 import { ModalPrompt } from "./ModalPrompt.js";
 
 const MAX_CONCURRENT_UPLOADS = 6;
-const CHUNK_SIZE = 512 * 1024;
+const CHUNK_SIZE = 10 * 1024 * 1024;
 
 const gActiveUploads = new Set();
 
@@ -90,6 +90,7 @@ function uploadFile(file, destination) {
 	let bytes_sent = 0;
 	let bytes_received = 0;
 	let cancelled = false;
+	let inflight = 0;
 
 	const stream = file.stream();
 
@@ -121,13 +122,13 @@ function uploadFile(file, destination) {
 				return;
 			}
 			bytes_received = parseInt(received);
-			// console.log("received:", bytes_received);
 			waiter.unblock();
 		};
 
 		proc.done((stdout) => {
 			if (stdout.length)
 				on_output(stdout);
+			cancel();
 		});
 		proc.catch(e => {
 			new ModalPrompt().alert(e.message);
@@ -139,23 +140,31 @@ function uploadFile(file, destination) {
 
 		proc.stream(on_output);
 
-		for await (const chunk of stream) {
-			bytes_sent += chunk.length;
-			proc.input(chunk, bytes_sent < total_bytes);
-			// console.log("sent:", bytes_sent);
-			while (!cancelled && ((bytes_sent - bytes_received) >= CHUNK_SIZE * 5)) {
+		const reader = stream.getReader({ mode: "byob" });
+		let buffer = new ArrayBuffer(Math.min(CHUNK_SIZE, total_bytes));
+
+		while (!cancelled) {
+			inflight = (bytes_sent - bytes_received);
+			if (inflight < CHUNK_SIZE * 2) {
+				const result = await reader.read(new Uint8Array(buffer));
+				if (result.done) {
+					break;
+				}
+				bytes_sent += result.value.byteLength;
+				proc.input(result.value, true);
+				buffer = result.value.buffer;
+			} else {
 				await waiter.block();
 			}
-			if (cancelled) {
-				proc.input(); // close STDIN
-				break;
-			}
-		}
-		stream.cancel();
-		await proc;
+		};
+		proc.input(); // close STDIN
+
+		return await proc;
 	})();
 
-	let last_stat_time = performance.now();
+	const start_time = performance.now();
+
+	let last_stat_time = start_time;
 	let last_current_bytes = 0;
 	let rate_avg = null;
 
@@ -168,11 +177,15 @@ function uploadFile(file, destination) {
 		last_current_bytes = bytes_received;
 
 		const rate = 1000 * delta_b / delta_t;
-		rate_avg = 0.125 * rate + (0.875 * (rate_avg ?? rate));
+		const alpha = 0.125;
+		rate_avg = alpha * rate + ((1 - alpha) * (rate_avg ?? rate));
 
 		const eta = (total_bytes - bytes_received) / rate_avg;
 
+		console.log("inflight:", inflight, "rate:", cockpit.format_bytes_per_sec(rate));
+
 		return {
+			start_time,
 			/**
 			 * instantaneous rate
 			 */
@@ -187,6 +200,8 @@ function uploadFile(file, destination) {
 			eta,
 			total_bytes,
 			current_bytes: bytes_received,
+			cancelled,
+			inflight,
 		};
 	};
 
@@ -308,6 +323,7 @@ function makeUploadNotification(upload_handle) {
 		eta.innerText = format_time_remaining(stats.eta);
 		progress.max = stats.total_bytes;
 		progress.value = stats.current_bytes;
+		cancel_button.disabled = stats.cancelled;
 	}, 250);
 
 	upload_handle.promise.finally(() => {
