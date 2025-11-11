@@ -40,7 +40,7 @@ function load_hidden_file_state(nav_window) {
  * 
  * @param {NavWindow} nav_window 
  */
- function load_item_display_state(nav_window) {
+function load_item_display_state(nav_window) {
 	const state = localStorage.getItem('item-display');
 
 	if (state === 'list') {
@@ -96,9 +96,8 @@ function load_hidden_file_state(nav_window) {
 // 	localStorage.setItem("houston-theme-state", state);
 // }
 
-let nav_window = new NavWindow();
 
-function set_up_buttons() {
+function set_up_buttons(nav_window) {
 	document.getElementById("nav-back-btn").addEventListener("click", nav_window.back.bind(nav_window));
 	document.getElementById("nav-forward-btn").addEventListener("click", nav_window.forward.bind(nav_window));
 	document.getElementById("nav-up-dir-btn").addEventListener("click", nav_window.up.bind(nav_window));
@@ -156,16 +155,26 @@ function set_up_buttons() {
 }
 
 async function main() {
+	let initial_path;
+	if (window.location.hash.startsWith("#:")) {
+		const hash = window.location.hash.replace(/^#:/, "");
+		initial_path = hash;
+	} else {
+		initial_path = localStorage.getItem('navigator-path') ?? '/';
+	}
+	// console.log("initial path:", initial_path);
+	const nav_window = new NavWindow(initial_path);
+	nav_window.update_hash();
 	// set_last_theme_state();
 	load_hidden_file_state(nav_window);
 	load_item_display_state(nav_window);
-	var get_users = nav_window.get_system_users();
-	var get_groups = nav_window.get_system_groups();
-	var refresh = nav_window.refresh();
+	const get_users = nav_window.get_system_users();
+	const get_groups = nav_window.get_system_groups();
+	const refresh = nav_window.refresh();
 	await get_users;
 	await get_groups;
 	await refresh;
-	set_up_buttons();
+	set_up_buttons(nav_window);
 }
 
 main();
