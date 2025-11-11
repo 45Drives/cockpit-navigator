@@ -182,7 +182,7 @@ function uploadFile(file, destination) {
 
 		const eta = (total_bytes - bytes_received) / rate_avg;
 
-		console.log("inflight:", inflight, "rate:", cockpit.format_bytes_per_sec(rate));
+		// console.log("inflight:", inflight, "rate:", cockpit.format_bytes_per_sec(rate));
 
 		return {
 			start_time,
