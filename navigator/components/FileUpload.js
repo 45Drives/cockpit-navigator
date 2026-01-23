@@ -107,7 +107,14 @@ function uploadFile(file, destination) {
 		// superuser test
 		let superuser = undefined;
 		try {
-			await cockpit.script('DIRNAME="$(dirname "$1")"; mkdir -p "$DIRNAME" && test -d "$DIRNAME" -a -x "$DIRNAME" -a -w "$DIRNAME"', [destination], { err: "message", binary: true, superuser });
+			await cockpit.script(`
+				if test -e "$1"; then
+					test -w "$1"
+				else
+					DIRNAME="$(dirname "$1")"
+					mkdir -p "$DIRNAME" && test -d "$DIRNAME" -a -x "$DIRNAME" -a -w "$DIRNAME"
+				fi
+				`, [destination], { err: "message", binary: true, superuser });
 		} catch (e) {
 			console.error(e);
 			superuser = 'try';
