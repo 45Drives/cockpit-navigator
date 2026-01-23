@@ -76,3 +76,8 @@ endif
 # Optional convenience target
 uninstall-remote:
 	$(SSH) "rm -rf $(REMOTE_DESTDIR)$(REMOTE_PREFIX)/navigator"
+
+README.md: README.md.j2 manifest.json
+	j2 README.md.j2 manifest.json > README.md
+
+readme: README.md

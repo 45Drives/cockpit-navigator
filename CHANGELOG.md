@@ -7,3 +7,7 @@
 * Overhaul file uploading for better stability with large files
 * Use Cockpit-provided dark mode settings
 * Use URL hash for location
+
+## Cockpit Navigator 0.6.1-1
+
+* Fix permissions check while uploading file and overwriting existing

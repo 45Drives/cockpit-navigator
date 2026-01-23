@@ -1,3 +1,9 @@
+cockpit-navigator (0.6.1-1bookworm) bookworm; urgency=medium
+
+  * Fix permissions check while uploading file and overwriting existing
+
+ -- Joshua Boudreau <jboudreau@45drives.com>  Fri, 23 Jan 2026 10:31:28 -0400
+
 cockpit-navigator (0.6.0-1bookworm) bookworm; urgency=medium
 
   * Fix changing focused file on right click
