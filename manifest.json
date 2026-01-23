@@ -14,7 +14,8 @@
     },
     "architecture": {
         "rocky": "noarch",
-        "ubuntu": "all"
+        "ubuntu": "all",
+        "debian": "all"
     },
     "dependencies": {
         "ubuntu_common": [
