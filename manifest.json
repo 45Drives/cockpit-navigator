@@ -3,9 +3,9 @@
     "name": "cockpit-navigator",
     "title": "Cockpit Navigator",
     "description": "A File System Browser for Cockpit.",
-    "version": "0.5.12",
+    "version": "0.6.1",
     "build_number": "1",
-    "stable": true,
+    "stable": false,
     "author": "Josh Boudreau <jboudreau@45drives.com>",
     "git_url": "https://github.com/45Drives/cockpit-navigator",
     "license": "GPL-3.0+",
@@ -13,8 +13,9 @@
         "change_urgency": "medium"
     },
     "architecture": {
-        "rocky": "x86_64",
-        "ubuntu": "all"
+        "rocky": "noarch",
+        "ubuntu": "all",
+        "debian": "all"
     },
     "dependencies": {
         "ubuntu_common": [
@@ -69,7 +70,7 @@
     ],
     "changelog": {
         "urgency": "medium",
-        "version": "0.5.12",
+        "version": "0.6.1",
         "build_number": "1",
         "date": null,
         "packager": "Josh Boudreau <jboudreau@45drives.com>",

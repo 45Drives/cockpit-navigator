@@ -442,6 +442,7 @@ input[type="text"] {
 	font-size: 85%;
 	flex-basis: 0;
 	flex: 3;
+	overflow-x: auto;
 }
 
 .nav-property-pair > input[type="text"] {
@@ -668,7 +669,6 @@ input:checked + .slider:before {
 .nav-notification {
 	margin: 5px;
 	position: relative;
-	display: none;
 	flex-flow: column nowrap;
 	align-items: stretch;
 	z-index: 10;

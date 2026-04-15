@@ -227,6 +227,7 @@ export class NavContextMenu {
 		  `;
 			const cmd = [
 			  'systemd-run',
+			  '--user',
 			  '--property=CollectMode=inactive-or-failed',
 			  '--property=RuntimeMaxSec=90000',
 			  '--unit', unitName,
@@ -234,7 +235,7 @@ export class NavContextMenu {
 			  ...(result['temp-dir'] ? ['--setenv=TEMPDIR=' + result['temp-dir']] : []),
 			  '/bin/bash','-lc', script
 			];		  
-			await cockpit.spawn(cmd, { superuser: 'require', err: 'out' });
+			await cockpit.spawn(cmd, { superuser: 'try', err: 'out' });
 		  }	  
 		const downloader = new NavDownloader(download_target);
 		downloader.download();
@@ -255,11 +256,8 @@ export class NavContextMenu {
 	 * @param {NavEntry} target 
 	 */
 	show(event, target) {
-		if (!this.nav_window_ref.none_selected()) {
-			if (event.shiftKey || event.ctrlKey)
-				this.nav_window_ref.set_selected(target, event.shiftKey, event.ctrlKey);
-		} else {
-			this.nav_window_ref.set_selected(target, false, false);
+		if (this.nav_window_ref.selected_entries.size <= 1) {
+			this.nav_window_ref.set_selected(target, event.shiftKey, event.ctrlKey);
 		}
 		for (let option of Object.keys(this.menu_options)) {
 			this.menu_options[option].style.display = "flex"; // show all

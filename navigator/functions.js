@@ -62,6 +62,9 @@ export function format_time(timestamp) {
  * @returns {string}
  */
 export function format_time_remaining(seconds_) {
+	if (!Number.isFinite(seconds_)) {
+		return '\u221E';
+	}
 	var hours = Math.floor(seconds_ / 3600);
 	var seconds = seconds_ % 3600;
 	var minutes = Math.floor(seconds / 60);

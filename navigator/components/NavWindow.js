@@ -26,10 +26,9 @@ import { ModalPrompt } from "./ModalPrompt.js";
 import { format_bytes, format_permissions } from "../functions.js";
 
 export class NavWindow {
-	constructor() {
+	constructor(initial_path) {
 		this.item_display = "grid";
-		this.path_stack = (localStorage.getItem('navigator-path') ?? '/').split('/');
-		this.path_stack = this.path_stack.map((_, index) => new NavDir([...this.path_stack.slice(0, index + 1)].filter(part => part != ''), this));
+		this.path_stack = [new NavDir(initial_path)];
 
 		this.path_stack_index = this.path_stack.length - 1;
 		this.selected_entries = new Set([this.pwd()]);
@@ -38,6 +37,13 @@ export class NavWindow {
 		this.window.addEventListener("click", this);
 		this.window.addEventListener("contextmenu", this);
 		window.addEventListener("keydown", this);
+
+		this.hashchange_handler = () => {
+			console.log("hashchange", window.location.hash);
+			this.cd(new NavDir(window.location.hash.replace(/^#:/, "") || "/"));
+		}
+
+		window.addEventListener("hashchange", this.hashchange_handler);
 
 		this.context_menu = new NavContextMenu("nav-context-menu", this);
 
@@ -170,7 +176,7 @@ export class NavWindow {
 	}
 
 	set_nav_button_state() {
-		document.getElementById("nav-back-btn").disabled = (this.path_stack_index === 1);
+		document.getElementById("nav-back-btn").disabled = (this.path_stack_index === 0);
 		document.getElementById("nav-forward-btn").disabled = (this.path_stack_index === this.path_stack.length - 1);
 		document.getElementById("nav-up-dir-btn").disabled = (this.pwd().path_str() === "/");
 	}
@@ -183,6 +189,14 @@ export class NavWindow {
 		return this.path_stack[this.path_stack_index];
 	}
 
+	update_hash() {
+		window.removeEventListener("hashchange", this.hashchange_handler);
+		window.location.hash = `#:${this.pwd().path_str()}`;
+		setTimeout(() => {
+			window.addEventListener("hashchange", this.hashchange_handler);
+		}, 0);
+	}
+
 	/**
 	 * 
 	 * @param {NavDir} new_dir 
@@ -191,22 +205,27 @@ export class NavWindow {
 		this.path_stack.length = this.path_stack_index + 1;
 		this.path_stack.push(new_dir);
 		this.path_stack_index = this.path_stack.length - 1;
+		this.update_hash();
 		this.refresh();
 	}
 
 	back() {
 		this.path_stack_index = Math.max(this.path_stack_index - 1, 0);
+		this.update_hash();
 		this.refresh();
 	}
 	
 	forward() {
 		this.path_stack_index = Math.min(this.path_stack_index + 1, this.path_stack.length - 1);
+		this.update_hash();
 		this.refresh();
 	}
 	
 	up() {
-		if(this.pwd().path_str() !== '/')
+		if(this.pwd().path_str() !== '/') {
 			this.cd(new NavDir(this.pwd().parent_dir()));
+			this.update_hash();
+		}
 	}
 	
 	clear_selected() {

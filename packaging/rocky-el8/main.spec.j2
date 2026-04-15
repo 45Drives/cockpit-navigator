@@ -33,6 +33,16 @@ rm -rf %{buildroot}
 /usr/share/cockpit/navigator/*
 
 %changelog
+* Fri Jan 23 2026 Joshua Boudreau <jboudreau@45drives.com> 0.6.1-1
+- Fix permissions check while uploading file and overwriting existing
+* Tue Nov 11 2025 Joshua Boudreau <jboudreau@45drives.com> 0.6.0-1
+- Fix changing focused file on right click
+- Added keyboard navigation
+- Added checksums to file properties pane
+- Fix zip for download for non-root users
+- Overhaul file uploading for better stability with large files
+- Use Cockpit-provided dark mode settings
+- Use URL hash for location
 * Tue Sep 16 2025 Jordan Keough <jkeough@45drives.com> 0.5.12-1
 - Building latest fixes
 * Tue Sep 16 2025 Rachit Hans <rhans@45drives.com> 0.5.11-4

@@ -17,10 +17,9 @@
 	along with Cockpit Navigator.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { FileUpload } from "./FileUpload.js";
+import { queueUpload } from "./FileUpload.js";
 import { ModalPrompt } from "./ModalPrompt.js";
 import { NavWindow } from "./NavWindow.js";
-import { FileUploadManager } from "./FileUploadManager.js";
 
 export class NavDragDrop {
 	/**
@@ -36,138 +35,88 @@ export class NavDragDrop {
 		this.drop_area = drop_area;
 		this.nav_window_ref = nav_window_ref;
 		this.modal_prompt = new ModalPrompt();
-		this.upload_manager = new FileUploadManager(this.nav_window_ref, 6);
 		this.upload_element = document.createElement('input');
 		this.upload_element.type = 'file';
 		this.upload_element.multiple = true;
 		this.upload_element.onchange = async e => {
-			var uploads = []
+			const pwd = nav_window_ref.pwd().path_str();
+			let uploads = [];
 			for (const file of e.target.files) {
-				let uploader = new FileUpload(file, this.nav_window_ref);
-				uploader.using_webkit = false;
-				uploads.push(uploader);
+				uploads.push([file, pwd + `/${file.name}`]);
 			}
 			if (uploads.length) {
 				uploads = await this.handle_conflicts(uploads);
-				this.upload_manager.add(... uploads);
+				Promise.allSettled(uploads.map((upload) => queueUpload(...upload))).finally(() => this.nav_window_ref.refresh());
 			}
-		}
-		document.getElementById("nav-upload-btn").addEventListener("click", this.upload_dialog.bind(this));
+		};
+		document.getElementById("nav-upload-btn").addEventListener("click", () => this.upload_dialog());
 	}
 
 	/**
 	 * 
-	 * @param {FileSystemEntry} item 
-	 * @param {string} path 
-	 * @returns {Promise<FileUpload[]>}
-	 */
-	async scan_files(item, path) {
-		let new_uploads = [];
-		if (item.isDirectory) {
-			if (!path && !await this.modal_prompt.confirm(`Copy whole directory: ${item.fullPath}?`, "", true))
-				return new_uploads;
-			let directoryReader = item.createReader();
-			let promise = new Promise((resolve, reject) => {
-				directoryReader.readEntries(async (entries) => {
-					for (const entry of entries) {
-						new_uploads.push(... await this.scan_files(entry, path + item.name + "/"));
-					}
-					resolve();
-				});
-			})
-			await promise;
-		} else {
-			let promise = new Promise((resolve, reject) => {
-				item.file((file) => {
-					resolve(file);
-				})
-			});
-			new_uploads.push(new FileUpload(await promise, this.nav_window_ref, path));
-		}
-		return new_uploads;
-	}
- 
-	/**
-	 * 
-	 * @param {DataTransferItemList} items 
-	 * @returns {Promise<DataTransferItemList>}
-	 */
-	handle_drop_advanced(items) {
-		return new Promise(async (resolve, reject) => {
-			let uploads = [];
-			for (let i = 0; i < items.length; i++) {
-				let item = items[i]?.webkitGetAsEntry?.() ?? items[i]?.getAsEntry?.() ?? null;
-				let path = "";
-				if (item) {
-					let new_uploads = await this.scan_files(item, path);
-					uploads.push(... new_uploads);
-				} else {
-					reject();
-				}
-			}
-			resolve(uploads);
-		})
-	}
-
-	/**
-	 * 
-	 * @param {FileUpload[]} uploads 
-	 * @returns {FileUpload[]}
+	 * @param {[File, string][]} uploads 
+	 * @returns {Promise<[File, string][]>}
 	 */
 	async handle_conflicts(uploads) {
-		let test_paths = [];
-		for (let upload of uploads)
-			test_paths.push(upload.path);
-		let proc = cockpit.spawn(
-			["/usr/share/cockpit/navigator/scripts/return-exists.py3", ... test_paths],
-			{error: "out", superuser: "try"}
-		);
-		let exist_result;
-		proc.done((data) => {
-			exist_result = JSON.parse(data);
-		});
-		proc.fail((e, data) => {
-			this.nav_window_ref.modal_prompt.alert(e, data);
-		});
-		try {
-			await proc;
-		} catch {
-			return;
-		}
-		let keepers = [];
-		let requests = {};
-		for (let upload of uploads) {
-			if (!exist_result[upload.path]) {
-				keepers.push(upload.filename);
-				continue;
+		const test_paths = uploads.map(([_, path]) => path);
+		const proc = cockpit.script(`
+		while IFS= read -r p; do
+			if [ -e "$p" -o -h "$p" ]; then
+				echo "$p"
+			fi
+		done`, [], { error: "message", superuser: "try" });
+		proc.input(test_paths.join("\n") + '\n');
+		const existing_paths = (await proc).trim().split("\n").filter(p => p);
+
+		if (existing_paths.length) {
+			const choice = Object.entries((await this.nav_window_ref.modal_prompt.prompt(
+				"Conflicts found while uploading:",
+				{
+					"skip": { label: "Skip existing", default: true, radio_group: "conflicts-choice", type: "radio" },
+					"overwrite": { label: "Overwrite existing", radio_group: "conflicts-choice", type: "radio" },
+					"choose-skip": { label: "Choose which files to overwrite (default skip)", radio_group: "conflicts-choice", type: "radio" },
+					"choose-overwrite": { label: "Choose which files to overwrite (default overwrite)", radio_group: "conflicts-choice", type: "radio" },
+				}
+			)) ?? {}).filter(([_, value]) => value)?.[0]?.[0];
+			let default_choice = false;
+			switch (choice) {
+				case "skip":
+					return uploads.filter(([_, p]) => !existing_paths.includes(p));
+				case "overwrite":
+					return uploads;
+				case "choose-overwrite":
+					default_choice = true;
+				case "choose-skip":
+					const requests = {};
+					for (const path of existing_paths) {
+						requests[path] = {
+							label: path,
+							type: "checkbox",
+							default: default_choice,
+						};
+					}
+					const responses = await this.nav_window_ref.modal_prompt.prompt(
+						"Choose which files to overwrite:",
+						requests
+					);
+					if (responses === null) {
+						return [];
+					}
+					return uploads.filter(([_, path]) =>
+						[undefined, true].includes(responses[path]));
+				default:
+					return [];
 			}
-			let request = {};
-			request.label = upload.filename;
-			request.type = "checkbox";
-			let id = upload.filename;
-			requests[id] = request;
 		}
-		if (Object.keys(requests).length > 0) {
-			let responses = await this.nav_window_ref.modal_prompt.prompt(
-				"Conflicts found while uploading. Replace?",
-				requests
-			)
-			if (responses === null)
-				return null;
-			for (let key of Object.keys(responses)) {
-				if (responses[key])
-					keepers.push(key);
-			}
-		}
-		return uploads.filter((upload) => keepers.includes(upload.filename));
+		return uploads;
 	}
-	
+
 	/**
 	 * 
 	 * @param {Event} e 
 	 */
 	async handleEvent(e) {
-		switch(e.type){
+		switch (e.type) {
 			case "dragenter":
 				e.preventDefault();
 				e.stopPropagation();
@@ -184,18 +133,56 @@ export class NavDragDrop {
 				break;
 			case "drop":
 				this.nav_window_ref.start_load();
-				let uploads;
-				let items = e.dataTransfer.items;
 				e.preventDefault();
 				e.stopPropagation();
-				try {
-					uploads = await this.handle_drop_advanced(items);
-				} catch {
-					uploads = [];
-					for (let file of e.dataTransfer.files) {
-						let uploader = new FileUpload(file, this.nav_window_ref);
-						uploader.using_webkit = false;
-						uploads.push(uploader);
+
+				/**
+				 * 
+				 * @param {FileSystemDirectoryEntry} dir 
+				 * @param {string} pwd
+				 */
+				const recurse_dir = async (dir, pwd) => {
+					/** 
+					 * @type {[File, string][]}
+					 */
+					const uploads = [];
+					const reader = dir.createReader();
+					/**
+					 * @type {FileSystemEntriesCallback extends ((args: infer U[]) => any) ? U : never}
+					 */
+					const entries = await new Promise((resolve, reject) =>
+						reader.readEntries(resolve, reject));
+					for (const entry of entries) {
+						const remote_path = pwd + `/${entry.name}`;
+						if (entry.isDirectory) {
+							uploads.push(...(await recurse_dir(entry, remote_path)));
+						} else {
+							uploads.push([await new Promise((resolve, reject) => entry.file(resolve, reject)), remote_path]);
+						}
+					}
+
+					return uploads;
+				};
+
+				/**
+				 * @type {DataTransferItemList}
+				 */
+				const items = e.dataTransfer.items;
+				/** 
+				 * @type {[File, string][]}
+				 */
+				let uploads = [];
+				const pwd = this.nav_window_ref.pwd().path_str();
+
+				for (const item of items) {
+					const entry = item.webkitGetAsEntry();
+					if (entry?.isDirectory) {
+						uploads.push(...(await recurse_dir(entry, pwd + `/${entry.name}`)));
+					} else {
+						const file = item.getAsFile();
+						if (file) {
+							uploads.push([file, pwd + `/${file.name}`]);
+						}
 					}
 				}
 				this.drop_area.classList.remove("drag-enter");
@@ -205,7 +192,7 @@ export class NavDragDrop {
 				}
 				uploads = await this.handle_conflicts(uploads);
 				this.nav_window_ref.stop_load();
-				this.upload_manager.add(... uploads);
+				Promise.allSettled(uploads.map((upload) => queueUpload(...upload))).finally(() => this.nav_window_ref.refresh());
 				break;
 			default:
 				this.drop_area.classList.remove("drag-enter");
@@ -214,6 +201,6 @@ export class NavDragDrop {
 	}
 
 	upload_dialog() {
-		this.upload_element.click();
+		this.upload_element.showPicker();
 	}
 }

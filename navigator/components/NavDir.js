@@ -55,6 +55,9 @@ export class NavDir extends NavEntry {
 					}, 500);
 				}
 				break;
+			case "keydown":
+				if (e.key == "Enter")
+					this.nav_window_ref.cd(this);
 		}
 		super.handleEvent(e);
 	}

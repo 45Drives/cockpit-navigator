@@ -1,3 +1,21 @@
+cockpit-navigator (0.6.1-1bookworm) bookworm; urgency=medium
+
+  * Fix permissions check while uploading file and overwriting existing
+
+ -- Joshua Boudreau <jboudreau@45drives.com>  Fri, 23 Jan 2026 10:31:28 -0400
+
+cockpit-navigator (0.6.0-1bookworm) bookworm; urgency=medium
+
+  * Fix changing focused file on right click
+  * Added keyboard navigation
+  * Added checksums to file properties pane
+  * Fix zip for download for non-root users
+  * Overhaul file uploading for better stability with large files
+  * Use Cockpit-provided dark mode settings
+  * Use URL hash for location
+
+ -- Joshua Boudreau <jboudreau@45drives.com>  Tue, 11 Nov 2025 13:35:20 -0400
+
 cockpit-navigator (0.5.12-1bookworm) bookworm; urgency=medium
 
   * Building latest fixes
