@@ -511,6 +511,9 @@ export class NavWindow {
 	}
 
 	async mkdir() {
+		let current_user;
+		var user_promise = cockpit.user();
+		user_promise.then(user => current_user = user.name);
 		let response = await this.modal_prompt.prompt("Creating Directory",
 			{
 				new_name: {
@@ -531,15 +534,24 @@ export class NavWindow {
 			return;
 		}
 		var promise = new Promise((resolve, reject) => {
-			var proc = cockpit.spawn(
-				["mkdir", this.pwd().path_str() + "/" + new_dir_name],
-				{superuser: "try", err: "out"}
+			var admin_access_proc = cockpit.spawn(
+				["runuser", "-u", current_user, "mkdir", this.pwd().path_str() + "/" + new_dir_name],
+				{superuser: "require", err: "out"}
 			);
-			proc.done((data) => {
+			admin_access_proc.done((data) => {
 				resolve();
 			});
-			proc.fail((e, data) => {
-				reject(data);
+			admin_access_proc.fail((e, data) => {
+				var limited_access_proc = cockpit.spawn(
+					["mkdir", this.pwd().path_str() + "/" + new_dir_name],
+					{superuser: "try", err: "out"}
+				);
+				limited_access_proc.done((data) => {
+					resolve();
+				});
+				limited_access_proc.fail((e, data) => {
+					reject(data);
+				})
 			});
 		});
 		try {
@@ -551,6 +563,9 @@ export class NavWindow {
 	}
 
 	async touch() {
+		let current_user;
+		var user_promise = cockpit.user();
+		user_promise.then(user => current_user = user.name);
 		let response = await this.modal_prompt.prompt("Creating File",
 			{
 				new_name: {
@@ -571,15 +586,24 @@ export class NavWindow {
 			return;
 		}
 		var promise = new Promise((resolve, reject) => {
-			var proc = cockpit.spawn(
-				["/usr/share/cockpit/navigator/scripts/touch.py3", this.pwd().path_str() + "/" + new_file_name],
-				{superuser: "try", err: "out"}
+			var admin_access_proc = cockpit.spawn(
+				["runuser", "-u", current_user, "/usr/share/cockpit/navigator/scripts/touch.py3", this.pwd().path_str() + "/" + new_file_name],
+				{superuser: "require", err: "out"}
 			);
-			proc.done((data) => {
+			admin_access_proc.done((data) => {
 				resolve();
 			});
-			proc.fail((e, data) => {
-				reject(data);
+			admin_access_proc.fail((e, data) => {
+				var limited_access_proc = cockpit.spawn(
+					["/usr/share/cockpit/navigator/scripts/touch.py3", this.pwd().path_str() + "/" + new_file_name],
+					{superuser: "try", err: "out"}
+				);
+				limited_access_proc.done((data) => {
+					resolve();
+				});
+				limited_access_proc.fail((e, data) => {
+					reject(data);
+				})
 			});
 		});
 		try {
